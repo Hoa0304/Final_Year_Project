@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+      - "3002:3002" # For Swagger if needed, but usually 3001
+    env_file:
+      - ./backend/.env
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - AI_SERVICE_URL=http://ai-service:3003
+    restart: always
+    networks:
+      - hmall-network
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./ai-service/.env
+    environment:
+      - PORT=3003
+      - NODE_ENV=production
+      - BACKEND_URL=http://backend:3001
+    volumes:
+      - ai-models:/app/models
+    restart: always
+    networks:
+      - hmall-network
+
+networks:
+  hmall-network:
+    driver: bridge
+
+volumes:
+  ai-models:

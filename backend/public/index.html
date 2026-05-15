@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMall Interactive API Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f1a; color: #f1f5f9; }
+        .glass { background: rgba(21, 28, 45, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .method-get { color: #10b981; border-color: rgba(16, 185, 129, 0.2); }
+        .method-post { color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); }
+        .json-response { background: #010409; border: 1px solid #30363d; }
+        input, textarea { background: #161b22 !important; border: 1px solid #30363d !important; color: #c9d1d9 !important; }
+        input:focus { border-color: #58a6ff !important; outline: none; }
+        .btn-send { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); transition: all 0.2s; }
+        .btn-send:hover { filter: brightness(1.1); transform: scale(1.02); }
+        .loader { border: 2px solid #f3f3f3; border-top: 2px solid #3498db; border-radius: 50%; width: 14px; height: 14px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-12">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="mb-12">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-4xl font-bold tracking-tight text-white mb-2">HMall <span class="text-blue-500">Interactive API</span></h1>
+                    <p class="text-slate-400">Kiểm thử trực tiếp các endpoint của hệ thống HMall.</p>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Base URL</label>
+                    <input id="baseUrl" type="text" value="" class="px-4 py-2 rounded-lg text-sm w-full md:w-64">
+                </div>
+            </div>
+        </header>
+
+        <!-- Global Auth -->
+        <div class="glass p-6 rounded-2xl mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="fas fa-lock text-blue-500"></i>
+                <h2 class="text-lg font-semibold text-white">Authentication</h2>
+            </div>
+            <p class="text-sm text-slate-400 mb-4">Nhập Bearer Token để tự động gắn vào Header cho các request cần xác thực.</p>
+            <input id="globalToken" type="text" placeholder="Bearer eyJhbGciOiJIUzI1..." class="w-full px-4 py-3 rounded-xl text-sm font-mono">
+        </div>
+
+        <!-- API List -->
+        <div class="space-y-6">
+            <!-- Auth: Login -->
+            <div class="glass rounded-2xl overflow-hidden border-l-4 border-blue-500">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 bg-blue-500/10 text-blue-500 font-bold rounded text-xs">POST</span>
+                            <span class="font-mono text-sm text-slate-300">/api/auth/login</span>
+                        </div>
+                        <span class="text-xs text-slate-500">Public Access</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Đăng nhập tài khoản</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Request Body (JSON)</label>
+                            <textarea id="body_login" class="w-full h-32 p-4 rounded-xl font-mono text-xs">{
+  "email": "user@example.com",
+  "password": "yourpassword"
+}</textarea>
+                            <button onclick="sendRequest('POST', '/api/auth/login', 'body_login')" class="btn-send mt-4 w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                                <span class="loader" id="loader_login"></span>
+                                Send Request <i class="fas fa-paper-plane text-xs"></i>
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Response</label>
+                            <div id="res_login" class="json-response w-full h-44 p-4 rounded-xl overflow-auto font-mono text-xs text-emerald-400">
+                                // Click Send to see response...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User: Profile -->
+            <div class="glass rounded-2xl overflow-hidden border-l-4 border-emerald-500">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-500 font-bold rounded text-xs">GET</span>
+                            <span class="font-mono text-sm text-slate-300">/api/users/profile</span>
+                        </div>
+                        <span class="text-xs text-amber-500"><i class="fas fa-shield-alt"></i> Auth Required</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Lấy thông tin cá nhân</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm text-slate-400 mb-4">Endpoint này yêu cầu Header Authorization.</p>
+                            <button onclick="sendRequest('GET', '/api/users/profile', null)" class="btn-send w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                                <span class="loader" id="loader_profile"></span>
+                                Send Request <i class="fas fa-paper-plane text-xs"></i>
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Response</label>
+                            <div id="res_profile" class="json-response w-full h-44 p-4 rounded-xl overflow-auto font-mono text-xs text-emerald-400">
+                                // Click Send to see response...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product: List -->
+            <div class="glass rounded-2xl overflow-hidden border-l-4 border-emerald-500">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-500 font-bold rounded text-xs">GET</span>
+                            <span class="font-mono text-sm text-slate-300">/api/products</span>
+                        </div>
+                        <span class="text-xs text-slate-500">Public Access</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Danh sách sản phẩm</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm text-slate-400 mb-4">Lấy danh sách sản phẩm ảo để hiển thị trên Marketplace.</p>
+                            <button onclick="sendRequest('GET', '/api/products', null)" class="btn-send w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                                <span class="loader" id="loader_products"></span>
+                                Send Request <i class="fas fa-paper-plane text-xs"></i>
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Response</label>
+                            <div id="res_products" class="json-response w-full h-44 p-4 rounded-xl overflow-auto font-mono text-xs text-emerald-400">
+                                // Click Send to see response...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Auto-detect base URL
+            document.getElementById('baseUrl').value = window.location.origin;
+
+            async function sendRequest(method, endpoint, bodyId) {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const token = document.getElementById('globalToken').value;
+                const resDiv = document.getElementById('res_' + (bodyId ? bodyId.split('_')[1] : endpoint.split('/').pop()));
+                const loader = document.getElementById('loader_' + (bodyId ? bodyId.split('_')[1] : endpoint.split('/').pop()));
+
+                resDiv.innerText = '// Sending request...';
+                resDiv.classList.remove('text-red-400', 'text-emerald-400');
+                resDiv.classList.add('text-slate-400');
+                if (loader) loader.style.display = 'inline-block';
+
+                try {
+                    const options = {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    };
+
+                    if (token) {
+                        options.headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+                    }
+
+                    if (bodyId) {
+                        options.body = document.getElementById(bodyId).value;
+                    }
+
+                    const response = await fetch(baseUrl + endpoint, options);
+                    const data = await response.json();
+
+                    resDiv.innerText = JSON.stringify(data, null, 2);
+                    resDiv.classList.add(response.ok ? 'text-emerald-400' : 'text-red-400');
+                } catch (error) {
+                    resDiv.innerText = 'Error: ' + error.message;
+                    resDiv.classList.add('text-red-400');
+                } finally {
+                    if (loader) loader.style.display = 'none';
+                }
+            }
+        </script>
+
+        <footer class="mt-20 pt-8 border-t border-slate-800/50 text-center text-slate-500 text-sm">
+            &copy; 2026 HMall Console. Powered by HMall Engine.
+        </footer>
+    </div>
+</body>
+</html>

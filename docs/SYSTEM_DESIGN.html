@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMall System Design Documentation</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .diagram-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            page-break-inside: avoid;
+        }
+        .diagram-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .mermaid {
+            text-align: center;
+            background: white;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        @media print {
+            .diagram-container {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>HMall System Design Documentation</h1>
+    
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#overview">1. System Overview</a></li>
+            <li><a href="#actors">2. Actors</a></li>
+            <li><a href="#use-cases">3. Use Cases</a></li>
+            <li><a href="#case-studies">4. Case Studies</a></li>
+            <li><a href="#use-case-diagrams">5. Use Case Diagrams</a></li>
+            <li><a href="#activity-diagrams">6. Activity Diagrams</a></li>
+            <li><a href="#sequence-diagrams">7. Sequence Diagrams</a></li>
+            <li><a href="#component-diagram">8. Component Diagram</a></li>
+            <li><a href="#deployment-diagram">9. Deployment Diagram</a></li>
+            <li><a href="#database-schema">10. Database Schema</a></li>
+            <li><a href="#project-structure">11. Project Structure Analysis</a></li>
+            <li><a href="#module-analysis">12. Module Analysis</a></li>
+        </ul>
+    </div>
+
+    <section id="overview">
+        <h2>1. System Overview</h2>
+        <p><strong>HMall</strong> is a comprehensive virtual currency management and simulated e-commerce platform that allows users to:</p>
+        <ul>
+            <li>Manage virtual finances safely</li>
+            <li>Experience simulated buying/selling and stock trading</li>
+            <li>Earn virtual coins through tasks and games</li>
+            <li>Receive AI-powered suggestions for spending and investing</li>
+            <li>Track expenses and investments with detailed analytics</li>
+        </ul>
+        <h3>Key Features</h3>
+        <ul>
+            <li>Virtual Currency Management</li>
+            <li>Simulated Marketplace</li>
+            <li>Task System</li>
+            <li>Simulated Stock Trading</li>
+            <li>Mini-Games (TicTacToe, Memory Match, etc.)</li>
+            <li>AI Recommendations</li>
+            <li>Admin Panel</li>
+            <li>Reports & Statistics</li>
+        </ul>
+    </section>
+
+    <section id="actors">
+        <h2>2. Actors</h2>
+        <h3>1. User (Regular User)</h3>
+        <p><strong>Description:</strong> End users who interact with the mobile application</p>
+        <p><strong>Responsibilities:</strong></p>
+        <ul>
+            <li>Register and authenticate</li>
+            <li>Manage profile and view balance</li>
+            <li>Browse and purchase products</li>
+            <li>Complete tasks to earn coins</li>
+            <li>Trade stocks</li>
+            <li>Play mini-games</li>
+            <li>View recommendations</li>
+            <li>View transaction history and portfolio</li>
+        </ul>
+
+        <h3>2. Admin</h3>
+        <p><strong>Description:</strong> System administrators with elevated privileges</p>
+        <p><strong>Responsibilities:</strong></p>
+        <ul>
+            <li>Manage users (view, grant/revoke coins)</li>
+            <li>Manage products (CRUD operations)</li>
+            <li>Manage tasks (CRUD operations)</li>
+            <li>Manage games (CRUD operations)</li>
+            <li>View system statistics and reports</li>
+            <li>Monitor transactions</li>
+        </ul>
+
+        <h3>3. System (Automated Processes)</h3>
+        <p><strong>Description:</strong> Automated system processes</p>
+        <p><strong>Responsibilities:</strong></p>
+        <ul>
+            <li>Update stock prices periodically</li>
+            <li>Generate AI recommendations</li>
+            <li>Process transactions</li>
+            <li>Validate business rules</li>
+            <li>Maintain data consistency</li>
+        </ul>
+    </section>
+
+    <section id="use-cases">
+        <h2>3. Use Cases</h2>
+        <h3>User Use Cases</h3>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Use Case</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>UC-1</td>
+                <td>User Registration</td>
+                <td>New user creates an account</td>
+            </tr>
+            <tr>
+                <td>UC-2</td>
+                <td>User Login</td>
+                <td>Existing user authenticates</td>
+            </tr>
+            <tr>
+                <td>UC-3</td>
+                <td>View Dashboard</td>
+                <td>User views account overview</td>
+            </tr>
+            <tr>
+                <td>UC-4</td>
+                <td>Browse Products</td>
+                <td>User views available products</td>
+            </tr>
+            <tr>
+                <td>UC-5</td>
+                <td>Purchase Product</td>
+                <td>User buys a product with virtual currency</td>
+            </tr>
+            <tr>
+                <td>UC-6</td>
+                <td>Complete Task</td>
+                <td>User completes a task to earn virtual coins</td>
+            </tr>
+            <tr>
+                <td>UC-7</td>
+                <td>Buy Stocks</td>
+                <td>User purchases stocks with virtual currency</td>
+            </tr>
+            <tr>
+                <td>UC-8</td>
+                <td>Sell Stocks</td>
+                <td>User sells owned stocks</td>
+            </tr>
+            <tr>
+                <td>UC-9</td>
+                <td>Play Mini-Game</td>
+                <td>User plays a mini-game to earn coins</td>
+            </tr>
+            <tr>
+                <td>UC-10</td>
+                <td>View Recommendations</td>
+                <td>User views AI-generated recommendations</td>
+            </tr>
+            <tr>
+                <td>UC-11</td>
+                <td>View Transaction History</td>
+                <td>User views all virtual currency transactions</td>
+            </tr>
+            <tr>
+                <td>UC-12</td>
+                <td>View Portfolio</td>
+                <td>User views stock portfolio and performance</td>
+            </tr>
+            <tr>
+                <td>UC-13</td>
+                <td>Update Profile</td>
+                <td>User updates personal information</td>
+            </tr>
+        </table>
+
+        <h3>Admin Use Cases</h3>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Use Case</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>UC-14</td>
+                <td>Manage Users</td>
+                <td>Admin views and manages user accounts</td>
+            </tr>
+            <tr>
+                <td>UC-15</td>
+                <td>Grant/Revoke Coins</td>
+                <td>Admin grants or revokes virtual coins</td>
+            </tr>
+            <tr>
+                <td>UC-16</td>
+                <td>Manage Products</td>
+                <td>Admin creates, updates, or deletes products</td>
+            </tr>
+            <tr>
+                <td>UC-17</td>
+                <td>Manage Tasks</td>
+                <td>Admin creates, updates, or deletes tasks</td>
+            </tr>
+            <tr>
+                <td>UC-18</td>
+                <td>View System Statistics</td>
+                <td>Admin views system-wide statistics and reports</td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="case-studies">
+        <h2>4. Case Studies</h2>
+        <h3>Case Study 1: New User Journey - First Purchase</h3>
+        <p><strong>Scenario:</strong> Sarah, a new user, wants to explore the platform and make her first purchase.</p>
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>Sarah registers with email "sarah@example.com" and password</li>
+            <li>System creates account with 1000 virtual coins (default balance)</li>
+            <li>Sarah logs in and views the dashboard</li>
+            <li>Sarah browses the marketplace and finds a "Virtual Laptop" for 500 coins</li>
+            <li>Sarah views product details and decides to purchase</li>
+            <li>System validates balance (1000 > 500) ✓</li>
+            <li>System creates order, deducts 500 coins, creates transaction</li>
+            <li>Sarah's balance is now 500 coins</li>
+            <li>System suggests completing "First Purchase" task</li>
+            <li>Sarah completes the task and earns 100 coins reward</li>
+            <li>Sarah's final balance: 600 coins</li>
+        </ol>
+        <p><strong>Outcome:</strong> Successful first purchase, task completion, and coin earning.</p>
+
+        <h3>Case Study 2: Stock Trading Strategy</h3>
+        <p><strong>Scenario:</strong> John wants to build a diversified stock portfolio.</p>
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>John logs in with balance of 2000 coins</li>
+            <li>John views available stocks and their trends</li>
+            <li>John buys 5 shares of VTECH (500 coins) and 10 shares of VECO (755 coins)</li>
+            <li>After price fluctuations, John sells VTECH at profit</li>
+            <li>System generates recommendation for diversification</li>
+        </ol>
+        <p><strong>Outcome:</strong> Mixed results, learning experience, AI recommendation provided.</p>
+    </section>
+
+    <section id="use-case-diagrams">
+        <h2>5. Use Case Diagrams</h2>
+        
+        <div class="diagram-container">
+            <div class="diagram-title">Use Case Diagram - User</div>
+            <div class="mermaid">
+graph TB
+    User[User]
+    
+    UC1[UC-1: Register]
+    UC2[UC-2: Login]
+    UC3[UC-3: View Dashboard]
+    UC4[UC-4: Browse Products]
+    UC5[UC-5: Purchase Product]
+    UC6[UC-6: Complete Task]
+    UC7[UC-7: Buy Stocks]
+    UC8[UC-8: Sell Stocks]
+    UC9[UC-9: Play Mini-Game]
+    UC10[UC-10: View Recommendations]
+    UC11[UC-11: View Transaction History]
+    UC12[UC-12: View Portfolio]
+    UC13[UC-13: Update Profile]
+    
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+    User --> UC6
+    User --> UC7
+    User --> UC8
+    User --> UC9
+    User --> UC10
+    User --> UC11
+    User --> UC12
+    User --> UC13
+    
+    UC4 -.->|includes| UC5
+    UC3 -.->|includes| UC10
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Use Case Diagram - Admin</div>
+            <div class="mermaid">
+graph TB
+    Admin[Admin]
+    
+    UC14[UC-14: Manage Users]
+    UC15[UC-15: Grant/Revoke Coins]
+    UC16[UC-16: Manage Products]
+    UC17[UC-17: Manage Tasks]
+    UC18[UC-18: View System Statistics]
+    
+    Admin --> UC14
+    Admin --> UC15
+    Admin --> UC16
+    Admin --> UC17
+    Admin --> UC18
+    
+    UC14 -.->|includes| UC15
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Use Case Diagram - Complete System</div>
+            <div class="mermaid">
+graph TB
+    User[User]
+    Admin[Admin]
+    System[System]
+    
+    subgraph "User Use Cases"
+        UC1[Register]
+        UC2[Login]
+        UC3[View Dashboard]
+        UC4[Browse Products]
+        UC5[Purchase Product]
+        UC6[Complete Task]
+        UC7[Buy Stocks]
+        UC8[Sell Stocks]
+        UC9[Play Game]
+        UC10[View Recommendations]
+        UC11[View Transactions]
+        UC12[View Portfolio]
+        UC13[Update Profile]
+    end
+    
+    subgraph "Admin Use Cases"
+        UC14[Manage Users]
+        UC15[Grant/Revoke Coins]
+        UC16[Manage Products]
+        UC17[Manage Tasks]
+        UC18[View Statistics]
+    end
+    
+    subgraph "System Use Cases"
+        UC19[Update Stock Prices]
+        UC20[Generate Recommendations]
+        UC21[Process Transactions]
+        UC22[Validate Business Rules]
+    end
+    
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+    User --> UC6
+    User --> UC7
+    User --> UC8
+    User --> UC9
+    User --> UC10
+    User --> UC11
+    User --> UC12
+    User --> UC13
+    
+    Admin --> UC14
+    Admin --> UC15
+    Admin --> UC16
+    Admin --> UC17
+    Admin --> UC18
+    
+    System --> UC19
+    System --> UC20
+    System --> UC21
+    System --> UC22
+            </div>
+        </div>
+    </section>
+
+    <section id="activity-diagrams">
+        <h2>6. Activity Diagrams</h2>
+        
+        <div class="diagram-container">
+            <div class="diagram-title">Activity Diagram - Purchase Product</div>
+            <div class="mermaid">
+flowchart TD
+    Start([User wants to purchase product]) --> Browse[Browse Products]
+    Browse --> Select[Select Product]
+    Select --> ViewDetails[View Product Details]
+    ViewDetails --> ChooseQty{Choose Quantity}
+    ChooseQty --> Confirm[Confirm Purchase]
+    Confirm --> ValidateBalance{Validate Balance}
+    
+    ValidateBalance -->|Insufficient| ErrorMsg[Display Error Message]
+    ErrorMsg --> End1([End - Purchase Failed])
+    
+    ValidateBalance -->|Sufficient| CreateOrder[Create Order]
+    CreateOrder --> DeductBalance[Deduct Virtual Currency]
+    DeductBalance --> CreateTransaction[Create Transaction Record]
+    CreateTransaction --> UpdateStock[Update Product Stock]
+    UpdateStock --> SuccessMsg[Display Success Message]
+    SuccessMsg --> UpdateUI[Update UI - Balance & Products]
+    UpdateUI --> End2([End - Purchase Successful])
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Activity Diagram - Complete Task</div>
+            <div class="mermaid">
+flowchart TD
+    Start([User wants to complete task]) --> ViewTasks[View Available Tasks]
+    ViewTasks --> SelectTask[Select Task]
+    SelectTask --> ViewDetails[View Task Details]
+    ViewDetails --> CompleteReq[Complete Task Requirements]
+    CompleteReq --> MarkComplete[Mark Task as Completed]
+    MarkComplete --> Validate{Validate Completion}
+    
+    Validate -->|Invalid| ErrorMsg[Display Error Message]
+    ErrorMsg --> End1([End - Task Not Completed])
+    
+    Validate -->|Valid| CreateUserTask[Create User Task Record]
+    CreateUserTask --> AwardCoins[Award Reward Coins]
+    AwardCoins --> CreateTransaction[Create Transaction Record]
+    CreateTransaction --> UpdateBalance[Update User Balance]
+    UpdateBalance --> SuccessMsg[Display Success Message]
+    SuccessMsg --> UpdateUI[Update UI - Balance & Tasks]
+    UpdateUI --> End2([End - Task Completed])
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Activity Diagram - Stock Trading (Buy)</div>
+            <div class="mermaid">
+flowchart TD
+    Start([User wants to buy stocks]) --> ViewStocks[View Available Stocks]
+    ViewStocks --> SelectStock[Select Stock]
+    SelectStock --> ViewDetails[View Stock Details & Price]
+    ViewDetails --> EnterQty[Enter Quantity]
+    EnterQty --> CalculateCost[Calculate Total Cost]
+    CalculateCost --> Confirm{Confirm Purchase}
+    
+    Confirm -->|Cancel| End1([End - Cancelled])
+    
+    Confirm -->|Confirm| ValidateBalance{Validate Balance}
+    
+    ValidateBalance -->|Insufficient| ErrorMsg[Display Error Message]
+    ErrorMsg --> End2([End - Purchase Failed])
+    
+    ValidateBalance -->|Sufficient| CreateStockTx[Create Stock Transaction]
+    CreateStockTx --> UpdatePortfolio[Update User Stock Portfolio]
+    UpdatePortfolio --> DeductBalance[Deduct Virtual Currency]
+    DeductBalance --> CreateTransaction[Create Transaction Record]
+    CreateTransaction --> SuccessMsg[Display Success Message]
+    SuccessMsg --> UpdateUI[Update UI - Balance & Portfolio]
+    UpdateUI --> End3([End - Purchase Successful])
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Activity Diagram - Generate AI Recommendations</div>
+            <div class="mermaid">
+flowchart TD
+    Start([User requests recommendations]) --> GetUserData[Get User Data]
+    GetUserData --> GetTransactions[Get Transaction History]
+    GetTransactions --> GetPortfolio[Get Stock Portfolio]
+    GetPortfolio --> GetProducts[Get Available Products]
+    GetProducts --> GetStocks[Get Available Stocks]
+    
+    GetStocks --> AnalyzeSpending[Analyze Spending Patterns]
+    AnalyzeSpending --> GenerateSpending[Generate Spending Recommendations]
+    
+    GetPortfolio --> AnalyzeInvesting[Analyze Investment Portfolio]
+    AnalyzeInvesting --> GenerateInvesting[Generate Investment Recommendations]
+    
+    GenerateSpending --> CalculateConfidence1[Calculate Confidence Scores]
+    GenerateInvesting --> CalculateConfidence2[Calculate Confidence Scores]
+    
+    CalculateConfidence1 --> StoreRecs[Store Recommendations]
+    CalculateConfidence2 --> StoreRecs
+    
+    StoreRecs --> ReturnRecs[Return Recommendations to User]
+    ReturnRecs --> Display[Display Recommendations]
+    Display --> End([End])
+            </div>
+        </div>
+    </section>
+
+    <section id="sequence-diagrams">
+        <h2>7. Sequence Diagrams</h2>
+        
+        <div class="diagram-container">
+            <div class="diagram-title">Sequence Diagram - User Registration and Login</div>
+            <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend API
+    participant DB as Database
+    participant JWT as JWT Service
+    
+    U->>F: Enter registration details
+    F->>B: POST /api/auth/register
+    B->>DB: Check if email exists
+    DB-->>B: Email not found
+    B->>B: Hash password
+    B->>DB: Create user record
+    DB-->>B: User created (id, email, role, balance)
+    B->>JWT: Generate token
+    JWT-->>B: JWT token
+    B-->>F: Return token + user info
+    F->>F: Store token
+    F-->>U: Registration successful
+    
+    Note over U,F: User now logged in
+    
+    U->>F: Enter login credentials
+    F->>B: POST /api/auth/login
+    B->>DB: Find user by email
+    DB-->>B: User record
+    B->>B: Verify password
+    B->>JWT: Generate token
+    JWT-->>B: JWT token
+    B-->>F: Return token + user info
+    F->>F: Store token
+    F-->>U: Login successful
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Sequence Diagram - Purchase Product</div>
+            <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend API
+    participant DB as Database
+    participant TS as Transaction Service
+    
+    U->>F: Select product & quantity
+    F->>B: POST /api/products/purchase (with token)
+    B->>B: Verify JWT token
+    B->>DB: Get user balance
+    DB-->>B: User balance
+    B->>DB: Get product details
+    DB-->>B: Product (price, stock)
+    
+    B->>B: Calculate total amount
+    B->>B: Validate balance >= total
+    
+    alt Insufficient Balance
+        B-->>F: Error: Insufficient balance
+        F-->>U: Display error message
+    else Sufficient Balance
+        B->>DB: Begin transaction
+        B->>DB: Create order record
+        DB-->>B: Order created
+        B->>TS: Create transaction (spend)
+        TS->>DB: Call create_transaction function
+        DB->>DB: Update user balance
+        DB->>DB: Create transaction record
+        DB-->>TS: Transaction ID
+        TS-->>B: Transaction created
+        B->>DB: Update product stock
+        B->>DB: Commit transaction
+        B-->>F: Success: Order created
+        F->>F: Refresh balance & products
+        F-->>U: Display success message
+    end
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Sequence Diagram - Complete Task</div>
+            <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend API
+    participant DB as Database
+    participant TS as Transaction Service
+    
+    U->>F: Mark task as completed
+    F->>B: POST /api/tasks/:id/complete (with token)
+    B->>B: Verify JWT token
+    B->>DB: Get task details
+    DB-->>B: Task (reward_amount, is_active)
+    B->>DB: Check if task already completed
+    DB-->>B: Task not completed
+    
+    B->>DB: Begin transaction
+    B->>DB: Create user_task record
+    DB-->>B: User task created
+    B->>TS: Create transaction (task_reward)
+    TS->>DB: Call create_transaction function
+    DB->>DB: Update user balance (+reward)
+    DB->>DB: Create transaction record
+    DB-->>TS: Transaction ID
+    TS-->>B: Transaction created
+    B->>DB: Commit transaction
+    B-->>F: Success: Task completed, coins awarded
+    F->>F: Refresh balance & tasks
+    F-->>U: Display success message
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Sequence Diagram - Buy Stocks</div>
+            <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend API
+    participant DB as Database
+    participant TS as Transaction Service
+    participant SS as Stock Service
+    
+    U->>F: Select stock & enter quantity
+    F->>B: POST /api/stocks/buy (with token)
+    B->>B: Verify JWT token
+    B->>DB: Get user balance
+    DB-->>B: User balance
+    B->>DB: Get stock details
+    DB-->>B: Stock (current_price, is_active)
+    
+    B->>SS: Calculate total cost
+    SS-->>B: Total cost
+    B->>B: Validate balance >= total cost
+    
+    alt Insufficient Balance
+        B-->>F: Error: Insufficient balance
+        F-->>U: Display error message
+    else Sufficient Balance
+        B->>DB: Begin transaction
+        B->>DB: Create stock_transaction (buy)
+        DB-->>B: Stock transaction created
+        B->>DB: Update/Insert user_stocks portfolio
+        DB-->>B: Portfolio updated
+        B->>TS: Create transaction (spend)
+        TS->>DB: Call create_transaction function
+        DB->>DB: Update user balance (-cost)
+        DB->>DB: Create transaction record
+        DB-->>TS: Transaction ID
+        TS-->>B: Transaction created
+        B->>DB: Commit transaction
+        B-->>F: Success: Stock purchased
+        F->>F: Refresh balance & portfolio
+        F-->>U: Display success message
+    end
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Sequence Diagram - Get AI Recommendations</div>
+            <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend API
+    participant DB as Database
+    participant AI as AI Service
+    
+    U->>F: Request recommendations
+    F->>B: GET /api/recommendations/spending (with token)
+    F->>B: GET /api/recommendations/investing (with token)
+    
+    B->>B: Verify JWT token
+    B->>DB: Get user transaction history
+    DB-->>B: Transactions
+    B->>DB: Get user stock portfolio
+    DB-->>B: Portfolio
+    B->>DB: Get available products
+    DB-->>B: Products
+    B->>DB: Get available stocks
+    DB-->>B: Stocks
+    
+    B->>AI: POST /recommendations/spending (user data)
+    AI->>AI: Analyze spending patterns
+    AI->>AI: Generate spending recommendations
+    AI-->>B: Spending recommendations
+    
+    B->>AI: POST /recommendations/investing (user data)
+    AI->>AI: Analyze portfolio
+    AI->>AI: Generate investment recommendations
+    AI-->>B: Investment recommendations
+    
+    B->>DB: Store recommendations (optional)
+    B-->>F: Return recommendations
+    F-->>U: Display recommendations
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Sequence Diagram - Admin Grant Coins</div>
+            <div class="mermaid">
+sequenceDiagram
+    participant A as Admin
+    participant F as Frontend
+    participant B as Backend API
+    participant DB as Database
+    participant TS as Transaction Service
+    
+    A->>F: Select user & enter amount
+    F->>B: POST /api/admin/users/:id/coins (with token)
+    B->>B: Verify JWT token
+    B->>B: Check admin role
+    B->>DB: Get user details
+    DB-->>B: User record
+    B->>B: Validate input (amount, type)
+    
+    B->>DB: Begin transaction
+    B->>TS: Create transaction (grant/revoke)
+    TS->>DB: Call create_transaction function
+    DB->>DB: Update user balance (+/-amount)
+    DB->>DB: Create transaction record (with created_by=admin)
+    DB-->>TS: Transaction ID
+    TS-->>B: Transaction created
+    B->>DB: Commit transaction
+    B-->>F: Success: Coins granted/revoked
+    F-->>A: Display success message
+            </div>
+        </div>
+    </section>
+
+    <section id="component-diagram">
+        <h2>8. Component Diagram</h2>
+        <div class="diagram-container">
+            <div class="diagram-title">System Component Architecture</div>
+            <div class="mermaid">
+graph TB
+    subgraph "Frontend Layer - React Native (Expo)"
+        UI[UI Components]
+        Screens[Screens]
+        Navigation[Navigation]
+        Services[API Services]
+        Context[Auth Context]
+        Storage[AsyncStorage]
+    end
+    
+    subgraph "Backend Layer - Node.js/Express"
+        Routes[API Routes]
+        Controllers[Controllers]
+        Middleware[Middleware]
+        ServicesBackend[Business Services]
+        Utils[Utilities]
+    end
+    
+    subgraph "AI Service Layer - Node.js"
+        AIEngine[Recommendation Engine]
+        AIRoutes[AI Routes]
+        AIControllers[AI Controllers]
+    end
+    
+    subgraph "Database Layer - Supabase/PostgreSQL"
+        DB[(PostgreSQL Database)]
+        Functions[Database Functions]
+        Triggers[Triggers]
+    end
+    
+    subgraph "External Services"
+        JWT[JWT Service]
+        Bcrypt[Bcrypt]
+    end
+    
+    UI --> Screens
+    Screens --> Navigation
+    Screens --> Services
+    Services --> Context
+    Context --> Storage
+    
+    Services -->|HTTP/REST| Routes
+    Routes --> Middleware
+    Middleware --> Controllers
+    Controllers --> ServicesBackend
+    ServicesBackend --> Utils
+    Utils --> JWT
+    Utils --> Bcrypt
+    
+    ServicesBackend -->|HTTP/REST| AIRoutes
+    AIRoutes --> AIControllers
+    AIControllers --> AIEngine
+    
+    ServicesBackend -->|SQL| DB
+    DB --> Functions
+    DB --> Triggers
+    
+    ServicesBackend -.->|Calls| Functions
+            </div>
+        </div>
+    </section>
+
+    <section id="deployment-diagram">
+        <h2>9. Deployment Diagram</h2>
+        <div class="diagram-container">
+            <div class="diagram-title">System Deployment Architecture</div>
+            <div class="mermaid">
+graph TB
+    subgraph "Client Devices"
+        Mobile1[Mobile Device 1<br/>iOS/Android]
+        Mobile2[Mobile Device 2<br/>iOS/Android]
+        MobileN[Mobile Device N<br/>iOS/Android]
+    end
+    
+    subgraph "Development Environment"
+        subgraph "Local Network"
+            Expo[Expo Dev Server<br/>Port: 8081]
+            FrontendDev[Frontend Dev<br/>React Native]
+        end
+    end
+    
+    subgraph "Backend Infrastructure"
+        subgraph "API Server"
+            BackendAPI[Backend API Server<br/>Node.js/Express<br/>Port: 3002]
+        end
+        
+        subgraph "AI Service"
+            AIService[AI Service<br/>Node.js/Express<br/>Port: 3003]
+        end
+    end
+    
+    subgraph "Database Infrastructure"
+        subgraph "Supabase Local"
+            SupabaseAPI[Supabase API<br/>Port: 54330]
+            SupabaseStudio[Supabase Studio<br/>Port: 54332]
+            PostgreSQL[(PostgreSQL Database<br/>Port: 54322)]
+        end
+    end
+    
+    subgraph "External Services (Optional)"
+        Ngrok[Ngrok Tunnel<br/>For Mobile Testing]
+        Firebase[Firebase<br/>Notifications/Chat]
+    end
+    
+    Mobile1 -->|HTTP/HTTPS| Ngrok
+    Mobile2 -->|HTTP/HTTPS| Ngrok
+    MobileN -->|HTTP/HTTPS| Ngrok
+    
+    Ngrok -->|Forward| BackendAPI
+    
+    FrontendDev -->|HTTP| BackendAPI
+    Expo -->|Serve| FrontendDev
+    
+    BackendAPI -->|HTTP| AIService
+    BackendAPI -->|SQL/HTTP| SupabaseAPI
+    SupabaseAPI --> PostgreSQL
+    
+    BackendAPI -.->|Optional| Firebase
+    AIService -.->|Optional| Firebase
+            </div>
+        </div>
+    </section>
+
+    <section id="database-schema">
+        <h2>10. Database Schema</h2>
+        <div class="diagram-container">
+            <div class="diagram-title">Entity Relationship Diagram (ERD)</div>
+            <div class="mermaid">
+erDiagram
+    USERS ||--o{ ORDERS : places
+    USERS ||--o{ USER_TASKS : completes
+    USERS ||--o{ USER_STOCKS : owns
+    USERS ||--o{ STOCK_TRANSACTIONS : makes
+    USERS ||--o{ TRANSACTIONS : has
+    USERS ||--o{ AI_RECOMMENDATIONS : receives
+    USERS ||--o{ USER_GAME_PLAYS : plays
+    USERS ||--o{ PRODUCTS : creates
+    USERS ||--o{ TASKS : creates
+    
+    PRODUCTS ||--o{ ORDERS : "ordered in"
+    TASKS ||--o{ USER_TASKS : "tracked in"
+    STOCKS ||--o{ USER_STOCKS : "held in"
+    STOCKS ||--o{ STOCK_TRANSACTIONS : "traded in"
+    STOCKS ||--o{ STOCK_PRICE_HISTORY : "tracked in"
+    GAMES ||--o{ USER_GAME_PLAYS : "played in"
+    
+    USERS {
+        uuid id PK
+        string email UK
+        string password_hash
+        string full_name
+        enum role
+        decimal virtual_balance
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    PRODUCTS {
+        uuid id PK
+        string name
+        text description
+        decimal price
+        string image_url
+        string category
+        int stock_quantity
+        boolean is_active
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    ORDERS {
+        uuid id PK
+        uuid user_id FK
+        uuid product_id FK
+        int quantity
+        decimal total_amount
+        enum status
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    TASKS {
+        uuid id PK
+        string title
+        text description
+        decimal reward_amount
+        boolean is_active
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    USER_TASKS {
+        uuid id PK
+        uuid user_id FK
+        uuid task_id FK
+        enum status
+        timestamp completed_at
+        timestamp claimed_at
+        timestamp created_at
+    }
+    
+    STOCKS {
+        uuid id PK
+        string symbol UK
+        string name
+        decimal current_price
+        decimal previous_price
+        decimal price_change_percent
+        text description
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    USER_STOCKS {
+        uuid id PK
+        uuid user_id FK
+        uuid stock_id FK
+        int quantity
+        decimal average_buy_price
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    STOCK_TRANSACTIONS {
+        uuid id PK
+        uuid user_id FK
+        uuid stock_id FK
+        string transaction_type
+        int quantity
+        decimal price
+        decimal total_amount
+        timestamp created_at
+    }
+    
+    STOCK_PRICE_HISTORY {
+        uuid id PK
+        uuid stock_id FK
+        decimal price
+        decimal price_change_percent
+        timestamp recorded_at
+    }
+    
+    TRANSACTIONS {
+        uuid id PK
+        uuid user_id FK
+        enum type
+        decimal amount
+        decimal balance_before
+        decimal balance_after
+        text description
+        uuid reference_id
+        string reference_type
+        uuid created_by FK
+        timestamp created_at
+    }
+    
+    GAMES {
+        uuid id PK
+        string name UK
+        text description
+        decimal reward_amount
+        int max_plays_per_day
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    USER_GAME_PLAYS {
+        uuid id PK
+        uuid user_id FK
+        uuid game_id FK
+        string result
+        decimal reward_earned
+        jsonb game_data
+        timestamp played_at
+        timestamp created_at
+    }
+    
+    AI_RECOMMENDATIONS {
+        uuid id PK
+        uuid user_id FK
+        string recommendation_type
+        string title
+        text description
+        string action_type
+        uuid action_id
+        decimal confidence_score
+        boolean is_active
+        timestamp created_at
+    }
+            </div>
+        </div>
+    </section>
+
+    <section id="project-structure">
+        <h2>11. Project Structure Analysis</h2>
+        
+        <h3>Root Directory Structure</h3>
+        <pre><code>HMall/
+├── backend/              # Backend API Server (Node.js/Express)
+├── frontend/             # Mobile Application (React Native/Expo)
+├── ai-service/           # AI Recommendation Service
+├── supabase/             # Database Migrations & Config
+├── docs/                 # Documentation
+├── scripts/              # Utility scripts
+└── [config files]       # Root level configuration</code></pre>
+
+        <h3>Backend Structure Analysis</h3>
+        <h4>Directory: <code>backend/src/</code></h4>
+        
+        <p><strong>Controllers (25 files)</strong> - Request handlers:</p>
+        <ul>
+            <li><code>auth.controller.ts</code>: Authentication (register, login)</li>
+            <li><code>user.controller.ts</code>: User management (balance, transactions, profile)</li>
+            <li><code>product.controller.ts</code>: Product CRUD operations</li>
+            <li><code>task.controller.ts</code>: Task management</li>
+            <li><code>stock.controller.ts</code>: Stock trading operations</li>
+            <li><code>admin.controller.ts</code>: Admin operations (grant/revoke coins, stats)</li>
+            <li><code>recommendation.controller.ts</code>: AI recommendations</li>
+            <li><code>voucher.controller.ts</code>: Voucher management</li>
+            <li><code>budget.controller.ts</code>: Budget and savings goals</li>
+            <li><code>chat.controller.ts</code>: AI chat functionality</li>
+            <li><code>social.controller.ts</code>: Social feed (threads, posts)</li>
+            <li><code>messaging.controller.ts</code>: Direct messaging between users</li>
+            <li><code>game.controller.ts</code>: Game operations</li>
+            <li><code>game-template.controller.ts</code>: Game template management</li>
+            <li><code>game-instance.controller.ts</code>: Game instance management</li>
+            <li><code>game-content.controller.ts</code>: Game content management</li>
+            <li><code>notification.controller.ts</code>: Notification management</li>
+            <li><code>purchase-history.controller.ts</code>: Purchase history</li>
+            <li><code>shopping-cart.controller.ts</code>: Shopping cart operations</li>
+            <li><code>transaction-label.controller.ts</code>: Transaction labeling</li>
+            <li><code>upload.controller.ts</code>: File upload (Cloudinary)</li>
+            <li><code>vendor.controller.ts</code>: Vendor operations</li>
+            <li><code>vendor-public.controller.ts</code>: Public vendor data</li>
+            <li><code>storage.controller.ts</code>: Storage operations</li>
+            <li><code>ai-suggestions.controller.ts</code>: AI suggestions</li>
+        </ul>
+
+        <p><strong>Routes (24 files)</strong> - API endpoint definitions:</p>
+        <ul>
+            <li>Each route file corresponds to a controller</li>
+            <li>RESTful API design</li>
+            <li>Authentication middleware applied</li>
+        </ul>
+
+        <p><strong>Services (10 files)</strong> - Business logic:</p>
+        <ul>
+            <li><code>transaction.service.ts</code>: Transaction processing logic</li>
+            <li><code>stock.service.ts</code>: Stock price updates and calculations</li>
+            <li><code>game.service.ts</code>: Game logic and validation</li>
+            <li><code>notification.service.ts</code>: Notification creation and delivery</li>
+            <li><code>budget.service.ts</code>: Budget calculations</li>
+            <li><code>transaction-label.service.ts</code>: Automatic transaction labeling</li>
+            <li><code>voucher.service.ts</code>: Voucher validation and application</li>
+            <li><code>messaging.service.ts</code>: Direct messaging logic</li>
+            <li><code>social.service.ts</code>: Social feed logic</li>
+            <li><code>chat.service.ts</code>: AI chat logic</li>
+        </ul>
+
+        <p><strong>Middleware (2 files)</strong>:</p>
+        <ul>
+            <li><code>auth.middleware.ts</code>: JWT authentication</li>
+            <li><code>upload.middleware.ts</code>: File upload handling</li>
+        </ul>
+
+        <p><strong>Utils (5 files)</strong>:</p>
+        <ul>
+            <li><code>supabase.ts</code>: Supabase client initialization</li>
+            <li><code>jwt.ts</code>: JWT utilities</li>
+            <li><code>validation.ts</code>: Input validation</li>
+            <li><code>errors.ts</code>: Error handling</li>
+            <li><code>logger.ts</code>: Logging utilities</li>
+        </ul>
+
+        <p><strong>Config (1 file)</strong>:</p>
+        <ul>
+            <li><code>env.ts</code>: Environment variable management</li>
+        </ul>
+
+        <h3>Frontend Structure Analysis</h3>
+        <h4>Directory: <code>frontend/src/</code></h4>
+        
+        <p><strong>Screens (31 files)</strong> - UI screens:</p>
+        
+        <p><strong>Auth Screens (2 files)</strong>:</p>
+        <ul>
+            <li><code>LoginScreen.tsx</code>: User login</li>
+            <li><code>RegisterScreen.tsx</code>: User registration</li>
+        </ul>
+
+        <p><strong>Main Screens (13 files)</strong>:</p>
+        <ul>
+            <li><code>DashboardScreen.tsx</code>: Main dashboard with overview</li>
+            <li><code>MarketplaceScreen.tsx</code>: Product browsing</li>
+            <li><code>StocksScreen.tsx</code>: Stock listing</li>
+            <li><code>ProfileScreen.tsx</code>: User profile management</li>
+            <li><code>TasksScreen.tsx</code>: Task list and completion</li>
+            <li><code>GamesScreen.tsx</code>: Game selection</li>
+            <li><code>ChatScreen.tsx</code>: AI chat interface</li>
+            <li><code>SocialScreen.tsx</code>: Social feed</li>
+            <li><code>MessagesScreen.tsx</code>: Direct messaging</li>
+            <li><code>NotificationsScreen.tsx</code>: Notification list</li>
+            <li><code>NotificationPreferencesScreen.tsx</code>: Notification settings</li>
+            <li><code>ExpenseManagementScreen.tsx</code>: Expense analytics</li>
+            <li><code>MoreScreen.tsx</code>: Additional features menu</li>
+        </ul>
+
+        <p><strong>Admin Screens (6 files)</strong>:</p>
+        <ul>
+            <li><code>AdminDashboardScreen.tsx</code>: Admin overview</li>
+            <li><code>AdminProductsScreen.tsx</code>: Product management</li>
+            <li><code>AdminTasksScreen.tsx</code>: Task management</li>
+            <li><code>AdminUsersScreen.tsx</code>: User management</li>
+            <li><code>AdminGameBuilderScreen.tsx</code>: Game Builder (Low-code)</li>
+            <li><code>VoucherManagementScreen.tsx</code>: Voucher management</li>
+        </ul>
+
+        <p><strong>Detail Screens (10 files)</strong>:</p>
+        <ul>
+            <li><code>ProductDetailScreen.tsx</code>: Product details and purchase</li>
+            <li><code>StockDetailScreen.tsx</code>: Stock details and trading</li>
+            <li><code>PortfolioScreen.tsx</code>: Investment portfolio</li>
+            <li><code>TransactionsScreen.tsx</code>: Transaction history</li>
+            <li><code>PurchaseHistoryScreen.tsx</code>: Purchase history</li>
+            <li><code>ShoppingCartScreen.tsx</code>: Shopping cart</li>
+            <li><code>VendorShopScreen.tsx</code>: Vendor shop view</li>
+            <li><code>TicTacToeScreen.tsx</code>: TicTacToe game</li>
+            <li><code>QuizGameScreen.tsx</code>: Quiz game</li>
+        </ul>
+
+        <p><strong>Vendor Screens (1 file)</strong>:</p>
+        <ul>
+            <li><code>VendorProductsScreen.tsx</code>: Vendor product management</li>
+        </ul>
+
+        <p><strong>Services (20 files)</strong> - API service layer:</p>
+        <ul>
+            <li><code>auth.service.ts</code>: Authentication API calls</li>
+            <li><code>user.service.ts</code>: User-related API calls</li>
+            <li><code>product.service.ts</code>: Product API calls</li>
+            <li><code>stock.service.ts</code>: Stock API calls</li>
+            <li><code>task.service.ts</code>: Task API calls</li>
+            <li><code>game.service.ts</code>: Game API calls</li>
+            <li><code>game-builder.service.ts</code>: Game Builder API calls</li>
+            <li><code>recommendation.service.ts</code>: Recommendation API calls</li>
+            <li><code>ai-suggestions.service.ts</code>: AI suggestions API calls</li>
+            <li><code>voucher.service.ts</code>: Voucher API calls</li>
+            <li><code>budget.service.ts</code>: Budget API calls</li>
+            <li><code>notification.service.ts</code>: Notification API calls</li>
+            <li><code>chat.service.ts</code>: Chat API calls</li>
+            <li><code>social.service.ts</code>: Social feed API calls</li>
+            <li><code>messaging.service.ts</code>: Messaging API calls</li>
+            <li><code>shopping-cart.service.ts</code>: Shopping cart API calls</li>
+            <li><code>purchase-history.service.ts</code>: Purchase history API calls</li>
+            <li><code>transaction-label.service.ts</code>: Transaction labeling API calls</li>
+            <li><code>upload.service.ts</code>: File upload API calls</li>
+            <li><code>vendor.service.ts</code>: Vendor API calls</li>
+        </ul>
+
+        <p><strong>Components (5 files)</strong> - Reusable UI components:</p>
+        <ul>
+            <li><code>ImageUploadPicker.tsx</code>: Image upload component</li>
+            <li><code>NotificationItem.tsx</code>: Notification display</li>
+            <li><code>NotificationToast.tsx</code>: Toast notifications</li>
+            <li><code>NotificationToastWrapper.tsx</code>: Toast wrapper</li>
+            <li><code>StarRating.tsx</code>: Star rating component</li>
+        </ul>
+
+        <p><strong>Navigation (1 file)</strong>:</p>
+        <ul>
+            <li><code>AppNavigator.tsx</code>: Navigation structure (Stack + Tabs)</li>
+        </ul>
+
+        <p><strong>Context (1 file)</strong>:</p>
+        <ul>
+            <li><code>AuthContext.tsx</code>: Authentication context provider</li>
+        </ul>
+
+        <p><strong>Config (1 file)</strong>:</p>
+        <ul>
+            <li><code>api.ts</code>: API client configuration</li>
+        </ul>
+
+        <p><strong>Utils (1 file)</strong>:</p>
+        <ul>
+            <li><code>price.utils.ts</code>: Price formatting utilities</li>
+        </ul>
+
+        <h3>AI Service Structure Analysis</h3>
+        <h4>Directory: <code>ai-service/src/</code></h4>
+        
+        <p><strong>ML Models (6 files)</strong>:</p>
+        <ul>
+            <li><code>content-based.ts</code>: Content-based filtering algorithm</li>
+            <li><code>collaborative-filtering.ts</code>: Collaborative filtering algorithm</li>
+            <li><code>hybrid-recommender.ts</code>: Hybrid recommendation (combines both)</li>
+            <li><code>model-storage.ts</code>: Model persistence (save/load)</li>
+            <li><code>train.ts</code>: Model training script</li>
+            <li><code>train-simple.ts</code>: Simplified training</li>
+            <li><code>types.ts</code>: TypeScript types</li>
+        </ul>
+
+        <p><strong>Recommendation API (4 files)</strong>:</p>
+        <ul>
+            <li><code>recommendation.controller.ts</code>: Recommendation endpoints</li>
+            <li><code>recommendation.service.ts</code>: Recommendation logic</li>
+            <li><code>recommendation.routes.ts</code>: API routes</li>
+            <li><code>recommendation.types.ts</code>: Types</li>
+        </ul>
+
+        <h3>Database Migrations Analysis</h3>
+        <h4>Directory: <code>supabase/migrations/</code></h4>
+        
+        <p><strong>21 Migration Files</strong> - Chronological order:</p>
+        <ol>
+            <li><strong>20250101000000_initial_schema.sql</strong>: Core schema
+                <ul>
+                    <li>users, products, orders, tasks, stocks, transactions</li>
+                </ul>
+            </li>
+            <li><strong>20250102000000_add_games_and_stock_history.sql</strong>: Games and stock history
+                <ul>
+                    <li>games, user_game_plays, stock_price_history</li>
+                </ul>
+            </li>
+            <li><strong>20250103000000_add_vendor_role.sql</strong>: Vendor role support
+                <ul>
+                    <li>Updated users table, vendor-specific features</li>
+                </ul>
+            </li>
+            <li><strong>20250104000000_game_builder_system.sql</strong>: Game Builder
+                <ul>
+                    <li>game_templates, game_instances, game_content</li>
+                </ul>
+            </li>
+            <li><strong>20250105000000_fix_user_game_plays_foreign_key.sql</strong>: Bug fix</li>
+            <li><strong>20250106000000_add_product_ratings.sql</strong>: Product ratings
+                <ul>
+                    <li>product_ratings table</li>
+                </ul>
+            </li>
+            <li><strong>20250107000000_add_transaction_labeling_and_cart.sql</strong>: Transaction labeling
+                <ul>
+                    <li>transaction_labels, shopping_cart</li>
+                </ul>
+            </li>
+            <li><strong>20250108000000_add_product_discounts.sql</strong>: Discounts
+                <ul>
+                    <li>product_discounts table</li>
+                </ul>
+            </li>
+            <li><strong>20250109000000_add_notification_system.sql</strong>: Notifications
+                <ul>
+                    <li>notifications table</li>
+                </ul>
+            </li>
+            <li><strong>20250110000000_add_task_validation_rules.sql</strong>: Task validation
+                <ul>
+                    <li>Updated tasks table with validation_rules</li>
+                </ul>
+            </li>
+            <li><strong>20250111000000_add_voucher_system.sql</strong>: Voucher system
+                <ul>
+                    <li>vouchers, user_vouchers tables</li>
+                </ul>
+            </li>
+            <li><strong>20250111000001_add_voucher_claimable_feature.sql</strong>: Voucher claims</li>
+            <li><strong>20250111000002_add_voucher_featured_and_auto_hide.sql</strong>: Voucher features</li>
+            <li><strong>20250111000003_add_product_random_voucher_ids.sql</strong>: Product vouchers</li>
+            <li><strong>20250112000000_add_budget_system.sql</strong>: Budget management
+                <ul>
+                    <li>budgets, savings_goals tables</li>
+                </ul>
+            </li>
+            <li><strong>20250113000000_add_chat_system.sql</strong>: AI Chat
+                <ul>
+                    <li>chat_conversations, chat_messages tables</li>
+                </ul>
+            </li>
+            <li><strong>20250114000000_add_social_discussion_system.sql</strong>: Social feed
+                <ul>
+                    <li>discussion_threads, discussion_posts tables</li>
+                </ul>
+            </li>
+            <li><strong>20250115000000_add_direct_messaging_system.sql</strong>: Direct messaging
+                <ul>
+                    <li>conversations, messages, conversation_participants, message_reads</li>
+                </ul>
+            </li>
+            <li><strong>20250116000000_disable_messaging_rls.sql</strong>: RLS configuration</li>
+            <li><strong>20250117000000_add_user_profile_fields.sql</strong>: User profile
+                <ul>
+                    <li>Added avatar_url, phone, bio, address, date_of_birth to users</li>
+                </ul>
+            </li>
+        </ol>
+    </section>
+
+    <section id="module-analysis">
+        <h2>12. Module Analysis</h2>
+        
+        <h3>Backend Modules</h3>
+        
+        <h4>1. Authentication Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>auth.controller.ts</code>, <code>auth.routes.ts</code></li>
+            <li><strong>Dependencies</strong>: JWT, bcrypt</li>
+            <li><strong>Features</strong>: Register, login, token generation</li>
+        </ul>
+
+        <h4>2. User Management Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>user.controller.ts</code>, <code>user.routes.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase</li>
+            <li><strong>Features</strong>: Profile, balance, transactions</li>
+        </ul>
+
+        <h4>3. Product Management Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>product.controller.ts</code>, <code>product.routes.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase, Cloudinary</li>
+            <li><strong>Features</strong>: CRUD products, ratings, discounts</li>
+        </ul>
+
+        <h4>4. Stock Trading Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>stock.controller.ts</code>, <code>stock.routes.ts</code>, <code>stock.service.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase</li>
+            <li><strong>Features</strong>: Buy/sell stocks, portfolio, price updates</li>
+        </ul>
+
+        <h4>5. Task System Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>task.controller.ts</code>, <code>task.routes.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase</li>
+            <li><strong>Features</strong>: Task CRUD, completion, validation</li>
+        </ul>
+
+        <h4>6. Game System Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>game.controller.ts</code>, <code>game-template.controller.ts</code>, <code>game-instance.controller.ts</code>, <code>game-content.controller.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase</li>
+            <li><strong>Features</strong>: Game CRUD, Game Builder, play tracking</li>
+        </ul>
+
+        <h4>7. AI Recommendation Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>recommendation.controller.ts</code>, <code>recommendation.routes.ts</code></li>
+            <li><strong>Dependencies</strong>: AI Service</li>
+            <li><strong>Features</strong>: Product/investment recommendations</li>
+        </ul>
+
+        <h4>8. Voucher System Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>voucher.controller.ts</code>, <code>voucher.routes.ts</code>, <code>voucher.service.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase</li>
+            <li><strong>Features</strong>: Voucher CRUD, claim, apply</li>
+        </ul>
+
+        <h4>9. Budget Management Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>budget.controller.ts</code>, <code>budget.routes.ts</code>, <code>budget.service.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase</li>
+            <li><strong>Features</strong>: Budget tracking, savings goals</li>
+        </ul>
+
+        <h4>10. Social Features Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>chat.controller.ts</code>, <code>social.controller.ts</code>, <code>messaging.controller.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase, Groq SDK (for AI chat)</li>
+            <li><strong>Features</strong>: AI chat, social feed, direct messaging</li>
+        </ul>
+
+        <h4>11. Notification Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>notification.controller.ts</code>, <code>notification.routes.ts</code>, <code>notification.service.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase, Firebase (optional)</li>
+            <li><strong>Features</strong>: Notification creation, delivery, preferences</li>
+        </ul>
+
+        <h4>12. Admin Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>admin.controller.ts</code>, <code>admin.routes.ts</code></li>
+            <li><strong>Dependencies</strong>: Supabase</li>
+            <li><strong>Features</strong>: User management, statistics, coin grant/revoke</li>
+        </ul>
+
+        <h3>Frontend Modules</h3>
+        
+        <h4>1. Authentication Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>LoginScreen.tsx</code>, <code>RegisterScreen.tsx</code>, <code>auth.service.ts</code>, <code>AuthContext.tsx</code></li>
+            <li><strong>Features</strong>: Login, register, session management</li>
+        </ul>
+
+        <h4>2. Dashboard Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>DashboardScreen.tsx</code></li>
+            <li><strong>Features</strong>: Overview, quick actions, statistics</li>
+        </ul>
+
+        <h4>3. Marketplace Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>MarketplaceScreen.tsx</code>, <code>ProductDetailScreen.tsx</code>, <code>ShoppingCartScreen.tsx</code>, <code>product.service.ts</code>, <code>shopping-cart.service.ts</code></li>
+            <li><strong>Features</strong>: Browse, search, purchase, cart management</li>
+        </ul>
+
+        <h4>4. Stock Trading Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>StocksScreen.tsx</code>, <code>StockDetailScreen.tsx</code>, <code>PortfolioScreen.tsx</code>, <code>stock.service.ts</code></li>
+            <li><strong>Features</strong>: Stock listing, trading, portfolio management</li>
+        </ul>
+
+        <h4>5. Task & Game Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>TasksScreen.tsx</code>, <code>GamesScreen.tsx</code>, <code>TicTacToeScreen.tsx</code>, <code>QuizGameScreen.tsx</code>, <code>task.service.ts</code>, <code>game.service.ts</code></li>
+            <li><strong>Features</strong>: Task completion, game playing</li>
+        </ul>
+
+        <h4>6. Profile Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>ProfileScreen.tsx</code>, <code>user.service.ts</code></li>
+            <li><strong>Features</strong>: Profile management, avatar upload</li>
+        </ul>
+
+        <h4>7. Social Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>ChatScreen.tsx</code>, <code>SocialScreen.tsx</code>, <code>MessagesScreen.tsx</code>, <code>chat.service.ts</code>, <code>social.service.ts</code>, <code>messaging.service.ts</code></li>
+            <li><strong>Features</strong>: AI chat, social feed, direct messaging</li>
+        </ul>
+
+        <h4>8. Notification Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>NotificationsScreen.tsx</code>, <code>NotificationPreferencesScreen.tsx</code>, <code>NotificationItem.tsx</code>, <code>notification.service.ts</code></li>
+            <li><strong>Features</strong>: Notification display, preferences</li>
+        </ul>
+
+        <h4>9. Expense Management Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>ExpenseManagementScreen.tsx</code>, <code>transaction-label.service.ts</code>, <code>budget.service.ts</code></li>
+            <li><strong>Features</strong>: Expense analytics, budget tracking</li>
+        </ul>
+
+        <h4>10. Admin Module</h4>
+        <ul>
+            <li><strong>Files</strong>: <code>AdminDashboardScreen.tsx</code>, <code>AdminProductsScreen.tsx</code>, <code>AdminTasksScreen.tsx</code>, <code>AdminUsersScreen.tsx</code>, <code>AdminGameBuilderScreen.tsx</code>, <code>VoucherManagementScreen.tsx</code></li>
+            <li><strong>Features</strong>: Admin panel, management screens</li>
+        </ul>
+
+        <h3>AI Service Modules</h3>
+        
+        <h4>1. Content-Based Filtering</h4>
+        <ul>
+            <li><strong>File</strong>: <code>content-based.ts</code></li>
+            <li><strong>Algorithm</strong>: TF-IDF + Cosine Similarity</li>
+            <li><strong>Use Case</strong>: Product recommendations based on features</li>
+        </ul>
+
+        <h4>2. Collaborative Filtering</h4>
+        <ul>
+            <li><strong>File</strong>: <code>collaborative-filtering.ts</code></li>
+            <li><strong>Algorithm</strong>: User-Item Matrix + Similarity</li>
+            <li><strong>Use Case</strong>: Recommendations based on user behavior</li>
+        </ul>
+
+        <h4>3. Hybrid Recommender</h4>
+        <ul>
+            <li><strong>File</strong>: <code>hybrid-recommender.ts</code></li>
+            <li><strong>Algorithm</strong>: Weighted combination of Content-Based and Collaborative</li>
+            <li><strong>Use Case</strong>: Best of both approaches</li>
+        </ul>
+
+        <h4>4. Model Storage</h4>
+        <ul>
+            <li><strong>File</strong>: <code>model-storage.ts</code></li>
+            <li><strong>Features</strong>: Save/load trained models to/from JSON files</li>
+        </ul>
+    </section>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            },
+            er: {
+                fontSize: 12
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+

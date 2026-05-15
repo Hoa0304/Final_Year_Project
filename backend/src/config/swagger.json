@@ -1,0 +1,2300 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HMall API",
+    "version": "1.0.0",
+    "description": "API Documentation for HMall Project - Comprehensive Version"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3002",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/api/admin/users/{id}/coins": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Grant coins to a user (Admin only)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coins granted"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List all users (Admin only)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User list"
+          }
+        }
+      }
+    },
+    "/api/admin/users/stats": {
+      "get": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "GET /api/admin/users/stats",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/transactions": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List all system transactions (Admin only)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction logs"
+          }
+        }
+      }
+    },
+    "/api/admin/blockchain/sync-balances": {
+      "post": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "POST /api/admin/blockchain/sync-balances",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/products": {
+      "get": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "GET /api/admin/products",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "POST /api/admin/products",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/products/{id}": {
+      "put": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "PUT /api/admin/products/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "DELETE /api/admin/products/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/tasks": {
+      "get": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "GET /api/admin/tasks",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "POST /api/admin/tasks",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/tasks/{taskId}/completions": {
+      "get": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "GET /api/admin/tasks/{taskId}/completions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/tasks/{id}": {
+      "put": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "PUT /api/admin/tasks/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ADMIN"
+        ],
+        "summary": "DELETE /api/admin/tasks/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/suggestions/items": {
+      "get": {
+        "tags": [
+          "AI SUGGESTIONS"
+        ],
+        "summary": "GET /api/suggestions/items",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register a new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "full_name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "AUTH"
+        ],
+        "summary": "POST /api/auth/refresh",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get current logged in user details",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details"
+          }
+        }
+      }
+    },
+    "/api/admin/blockchain-audit/user/{userId}": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN AUDIT"
+        ],
+        "summary": "GET /api/admin/blockchain-audit/user/{userId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/blockchain-audit/all": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN AUDIT"
+        ],
+        "summary": "GET /api/admin/blockchain-audit/all",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/blockchain-audit/unrecorded": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN AUDIT"
+        ],
+        "summary": "GET /api/admin/blockchain-audit/unrecorded",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/blockchain-audit/verify/{transactionId}": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN AUDIT"
+        ],
+        "summary": "GET /api/admin/blockchain-audit/verify/{transactionId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/blockchain/status": {
+      "get": {
+        "tags": [
+          "Blockchain"
+        ],
+        "summary": "Get blockchain status",
+        "responses": {
+          "200": {
+            "description": "Status info"
+          }
+        }
+      }
+    },
+    "/api/blockchain/address": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN"
+        ],
+        "summary": "GET /api/blockchain/address",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/blockchain/balance": {
+      "get": {
+        "tags": [
+          "Blockchain"
+        ],
+        "summary": "Get blockchain token balance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "On-chain balance"
+          }
+        }
+      }
+    },
+    "/api/blockchain/transactions": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN"
+        ],
+        "summary": "GET /api/blockchain/transactions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/blockchain/transactions/{txId}": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN"
+        ],
+        "summary": "GET /api/blockchain/transactions/{txId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/blockchain/verify": {
+      "post": {
+        "tags": [
+          "BLOCKCHAIN"
+        ],
+        "summary": "POST /api/blockchain/verify",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/blockchain/verify-balance": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN"
+        ],
+        "summary": "GET /api/blockchain/verify-balance",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/blockchain/admin/all": {
+      "get": {
+        "tags": [
+          "BLOCKCHAIN"
+        ],
+        "summary": "GET /api/blockchain/admin/all",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/budgets": {
+      "post": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "POST /api/budgets",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "GET /api/budgets",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/budgets/progress": {
+      "get": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "GET /api/budgets/progress",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/budgets/category": {
+      "post": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "POST /api/budgets/category",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "GET /api/budgets/category",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/budgets/savings-goals": {
+      "post": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "POST /api/budgets/savings-goals",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "GET /api/budgets/savings-goals",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/budgets/savings-goals/{goalId}": {
+      "put": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "PUT /api/budgets/savings-goals/{goalId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/budgets/alerts": {
+      "get": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "GET /api/budgets/alerts",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/budgets/alerts/{alertId}/read": {
+      "put": {
+        "tags": [
+          "BUDGET"
+        ],
+        "summary": "PUT /api/budgets/alerts/{alertId}/read",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/chat/conversations": {
+      "get": {
+        "tags": [
+          "CHAT"
+        ],
+        "summary": "GET /api/chat/conversations",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CHAT"
+        ],
+        "summary": "POST /api/chat/conversations",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{conversationId}": {
+      "get": {
+        "tags": [
+          "CHAT"
+        ],
+        "summary": "GET /api/chat/conversations/{conversationId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CHAT"
+        ],
+        "summary": "DELETE /api/chat/conversations/{conversationId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{conversationId}/title": {
+      "put": {
+        "tags": [
+          "CHAT"
+        ],
+        "summary": "PUT /api/chat/conversations/{conversationId}/title",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/chat/messages": {
+      "post": {
+        "tags": [
+          "CHAT"
+        ],
+        "summary": "POST /api/chat/messages",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-content/{gameInstanceId}": {
+      "get": {
+        "tags": [
+          "GAME CONTENT"
+        ],
+        "summary": "GET /api/admin/game-content/{gameInstanceId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "GAME CONTENT"
+        ],
+        "summary": "POST /api/admin/game-content/{gameInstanceId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-content/{gameInstanceId}/{contentId}": {
+      "put": {
+        "tags": [
+          "GAME CONTENT"
+        ],
+        "summary": "PUT /api/admin/game-content/{gameInstanceId}/{contentId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "GAME CONTENT"
+        ],
+        "summary": "DELETE /api/admin/game-content/{gameInstanceId}/{contentId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-content/{gameInstanceId}/reorder": {
+      "post": {
+        "tags": [
+          "GAME CONTENT"
+        ],
+        "summary": "POST /api/admin/game-content/{gameInstanceId}/reorder",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-instances": {
+      "get": {
+        "tags": [
+          "GAME INSTANCE"
+        ],
+        "summary": "GET /api/admin/game-instances",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "GAME INSTANCE"
+        ],
+        "summary": "POST /api/admin/game-instances",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-instances/{id}": {
+      "get": {
+        "tags": [
+          "GAME INSTANCE"
+        ],
+        "summary": "GET /api/admin/game-instances/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "GAME INSTANCE"
+        ],
+        "summary": "PUT /api/admin/game-instances/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "GAME INSTANCE"
+        ],
+        "summary": "DELETE /api/admin/game-instances/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-instances/validate": {
+      "post": {
+        "tags": [
+          "GAME INSTANCE"
+        ],
+        "summary": "POST /api/admin/game-instances/validate",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-templates": {
+      "get": {
+        "tags": [
+          "GAME TEMPLATE"
+        ],
+        "summary": "GET /api/admin/game-templates",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "GAME TEMPLATE"
+        ],
+        "summary": "POST /api/admin/game-templates",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/game-templates/{id}": {
+      "get": {
+        "tags": [
+          "GAME TEMPLATE"
+        ],
+        "summary": "GET /api/admin/game-templates/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "GAME TEMPLATE"
+        ],
+        "summary": "PUT /api/admin/game-templates/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "GAME TEMPLATE"
+        ],
+        "summary": "DELETE /api/admin/game-templates/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/games": {
+      "get": {
+        "tags": [
+          "GAME"
+        ],
+        "summary": "GET /api/games",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/games/{id}": {
+      "get": {
+        "tags": [
+          "GAME"
+        ],
+        "summary": "GET /api/games/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/games/stats/me": {
+      "get": {
+        "tags": [
+          "GAME"
+        ],
+        "summary": "GET /api/games/stats/me",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/games/{gameId}/can-play": {
+      "get": {
+        "tags": [
+          "GAME"
+        ],
+        "summary": "GET /api/games/{gameId}/can-play",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/games/tictactoe/play": {
+      "post": {
+        "tags": [
+          "GAME"
+        ],
+        "summary": "POST /api/games/tictactoe/play",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/games/submit": {
+      "post": {
+        "tags": [
+          "GAME"
+        ],
+        "summary": "POST /api/games/submit",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/conversations/get-or-create": {
+      "post": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "POST /api/messaging/conversations/get-or-create",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/conversations": {
+      "get": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "GET /api/messaging/conversations",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/conversations/{id}": {
+      "get": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "GET /api/messaging/conversations/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/conversations/{id}/messages": {
+      "get": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "GET /api/messaging/conversations/{id}/messages",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/messages": {
+      "post": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "POST /api/messaging/messages",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/conversations/{id}/read": {
+      "post": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "POST /api/messaging/conversations/{id}/read",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/messages/{id}": {
+      "delete": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "DELETE /api/messaging/messages/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/messaging/search-users": {
+      "get": {
+        "tags": [
+          "MESSAGING"
+        ],
+        "summary": "GET /api/messaging/search-users",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "GET /api/notifications",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "GET /api/notifications/unread-count",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "PUT /api/notifications/{id}/read",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/notifications/read-all": {
+      "put": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "PUT /api/notifications/read-all",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}": {
+      "delete": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "DELETE /api/notifications/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/notifications/preferences": {
+      "get": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "GET /api/notifications/preferences",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "PUT /api/notifications/preferences",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/notifications/send": {
+      "post": {
+        "tags": [
+          "NOTIFICATION"
+        ],
+        "summary": "POST /api/notifications/send",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": [
+          "Marketplace"
+        ],
+        "summary": "List all products",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of products"
+          }
+        }
+      }
+    },
+    "/api/products/categories": {
+      "get": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "GET /api/products/categories",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/products/purchase": {
+      "post": {
+        "tags": [
+          "Marketplace"
+        ],
+        "summary": "Purchase a product",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase successful"
+          }
+        }
+      }
+    },
+    "/api/products/ratings/all": {
+      "get": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "GET /api/products/ratings/all",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/products/{productId}/ratings": {
+      "get": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "GET /api/products/{productId}/ratings",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "POST /api/products/{productId}/ratings",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/products/{productId}/ratings/my": {
+      "get": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "GET /api/products/{productId}/ratings/my",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/products/{productId}/ratings/{ratingId}": {
+      "put": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "PUT /api/products/{productId}/ratings/{ratingId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "DELETE /api/products/{productId}/ratings/{ratingId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": [
+          "PRODUCT"
+        ],
+        "summary": "GET /api/products/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/purchase-history": {
+      "get": {
+        "tags": [
+          "PURCHASE HISTORY"
+        ],
+        "summary": "GET /api/purchase-history",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/purchase-history/all": {
+      "get": {
+        "tags": [
+          "PURCHASE HISTORY"
+        ],
+        "summary": "GET /api/purchase-history/all",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/recommendations/spending": {
+      "get": {
+        "tags": [
+          "RECOMMENDATION"
+        ],
+        "summary": "GET /api/recommendations/spending",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/recommendations/investing": {
+      "get": {
+        "tags": [
+          "RECOMMENDATION"
+        ],
+        "summary": "GET /api/recommendations/investing",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/recommendations/ml": {
+      "get": {
+        "tags": [
+          "RECOMMENDATION"
+        ],
+        "summary": "GET /api/recommendations/ml",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/cart": {
+      "get": {
+        "tags": [
+          "SHOPPING CART"
+        ],
+        "summary": "GET /api/cart",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SHOPPING CART"
+        ],
+        "summary": "POST /api/cart",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SHOPPING CART"
+        ],
+        "summary": "DELETE /api/cart",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/cart/{itemId}": {
+      "put": {
+        "tags": [
+          "SHOPPING CART"
+        ],
+        "summary": "PUT /api/cart/{itemId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SHOPPING CART"
+        ],
+        "summary": "DELETE /api/cart/{itemId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/threads": {
+      "get": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "GET /api/social/threads",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "POST /api/social/threads",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/threads/{threadId}": {
+      "get": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "GET /api/social/threads/{threadId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "PUT /api/social/threads/{threadId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "DELETE /api/social/threads/{threadId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/posts": {
+      "post": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "POST /api/social/posts",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/posts/{postId}": {
+      "put": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "PUT /api/social/posts/{postId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "DELETE /api/social/posts/{postId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/reactions": {
+      "post": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "POST /api/social/reactions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/reports": {
+      "post": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "POST /api/social/reports",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/threads/{threadId}/pin": {
+      "post": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "POST /api/social/threads/{threadId}/pin",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/social/threads/{threadId}/lock": {
+      "post": {
+        "tags": [
+          "SOCIAL"
+        ],
+        "summary": "POST /api/social/threads/{threadId}/lock",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stocks": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Get all available stocks",
+        "responses": {
+          "200": {
+            "description": "Stock list"
+          }
+        }
+      }
+    },
+    "/api/stocks/portfolio/me": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Get user stock portfolio",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Portfolio data"
+          }
+        }
+      }
+    },
+    "/api/stocks/transactions/me": {
+      "get": {
+        "tags": [
+          "STOCK"
+        ],
+        "summary": "GET /api/stocks/transactions/me",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stocks/{id}/holding": {
+      "get": {
+        "tags": [
+          "STOCK"
+        ],
+        "summary": "GET /api/stocks/{id}/holding",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stocks/{id}/history": {
+      "get": {
+        "tags": [
+          "STOCK"
+        ],
+        "summary": "GET /api/stocks/{id}/history",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stocks/{id}": {
+      "get": {
+        "tags": [
+          "STOCK"
+        ],
+        "summary": "GET /api/stocks/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stocks/buy": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Buy stock",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "stockId": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stock bought"
+          }
+        }
+      }
+    },
+    "/api/stocks/sell": {
+      "post": {
+        "tags": [
+          "STOCK"
+        ],
+        "summary": "POST /api/stocks/sell",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Get all available tasks",
+        "responses": {
+          "200": {
+            "description": "Task list"
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}": {
+      "get": {
+        "tags": [
+          "TASK"
+        ],
+        "summary": "GET /api/tasks/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}/complete": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Complete a task and get reward",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task completed"
+          }
+        }
+      }
+    },
+    "/api/transactions": {
+      "get": {
+        "tags": [
+          "TRANSACTION LABEL"
+        ],
+        "summary": "GET /api/transactions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/transactions/categories": {
+      "get": {
+        "tags": [
+          "TRANSACTION LABEL"
+        ],
+        "summary": "GET /api/transactions/categories",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/transactions/suggestions": {
+      "get": {
+        "tags": [
+          "TRANSACTION LABEL"
+        ],
+        "summary": "GET /api/transactions/suggestions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/transactions/expense-statistics": {
+      "get": {
+        "tags": [
+          "TRANSACTION LABEL"
+        ],
+        "summary": "GET /api/transactions/expense-statistics",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/transactions/expense-insights": {
+      "get": {
+        "tags": [
+          "TRANSACTION LABEL"
+        ],
+        "summary": "GET /api/transactions/expense-insights",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/transactions/{transactionId}/label": {
+      "put": {
+        "tags": [
+          "TRANSACTION LABEL"
+        ],
+        "summary": "PUT /api/transactions/{transactionId}/label",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/transactions/{transactionId}/categorize": {
+      "post": {
+        "tags": [
+          "TRANSACTION LABEL"
+        ],
+        "summary": "POST /api/transactions/{transactionId}/categorize",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "tags": [
+          "UPLOAD"
+        ],
+        "summary": "POST /api/upload",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/upload/{publicId}": {
+      "delete": {
+        "tags": [
+          "UPLOAD"
+        ],
+        "summary": "DELETE /api/upload/{publicId}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/upload/by-url": {
+      "delete": {
+        "tags": [
+          "UPLOAD"
+        ],
+        "summary": "DELETE /api/upload/by-url",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/users/balance": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Get user balance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current balance"
+          }
+        }
+      }
+    },
+    "/api/users/transactions": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Get user transaction history",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction list"
+          }
+        }
+      }
+    },
+    "/api/users/profile": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Get current user profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile data"
+          }
+        }
+      }
+    },
+    "/api/vendors/search": {
+      "get": {
+        "tags": [
+          "VENDOR PUBLIC"
+        ],
+        "summary": "GET /api/vendors/search",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vendors/by-ids": {
+      "get": {
+        "tags": [
+          "VENDOR PUBLIC"
+        ],
+        "summary": "GET /api/vendors/by-ids",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vendors/{id}": {
+      "get": {
+        "tags": [
+          "VENDOR PUBLIC"
+        ],
+        "summary": "GET /api/vendors/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vendors/{id}/vouchers": {
+      "get": {
+        "tags": [
+          "VENDOR PUBLIC"
+        ],
+        "summary": "GET /api/vendors/{id}/vouchers",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vendor/products": {
+      "get": {
+        "tags": [
+          "VENDOR"
+        ],
+        "summary": "GET /api/vendor/products",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "VENDOR"
+        ],
+        "summary": "POST /api/vendor/products",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vendor/products/{id}": {
+      "put": {
+        "tags": [
+          "VENDOR"
+        ],
+        "summary": "PUT /api/vendor/products/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "VENDOR"
+        ],
+        "summary": "DELETE /api/vendor/products/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vendor/products/{id}/discount": {
+      "put": {
+        "tags": [
+          "VENDOR"
+        ],
+        "summary": "PUT /api/vendor/products/{id}/discount",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "POST /api/vouchers",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/available": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers/available",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/featured": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers/featured",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/code/{code}": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers/code/{code}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/{id}": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "PUT /api/vouchers/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "DELETE /api/vouchers/{id}",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/claim": {
+      "post": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "POST /api/vouchers/claim",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/redeem": {
+      "post": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "POST /api/vouchers/redeem",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/my/redemptions": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers/my/redemptions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/my/issued": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers/my/issued",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/issue": {
+      "post": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "POST /api/vouchers/issue",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vouchers/{id}/stats": {
+      "get": {
+        "tags": [
+          "VOUCHER"
+        ],
+        "summary": "GET /api/vouchers/{id}/stats",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/recommendations": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Get general AI recommendations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suggestions"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "hmall-blockchain",
+  "version": "1.0.0",
+  "description": "HMall Blockchain Smart Contracts",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy": "hardhat run scripts/deploy.ts"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "ethers": "^6.9.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@types/node": "^20.10.5",
+    "hardhat": "^2.19.0",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}
+
+
+
+
+

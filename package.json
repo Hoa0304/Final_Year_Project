@@ -1,0 +1,30 @@
+{
+  "name": "hmall",
+  "version": "1.0.0",
+  "description": "HMall - Virtual Currency Management & Simulated E-commerce Platform",
+  "main": "index.js",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:frontend:tunnel": "cd frontend && npm run dev:tunnel",
+    "dev:frontend:local": "cd frontend && npm run dev:local",
+    "dev:ai": "cd ai-service && npm run dev",
+    "setup": "node scripts/setup.js",
+    "setup:root": "npm install",
+    "setup:backend": "cd backend && npm install",
+    "setup:frontend": "cd frontend && npm install",
+    "setup:ai": "cd ai-service && npm install",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "test:api": "node scripts/test-api.js || powershell -ExecutionPolicy Bypass -File scripts/test-api.ps1 || bash scripts/test-api.sh"
+  },
+  "keywords": [
+    "virtual-currency",
+    "expense-management",
+    "simulated-trading",
+    "react-native"
+  ],
+  "author": "Nguyễn Đức Đạt",
+  "license": "MIT"
+}
+
