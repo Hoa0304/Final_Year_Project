@@ -102,7 +102,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     insights.push({
       type: 'alert',
       title: '💰 Low Balance Warning',
-      message: `Your balance is low (${balance.toFixed(2)} coins). Consider completing tasks or playing games to earn more coins.`,
+      message: `Your balance is low (${balance.toFixed(2)} coins). Consider completing tasks to earn more coins.`,
       priority: 'high',
       actionType: 'earn',
       confidence: 0.9,
@@ -188,7 +188,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     insights.push({
       type: 'tip',
       title: '💎 Savings Opportunity',
-      message: `You have ${netAmount.toFixed(2)} coins saved this ${period}. Consider investing in stocks or saving for bigger purchases.`,
+      message: `You have ${netAmount.toFixed(2)} coins saved this ${period}. Consider saving for bigger purchases.`,
       priority: 'low',
       actionType: 'save',
       confidence: 0.8,

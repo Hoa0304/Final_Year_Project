@@ -20,13 +20,17 @@ export default function NotificationItem({
 
   return (
     <TouchableOpacity
-      style={[styles.container, unread && styles.unreadContainer]}
+      style={[
+        styles.container,
+        unread && styles.unreadContainer,
+        unread && { borderLeftColor: color }
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View style={styles.content}>
-        <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
-          <Ionicons name={icon as any} size={24} color={color} />
+        <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
+          <Ionicons name={icon as any} size={22} color={color} />
         </View>
         <View style={styles.textContainer}>
           <Text style={[styles.title, unread && styles.unreadTitle]}>
@@ -39,7 +43,7 @@ export default function NotificationItem({
             {formatTime(notification.created_at)}
           </Text>
         </View>
-        {unread && <View style={styles.unreadDot} />}
+        {unread && <View style={[styles.unreadDot, { backgroundColor: color }]} />}
       </View>
       {onDelete && (
         <TouchableOpacity
@@ -47,7 +51,7 @@ export default function NotificationItem({
           onPress={onDelete}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="close" size={20} color="#8E8E93" />
+          <Ionicons name="close" size={18} color="#64748B" />
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -63,31 +67,27 @@ function formatTime(dateString: string): string {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays < 7) return `${diffDays} days ago`;
 
   return date.toLocaleDateString();
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    padding: 15,
+    backgroundColor: '#0F172A',
+    padding: 14,
     marginBottom: 10,
-    borderRadius: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   unreadContainer: {
-    backgroundColor: '#F0F8FF',
-    borderLeftWidth: 3,
-    borderLeftColor: '#007AFF',
+    backgroundColor: '#1E293B60',
+    borderLeftWidth: 4,
   },
   content: {
     flex: 1,
@@ -95,44 +95,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   textContainer: {
     flex: 1,
+    marginRight: 8,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   unreadTitle: {
-    fontWeight: '700',
+    fontWeight: '800',
   },
   message: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 13,
+    color: '#94A3B8',
     marginBottom: 4,
+    lineHeight: 18,
   },
   time: {
-    fontSize: 12,
-    color: '#C7C7CC',
+    fontSize: 11,
+    color: '#64748B',
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#007AFF',
     marginLeft: 8,
   },
   deleteButton: {
     padding: 5,
-    marginLeft: 10,
+    marginLeft: 6,
   },
 });
 

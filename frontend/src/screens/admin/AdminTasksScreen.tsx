@@ -20,9 +20,22 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../config/api';
-import { getGames, Game } from '../../services/game.service';
 import { getProducts, Product } from '../../services/product.service';
-import { getStocks, Stock } from '../../services/stock.service';
+
+// Mock empty types and functions for removed features (games, stocks) to maintain compile compatibility
+interface Game {
+  id: string;
+  name: string;
+  description?: string;
+}
+interface Stock {
+  id: string;
+  symbol: string;
+  name: string;
+  current_price: number;
+}
+const getGames = async () => [] as Game[];
+const getStocks = async () => [] as Stock[];
 
 interface Task {
   id: string;
@@ -65,7 +78,7 @@ export default function AdminTasksScreen() {
   });
 
   // Fetch games and products for selection
-  const { data: games = [] } = useQuery({
+  const { data: games = [] } = useQuery<Game[]>({
     queryKey: ['games'],
     queryFn: getGames,
     enabled: formData.validationRuleType === 'play_game', // Only fetch when needed
@@ -77,7 +90,7 @@ export default function AdminTasksScreen() {
     enabled: formData.validationRuleType === 'purchase' || modalVisible, // Fetch when needed or modal is open
   });
 
-  const { data: stocks = [] } = useQuery({
+  const { data: stocks = [] } = useQuery<Stock[]>({
     queryKey: ['stocks'],
     queryFn: getStocks,
     enabled: formData.validationRuleType === 'buy_stock' || modalVisible, // Fetch when needed or modal is open
@@ -153,6 +166,7 @@ export default function AdminTasksScreen() {
       validationRuleProductId: '',
       validationRuleProductName: '',
       validationRuleStockSymbol: '',
+      validationRuleStockName: '',
     });
     setEditingTask(null);
   };
@@ -187,23 +201,23 @@ export default function AdminTasksScreen() {
   useEffect(() => {
     if (editingTask && editingTask.validation_rule && modalVisible) {
       const rule = editingTask.validation_rule;
-      
+
       if (rule.gameId && games.length > 0) {
         const game = games.find(g => g.id === rule.gameId);
         if (game && formData.validationRuleGameName !== game.name) {
           setFormData(prev => ({ ...prev, validationRuleGameName: game.name }));
         }
       }
-      
+
       if (rule.productKeyword && products.length > 0) {
         // Try to find matching product
-        const product = products.find(p => 
+        const product = products.find(p =>
           p.name.toLowerCase().includes(rule.productKeyword?.toLowerCase() || '') ||
           p.description?.toLowerCase().includes(rule.productKeyword?.toLowerCase() || '')
         );
         if (product && formData.validationRuleProductName !== product.name) {
-          setFormData(prev => ({ 
-            ...prev, 
+          setFormData(prev => ({
+            ...prev,
             validationRuleProductName: product.name,
             validationRuleProductId: product.id,
           }));
@@ -213,8 +227,8 @@ export default function AdminTasksScreen() {
       if (rule.stockSymbol && stocks.length > 0) {
         const stock = stocks.find(s => s.symbol === rule.stockSymbol);
         if (stock && formData.validationRuleStockName !== stock.name) {
-          setFormData(prev => ({ 
-            ...prev, 
+          setFormData(prev => ({
+            ...prev,
             validationRuleStockName: stock.name,
           }));
         }
@@ -233,7 +247,7 @@ export default function AdminTasksScreen() {
 
     // Build validation rule
     let validationRule: any = null;
-    if (formData.validationRuleType && formData.validationRuleType !== '') {
+    if (formData.validationRuleType) {
       validationRule = {
         type: formData.validationRuleType,
       };
@@ -300,7 +314,7 @@ export default function AdminTasksScreen() {
       <View style={styles.taskInfo}>
         <Text style={styles.taskTitle}>{item.title}</Text>
         {item.description && <Text style={styles.taskDescription}>{item.description}</Text>}
-        <Text style={styles.taskReward}>Reward: {item.reward_amount} coins</Text>
+        <Text style={styles.taskReward}>Reward: {Math.round(item.reward_amount).toLocaleString('vi-VN')} xu</Text>
         <View style={styles.taskMeta}>
           <Text style={[styles.taskStatus, !item.is_active && styles.inactive]}>
             {item.is_active ? 'Active' : 'Inactive'}
@@ -329,7 +343,7 @@ export default function AdminTasksScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-    <View style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Tasks Management</Text>
           <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
@@ -342,15 +356,15 @@ export default function AdminTasksScreen() {
             <Text>Loading...</Text>
           </View>
         ) : (
-      <FlatList
-        data={response?.tasks || []}
-        keyExtractor={(item) => item.id}
+          <FlatList
+            data={response?.tasks || []}
+            keyExtractor={(item) => item.id}
             renderItem={renderTask}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyText}>No tasks found</Text>
-          </View>
+              </View>
             }
           />
         )}
@@ -371,515 +385,515 @@ export default function AdminTasksScreen() {
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={() => {}}>
+                <TouchableWithoutFeedback onPress={() => { }}>
                   <View style={styles.modalContent}>
-                  <ScrollView
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <View style={styles.modalHeader}>
-                      <Text style={styles.modalTitle}>
-                        {editingTask ? 'Edit Task' : 'Create Task'}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => {
-                          Keyboard.dismiss();
-                          setModalVisible(false);
-                        }}
-                      >
-                        <Ionicons name="close" size={24} color="#000" />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Task Title *</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Task Title *"
-                        placeholderTextColor="#000"
-                        value={formData.title}
-                        onChangeText={(text) => setFormData({ ...formData, title: text })}
-                        returnKeyType="next"
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Description</Text>
-                      <TextInput
-                        style={[styles.input, styles.textArea]}
-                        placeholder="Description"
-                        placeholderTextColor="#000"
-                        value={formData.description}
-                        onChangeText={(text) => setFormData({ ...formData, description: text })}
-                        multiline
-                        numberOfLines={3}
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
-                        blurOnSubmit={true}
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Reward Amount *</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Reward Amount *"
-                        placeholderTextColor="#000"
-                        value={formData.rewardAmount}
-                        onChangeText={(text) => setFormData({ ...formData, rewardAmount: text })}
-                        keyboardType="decimal-pad"
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
-                      />
-                    </View>
-
-                    <View style={styles.switchContainer}>
-                      <Text style={styles.switchLabel}>Active</Text>
-                      <Switch
-                        value={formData.isActive}
-                        onValueChange={(value) => setFormData({ ...formData, isActive: value })}
-                      />
-                    </View>
-
-                    {/* Validation Rule Section */}
-                    <View style={styles.sectionDivider} />
-                    <Text style={styles.sectionTitle}>Validation Rule</Text>
-                    <Text style={styles.sectionDescription}>
-                      Set how the system will check if users completed this task
-                    </Text>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Rule Type</Text>
-                      <TouchableOpacity
-                        style={styles.selectButton}
-                        onPress={() => setRuleTypePickerVisible(true)}
-                      >
-                        <Text style={styles.selectButtonText}>
-                          {formData.validationRuleType === 'manual' && 'Manual (can complete directly)'}
-                          {formData.validationRuleType === 'purchase' && 'Purchase Product(s)'}
-                          {formData.validationRuleType === 'play_game' && 'Play Game(s)'}
-                          {formData.validationRuleType === 'buy_stock' && 'Buy Stock(s)'}
-                          {formData.validationRuleType === 'complete_tasks' && 'Complete Task(s)'}
-                          {!formData.validationRuleType && 'Select Rule Type'}
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false}
+                    >
+                      <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>
+                          {editingTask ? 'Edit Task' : 'Create Task'}
                         </Text>
-                        <Ionicons name="chevron-down" size={20} color="#666" />
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            Keyboard.dismiss();
+                            setModalVisible(false);
+                          }}
+                        >
+                          <Ionicons name="close" size={24} color="#000" />
+                        </TouchableOpacity>
+                      </View>
 
-                      {/* Rule Type Picker Modal */}
-                      <Modal
-                        visible={ruleTypePickerVisible}
-                        transparent={true}
-                        animationType="slide"
-                        onRequestClose={() => setRuleTypePickerVisible(false)}
-                      >
-                        <TouchableWithoutFeedback onPress={() => setRuleTypePickerVisible(false)}>
-                          <View style={styles.pickerModalOverlay}>
-                            <TouchableWithoutFeedback onPress={() => {}}>
-                              <View style={styles.pickerModalContent}>
-                                <View style={styles.pickerModalHeader}>
-                                  <Text style={styles.pickerModalTitle}>Select Rule Type</Text>
-                                  <TouchableOpacity onPress={() => setRuleTypePickerVisible(false)}>
-                                    <Ionicons name="close" size={24} color="#000" />
-                                  </TouchableOpacity>
-                                </View>
-                                <ScrollView>
-                                  {[
-                                    { label: 'Manual (can complete directly)', value: 'manual' },
-                                    { label: 'Purchase Product(s)', value: 'purchase' },
-                                    { label: 'Play Game(s)', value: 'play_game' },
-                                    { label: 'Buy Stock(s)', value: 'buy_stock' },
-                                    { label: 'Complete Task(s)', value: 'complete_tasks' },
-                                  ].map((option) => (
-                                    <TouchableOpacity
-                                      key={option.value}
-                                      style={[
-                                        styles.pickerOption,
-                                        formData.validationRuleType === option.value && styles.pickerOptionActive,
-                                      ]}
-                                      onPress={() => {
-                                        setFormData({ ...formData, validationRuleType: option.value as any });
-                                        setRuleTypePickerVisible(false);
-                                      }}
-                                    >
-                                      <Text
-                                        style={[
-                                          styles.pickerOptionText,
-                                          formData.validationRuleType === option.value && styles.pickerOptionTextActive,
-                                        ]}
-                                      >
-                                        {option.label}
-                                      </Text>
-                                      {formData.validationRuleType === option.value && (
-                                        <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                      )}
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Task Title *</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Task Title *"
+                          placeholderTextColor="#000"
+                          value={formData.title}
+                          onChangeText={(text) => setFormData({ ...formData, title: text })}
+                          returnKeyType="next"
+                        />
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Description</Text>
+                        <TextInput
+                          style={[styles.input, styles.textArea]}
+                          placeholder="Description"
+                          placeholderTextColor="#000"
+                          value={formData.description}
+                          onChangeText={(text) => setFormData({ ...formData, description: text })}
+                          multiline
+                          numberOfLines={3}
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                          blurOnSubmit={true}
+                        />
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Reward Amount *</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Reward Amount *"
+                          placeholderTextColor="#000"
+                          value={formData.rewardAmount}
+                          onChangeText={(text) => setFormData({ ...formData, rewardAmount: text })}
+                          keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                        />
+                      </View>
+
+                      <View style={styles.switchContainer}>
+                        <Text style={styles.switchLabel}>Active</Text>
+                        <Switch
+                          value={formData.isActive}
+                          onValueChange={(value) => setFormData({ ...formData, isActive: value })}
+                        />
+                      </View>
+
+                      {/* Validation Rule Section */}
+                      <View style={styles.sectionDivider} />
+                      <Text style={styles.sectionTitle}>Validation Rule</Text>
+                      <Text style={styles.sectionDescription}>
+                        Set how the system will check if users completed this task
+                      </Text>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Rule Type</Text>
+                        <TouchableOpacity
+                          style={styles.selectButton}
+                          onPress={() => setRuleTypePickerVisible(true)}
+                        >
+                          <Text style={styles.selectButtonText}>
+                            {formData.validationRuleType === 'manual' && 'Manual (can complete directly)'}
+                            {formData.validationRuleType === 'purchase' && 'Purchase Product(s)'}
+                            {formData.validationRuleType === 'play_game' && 'Play Game(s)'}
+                            {formData.validationRuleType === 'buy_stock' && 'Buy Stock(s)'}
+                            {formData.validationRuleType === 'complete_tasks' && 'Complete Task(s)'}
+                            {!formData.validationRuleType && 'Select Rule Type'}
+                          </Text>
+                          <Ionicons name="chevron-down" size={20} color="#666" />
+                        </TouchableOpacity>
+
+                        {/* Rule Type Picker Modal */}
+                        <Modal
+                          visible={ruleTypePickerVisible}
+                          transparent={true}
+                          animationType="slide"
+                          onRequestClose={() => setRuleTypePickerVisible(false)}
+                        >
+                          <TouchableWithoutFeedback onPress={() => setRuleTypePickerVisible(false)}>
+                            <View style={styles.pickerModalOverlay}>
+                              <TouchableWithoutFeedback onPress={() => { }}>
+                                <View style={styles.pickerModalContent}>
+                                  <View style={styles.pickerModalHeader}>
+                                    <Text style={styles.pickerModalTitle}>Select Rule Type</Text>
+                                    <TouchableOpacity onPress={() => setRuleTypePickerVisible(false)}>
+                                      <Ionicons name="close" size={24} color="#000" />
                                     </TouchableOpacity>
-                                  ))}
-                                </ScrollView>
-                              </View>
-                            </TouchableWithoutFeedback>
-                          </View>
-                        </TouchableWithoutFeedback>
-                      </Modal>
-                    </View>
-
-                    {formData.validationRuleType !== 'manual' && (
-                      <>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.label}>Required Count</Text>
-                          <TextInput
-                            style={styles.input}
-                            placeholder="1"
-                            placeholderTextColor="#000"
-                            value={formData.validationRuleCount}
-                            onChangeText={(text) => setFormData({ ...formData, validationRuleCount: text })}
-                            keyboardType="number-pad"
-                            returnKeyType="done"
-                            onSubmitEditing={Keyboard.dismiss}
-                          />
-                        </View>
-
-                        {formData.validationRuleType === 'purchase' && (
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Select Product (optional)</Text>
-                            <Text style={styles.hintText}>
-                              Select a product or leave empty to allow any product. You can also enter keyword manually below.
-                            </Text>
-                            <TouchableOpacity
-                              style={styles.selectButton}
-                              onPress={() => setProductPickerVisible(true)}
-                            >
-                              <Text style={styles.selectButtonText}>
-                                {formData.validationRuleProductName || 'Select Product (optional)'}
-                              </Text>
-                              <Ionicons name="chevron-down" size={20} color="#666" />
-                            </TouchableOpacity>
-                            
-                            {/* Product Picker Modal */}
-                            <Modal
-                              visible={productPickerVisible}
-                              transparent={true}
-                              animationType="slide"
-                              onRequestClose={() => setProductPickerVisible(false)}
-                            >
-                              <TouchableWithoutFeedback onPress={() => setProductPickerVisible(false)}>
-                                <View style={styles.pickerModalOverlay}>
-                                  <TouchableWithoutFeedback onPress={() => {}}>
-                                    <View style={styles.pickerModalContent}>
-                                      <View style={styles.pickerModalHeader}>
-                                        <Text style={styles.pickerModalTitle}>Select Product</Text>
-                                        <TouchableOpacity onPress={() => setProductPickerVisible(false)}>
-                                          <Ionicons name="close" size={24} color="#000" />
-                                        </TouchableOpacity>
-                                      </View>
-                                      <ScrollView>
-                                        <TouchableOpacity
+                                  </View>
+                                  <ScrollView>
+                                    {[
+                                      { label: 'Manual (can complete directly)', value: 'manual' },
+                                      { label: 'Purchase Product(s)', value: 'purchase' },
+                                      { label: 'Play Game(s)', value: 'play_game' },
+                                      { label: 'Buy Stock(s)', value: 'buy_stock' },
+                                      { label: 'Complete Task(s)', value: 'complete_tasks' },
+                                    ].map((option) => (
+                                      <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                          styles.pickerOption,
+                                          formData.validationRuleType === option.value && styles.pickerOptionActive,
+                                        ]}
+                                        onPress={() => {
+                                          setFormData({ ...formData, validationRuleType: option.value as any });
+                                          setRuleTypePickerVisible(false);
+                                        }}
+                                      >
+                                        <Text
                                           style={[
-                                            styles.pickerOption,
-                                            !formData.validationRuleProductId && styles.pickerOptionActive,
+                                            styles.pickerOptionText,
+                                            formData.validationRuleType === option.value && styles.pickerOptionTextActive,
                                           ]}
-                                          onPress={() => {
-                                            setFormData({
-                                              ...formData,
-                                              validationRuleProductId: '',
-                                              validationRuleProductName: '',
-                                              validationRuleProductKeyword: '',
-                                            });
-                                            setProductPickerVisible(false);
-                                          }}
                                         >
-                                          <Text
-                                            style={[
-                                              styles.pickerOptionText,
-                                              !formData.validationRuleProductId && styles.pickerOptionTextActive,
-                                            ]}
-                                          >
-                                            Any Product
-                                          </Text>
-                                          {!formData.validationRuleProductId && (
-                                            <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                          )}
-                                        </TouchableOpacity>
-                                        {products.map((product) => (
-                                          <TouchableOpacity
-                                            key={product.id}
-                                            style={[
-                                              styles.pickerOption,
-                                              formData.validationRuleProductId === product.id && styles.pickerOptionActive,
-                                            ]}
-                                            onPress={() => {
-                                              setFormData({
-                                                ...formData,
-                                                validationRuleProductId: product.id,
-                                                validationRuleProductName: product.name,
-                                                validationRuleProductKeyword: product.name.toLowerCase(),
-                                              });
-                                              setProductPickerVisible(false);
-                                            }}
-                                          >
-                                            <View style={{ flex: 1 }}>
-                                              <Text
-                                                style={[
-                                                  styles.pickerOptionText,
-                                                  formData.validationRuleProductId === product.id && styles.pickerOptionTextActive,
-                                                ]}
-                                              >
-                                                {product.name}
-                                              </Text>
-                                              {product.category && (
-                                                <Text style={styles.pickerOptionSubtext}>{product.category}</Text>
-                                              )}
-                                            </View>
-                                            {formData.validationRuleProductId === product.id && (
-                                              <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                            )}
-                                          </TouchableOpacity>
-                                        ))}
-                                      </ScrollView>
-                                    </View>
-                                  </TouchableWithoutFeedback>
+                                          {option.label}
+                                        </Text>
+                                        {formData.validationRuleType === option.value && (
+                                          <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                        )}
+                                      </TouchableOpacity>
+                                    ))}
+                                  </ScrollView>
                                 </View>
                               </TouchableWithoutFeedback>
-                            </Modal>
+                            </View>
+                          </TouchableWithoutFeedback>
+                        </Modal>
+                      </View>
 
-                            <Text style={[styles.hintText, { marginTop: 10 }]}>
-                              Or enter keyword manually:
-                            </Text>
+                      {formData.validationRuleType !== 'manual' && (
+                        <>
+                          <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Required Count</Text>
                             <TextInput
                               style={styles.input}
-                              placeholder="laptop, iPhone, etc."
+                              placeholder="1"
                               placeholderTextColor="#000"
-                              value={formData.validationRuleProductKeyword}
-                              onChangeText={(text) => setFormData({ ...formData, validationRuleProductKeyword: text, validationRuleProductId: '', validationRuleProductName: '' })}
+                              value={formData.validationRuleCount}
+                              onChangeText={(text) => setFormData({ ...formData, validationRuleCount: text })}
+                              keyboardType="number-pad"
                               returnKeyType="done"
                               onSubmitEditing={Keyboard.dismiss}
                             />
                           </View>
-                        )}
 
-                        {formData.validationRuleType === 'play_game' && (
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Select Game (optional)</Text>
-                            <Text style={styles.hintText}>
-                              Select a specific game or leave empty to count any game
-                            </Text>
-                            <TouchableOpacity
-                              style={styles.selectButton}
-                              onPress={() => setGamePickerVisible(true)}
-                            >
-                              <Text style={styles.selectButtonText}>
-                                {formData.validationRuleGameName || 'Select Game (optional)'}
+                          {formData.validationRuleType === 'purchase' && (
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.label}>Select Product (optional)</Text>
+                              <Text style={styles.hintText}>
+                                Select a product or leave empty to allow any product. You can also enter keyword manually below.
                               </Text>
-                              <Ionicons name="chevron-down" size={20} color="#666" />
-                            </TouchableOpacity>
+                              <TouchableOpacity
+                                style={styles.selectButton}
+                                onPress={() => setProductPickerVisible(true)}
+                              >
+                                <Text style={styles.selectButtonText}>
+                                  {formData.validationRuleProductName || 'Select Product (optional)'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={20} color="#666" />
+                              </TouchableOpacity>
 
-                            {/* Game Picker Modal */}
-                            <Modal
-                              visible={gamePickerVisible}
-                              transparent={true}
-                              animationType="slide"
-                              onRequestClose={() => setGamePickerVisible(false)}
-                            >
-                              <TouchableWithoutFeedback onPress={() => setGamePickerVisible(false)}>
-                                <View style={styles.pickerModalOverlay}>
-                                  <TouchableWithoutFeedback onPress={() => {}}>
-                                    <View style={styles.pickerModalContent}>
-                                      <View style={styles.pickerModalHeader}>
-                                        <Text style={styles.pickerModalTitle}>Select Game</Text>
-                                        <TouchableOpacity onPress={() => setGamePickerVisible(false)}>
-                                          <Ionicons name="close" size={24} color="#000" />
-                                        </TouchableOpacity>
-                                      </View>
-                                      <ScrollView>
-                                        <TouchableOpacity
-                                          style={[
-                                            styles.pickerOption,
-                                            !formData.validationRuleGameId && styles.pickerOptionActive,
-                                          ]}
-                                          onPress={() => {
-                                            setFormData({
-                                              ...formData,
-                                              validationRuleGameId: '',
-                                              validationRuleGameName: '',
-                                            });
-                                            setGamePickerVisible(false);
-                                          }}
-                                        >
-                                          <Text
-                                            style={[
-                                              styles.pickerOptionText,
-                                              !formData.validationRuleGameId && styles.pickerOptionTextActive,
-                                            ]}
-                                          >
-                                            Any Game
-                                          </Text>
-                                          {!formData.validationRuleGameId && (
-                                            <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                          )}
-                                        </TouchableOpacity>
-                                        {games.map((game) => (
+                              {/* Product Picker Modal */}
+                              <Modal
+                                visible={productPickerVisible}
+                                transparent={true}
+                                animationType="slide"
+                                onRequestClose={() => setProductPickerVisible(false)}
+                              >
+                                <TouchableWithoutFeedback onPress={() => setProductPickerVisible(false)}>
+                                  <View style={styles.pickerModalOverlay}>
+                                    <TouchableWithoutFeedback onPress={() => { }}>
+                                      <View style={styles.pickerModalContent}>
+                                        <View style={styles.pickerModalHeader}>
+                                          <Text style={styles.pickerModalTitle}>Select Product</Text>
+                                          <TouchableOpacity onPress={() => setProductPickerVisible(false)}>
+                                            <Ionicons name="close" size={24} color="#000" />
+                                          </TouchableOpacity>
+                                        </View>
+                                        <ScrollView>
                                           <TouchableOpacity
-                                            key={game.id}
                                             style={[
                                               styles.pickerOption,
-                                              formData.validationRuleGameId === game.id && styles.pickerOptionActive,
+                                              !formData.validationRuleProductId && styles.pickerOptionActive,
                                             ]}
                                             onPress={() => {
                                               setFormData({
                                                 ...formData,
-                                                validationRuleGameId: game.id,
-                                                validationRuleGameName: game.name,
+                                                validationRuleProductId: '',
+                                                validationRuleProductName: '',
+                                                validationRuleProductKeyword: '',
+                                              });
+                                              setProductPickerVisible(false);
+                                            }}
+                                          >
+                                            <Text
+                                              style={[
+                                                styles.pickerOptionText,
+                                                !formData.validationRuleProductId && styles.pickerOptionTextActive,
+                                              ]}
+                                            >
+                                              Any Product
+                                            </Text>
+                                            {!formData.validationRuleProductId && (
+                                              <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                            )}
+                                          </TouchableOpacity>
+                                          {products.map((product) => (
+                                            <TouchableOpacity
+                                              key={product.id}
+                                              style={[
+                                                styles.pickerOption,
+                                                formData.validationRuleProductId === product.id && styles.pickerOptionActive,
+                                              ]}
+                                              onPress={() => {
+                                                setFormData({
+                                                  ...formData,
+                                                  validationRuleProductId: product.id,
+                                                  validationRuleProductName: product.name,
+                                                  validationRuleProductKeyword: product.name.toLowerCase(),
+                                                });
+                                                setProductPickerVisible(false);
+                                              }}
+                                            >
+                                              <View style={{ flex: 1 }}>
+                                                <Text
+                                                  style={[
+                                                    styles.pickerOptionText,
+                                                    formData.validationRuleProductId === product.id && styles.pickerOptionTextActive,
+                                                  ]}
+                                                >
+                                                  {product.name}
+                                                </Text>
+                                                {product.category && (
+                                                  <Text style={styles.pickerOptionSubtext}>{product.category}</Text>
+                                                )}
+                                              </View>
+                                              {formData.validationRuleProductId === product.id && (
+                                                <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                              )}
+                                            </TouchableOpacity>
+                                          ))}
+                                        </ScrollView>
+                                      </View>
+                                    </TouchableWithoutFeedback>
+                                  </View>
+                                </TouchableWithoutFeedback>
+                              </Modal>
+
+                              <Text style={[styles.hintText, { marginTop: 10 }]}>
+                                Or enter keyword manually:
+                              </Text>
+                              <TextInput
+                                style={styles.input}
+                                placeholder="laptop, iPhone, etc."
+                                placeholderTextColor="#000"
+                                value={formData.validationRuleProductKeyword}
+                                onChangeText={(text) => setFormData({ ...formData, validationRuleProductKeyword: text, validationRuleProductId: '', validationRuleProductName: '' })}
+                                returnKeyType="done"
+                                onSubmitEditing={Keyboard.dismiss}
+                              />
+                            </View>
+                          )}
+
+                          {formData.validationRuleType === 'play_game' && (
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.label}>Select Game (optional)</Text>
+                              <Text style={styles.hintText}>
+                                Select a specific game or leave empty to count any game
+                              </Text>
+                              <TouchableOpacity
+                                style={styles.selectButton}
+                                onPress={() => setGamePickerVisible(true)}
+                              >
+                                <Text style={styles.selectButtonText}>
+                                  {formData.validationRuleGameName || 'Select Game (optional)'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={20} color="#666" />
+                              </TouchableOpacity>
+
+                              {/* Game Picker Modal */}
+                              <Modal
+                                visible={gamePickerVisible}
+                                transparent={true}
+                                animationType="slide"
+                                onRequestClose={() => setGamePickerVisible(false)}
+                              >
+                                <TouchableWithoutFeedback onPress={() => setGamePickerVisible(false)}>
+                                  <View style={styles.pickerModalOverlay}>
+                                    <TouchableWithoutFeedback onPress={() => { }}>
+                                      <View style={styles.pickerModalContent}>
+                                        <View style={styles.pickerModalHeader}>
+                                          <Text style={styles.pickerModalTitle}>Select Game</Text>
+                                          <TouchableOpacity onPress={() => setGamePickerVisible(false)}>
+                                            <Ionicons name="close" size={24} color="#000" />
+                                          </TouchableOpacity>
+                                        </View>
+                                        <ScrollView>
+                                          <TouchableOpacity
+                                            style={[
+                                              styles.pickerOption,
+                                              !formData.validationRuleGameId && styles.pickerOptionActive,
+                                            ]}
+                                            onPress={() => {
+                                              setFormData({
+                                                ...formData,
+                                                validationRuleGameId: '',
+                                                validationRuleGameName: '',
                                               });
                                               setGamePickerVisible(false);
                                             }}
                                           >
-                                            <View style={{ flex: 1 }}>
-                                              <Text
-                                                style={[
-                                                  styles.pickerOptionText,
-                                                  formData.validationRuleGameId === game.id && styles.pickerOptionTextActive,
-                                                ]}
-                                              >
-                                                {game.name}
-                                              </Text>
-                                              {game.description && (
-                                                <Text style={styles.pickerOptionSubtext} numberOfLines={1}>
-                                                  {game.description}
-                                                </Text>
-                                              )}
-                                            </View>
-                                            {formData.validationRuleGameId === game.id && (
+                                            <Text
+                                              style={[
+                                                styles.pickerOptionText,
+                                                !formData.validationRuleGameId && styles.pickerOptionTextActive,
+                                              ]}
+                                            >
+                                              Any Game
+                                            </Text>
+                                            {!formData.validationRuleGameId && (
                                               <Ionicons name="checkmark" size={20} color="#007AFF" />
                                             )}
                                           </TouchableOpacity>
-                                        ))}
-                                      </ScrollView>
-                                    </View>
-                                  </TouchableWithoutFeedback>
-                                </View>
-                              </TouchableWithoutFeedback>
-                            </Modal>
-                          </View>
-                        )}
-
-                        {formData.validationRuleType === 'buy_stock' && (
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Select Stock (optional)</Text>
-                            <Text style={styles.hintText}>
-                              Select a specific stock or leave empty to count any stock
-                            </Text>
-                            <TouchableOpacity
-                              style={styles.selectButton}
-                              onPress={() => setStockPickerVisible(true)}
-                            >
-                              <Text style={styles.selectButtonText}>
-                                {formData.validationRuleStockName || formData.validationRuleStockSymbol || 'Select Stock (optional)'}
-                              </Text>
-                              <Ionicons name="chevron-down" size={20} color="#666" />
-                            </TouchableOpacity>
-
-                            {/* Stock Picker Modal */}
-                            <Modal
-                              visible={stockPickerVisible}
-                              transparent={true}
-                              animationType="slide"
-                              onRequestClose={() => setStockPickerVisible(false)}
-                            >
-                              <TouchableWithoutFeedback onPress={() => setStockPickerVisible(false)}>
-                                <View style={styles.pickerModalOverlay}>
-                                  <TouchableWithoutFeedback onPress={() => {}}>
-                                    <View style={styles.pickerModalContent}>
-                                      <View style={styles.pickerModalHeader}>
-                                        <Text style={styles.pickerModalTitle}>Select Stock</Text>
-                                        <TouchableOpacity onPress={() => setStockPickerVisible(false)}>
-                                          <Ionicons name="close" size={24} color="#000" />
-                                        </TouchableOpacity>
+                                          {games.map((game) => (
+                                            <TouchableOpacity
+                                              key={game.id}
+                                              style={[
+                                                styles.pickerOption,
+                                                formData.validationRuleGameId === game.id && styles.pickerOptionActive,
+                                              ]}
+                                              onPress={() => {
+                                                setFormData({
+                                                  ...formData,
+                                                  validationRuleGameId: game.id,
+                                                  validationRuleGameName: game.name,
+                                                });
+                                                setGamePickerVisible(false);
+                                              }}
+                                            >
+                                              <View style={{ flex: 1 }}>
+                                                <Text
+                                                  style={[
+                                                    styles.pickerOptionText,
+                                                    formData.validationRuleGameId === game.id && styles.pickerOptionTextActive,
+                                                  ]}
+                                                >
+                                                  {game.name}
+                                                </Text>
+                                                {game.description && (
+                                                  <Text style={styles.pickerOptionSubtext} numberOfLines={1}>
+                                                    {game.description}
+                                                  </Text>
+                                                )}
+                                              </View>
+                                              {formData.validationRuleGameId === game.id && (
+                                                <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                              )}
+                                            </TouchableOpacity>
+                                          ))}
+                                        </ScrollView>
                                       </View>
-                                      <ScrollView>
-                                        <TouchableOpacity
-                                          style={[
-                                            styles.pickerOption,
-                                            !formData.validationRuleStockSymbol && styles.pickerOptionActive,
-                                          ]}
-                                          onPress={() => {
-                                            setFormData({
-                                              ...formData,
-                                              validationRuleStockSymbol: '',
-                                              validationRuleStockName: '',
-                                            });
-                                            setStockPickerVisible(false);
-                                          }}
-                                        >
-                                          <Text
-                                            style={[
-                                              styles.pickerOptionText,
-                                              !formData.validationRuleStockSymbol && styles.pickerOptionTextActive,
-                                            ]}
-                                          >
-                                            Any Stock
-                                          </Text>
-                                          {!formData.validationRuleStockSymbol && (
-                                            <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                          )}
-                                        </TouchableOpacity>
-                                        {stocks.map((stock) => (
+                                    </TouchableWithoutFeedback>
+                                  </View>
+                                </TouchableWithoutFeedback>
+                              </Modal>
+                            </View>
+                          )}
+
+                          {formData.validationRuleType === 'buy_stock' && (
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.label}>Select Stock (optional)</Text>
+                              <Text style={styles.hintText}>
+                                Select a specific stock or leave empty to count any stock
+                              </Text>
+                              <TouchableOpacity
+                                style={styles.selectButton}
+                                onPress={() => setStockPickerVisible(true)}
+                              >
+                                <Text style={styles.selectButtonText}>
+                                  {formData.validationRuleStockName || formData.validationRuleStockSymbol || 'Select Stock (optional)'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={20} color="#666" />
+                              </TouchableOpacity>
+
+                              {/* Stock Picker Modal */}
+                              <Modal
+                                visible={stockPickerVisible}
+                                transparent={true}
+                                animationType="slide"
+                                onRequestClose={() => setStockPickerVisible(false)}
+                              >
+                                <TouchableWithoutFeedback onPress={() => setStockPickerVisible(false)}>
+                                  <View style={styles.pickerModalOverlay}>
+                                    <TouchableWithoutFeedback onPress={() => { }}>
+                                      <View style={styles.pickerModalContent}>
+                                        <View style={styles.pickerModalHeader}>
+                                          <Text style={styles.pickerModalTitle}>Select Stock</Text>
+                                          <TouchableOpacity onPress={() => setStockPickerVisible(false)}>
+                                            <Ionicons name="close" size={24} color="#000" />
+                                          </TouchableOpacity>
+                                        </View>
+                                        <ScrollView>
                                           <TouchableOpacity
-                                            key={stock.id}
                                             style={[
                                               styles.pickerOption,
-                                              formData.validationRuleStockSymbol === stock.symbol && styles.pickerOptionActive,
+                                              !formData.validationRuleStockSymbol && styles.pickerOptionActive,
                                             ]}
                                             onPress={() => {
                                               setFormData({
                                                 ...formData,
-                                                validationRuleStockSymbol: stock.symbol,
-                                                validationRuleStockName: stock.name,
+                                                validationRuleStockSymbol: '',
+                                                validationRuleStockName: '',
                                               });
                                               setStockPickerVisible(false);
                                             }}
                                           >
-                                            <View style={{ flex: 1 }}>
-                                              <Text
-                                                style={[
-                                                  styles.pickerOptionText,
-                                                  formData.validationRuleStockSymbol === stock.symbol && styles.pickerOptionTextActive,
-                                                ]}
-                                              >
-                                                {stock.symbol} - {stock.name}
-                                              </Text>
-                                              <Text style={styles.pickerOptionSubtext}>
-                                                Price: {stock.current_price.toFixed(2)} coins
-                                              </Text>
-                                            </View>
-                                            {formData.validationRuleStockSymbol === stock.symbol && (
+                                            <Text
+                                              style={[
+                                                styles.pickerOptionText,
+                                                !formData.validationRuleStockSymbol && styles.pickerOptionTextActive,
+                                              ]}
+                                            >
+                                              Any Stock
+                                            </Text>
+                                            {!formData.validationRuleStockSymbol && (
                                               <Ionicons name="checkmark" size={20} color="#007AFF" />
                                             )}
                                           </TouchableOpacity>
-                                        ))}
-                                      </ScrollView>
-                                    </View>
-                                  </TouchableWithoutFeedback>
-                                </View>
-                              </TouchableWithoutFeedback>
-                            </Modal>
-                          </View>
-                        )}
-                      </>
-                    )}
+                                          {stocks.map((stock) => (
+                                            <TouchableOpacity
+                                              key={stock.id}
+                                              style={[
+                                                styles.pickerOption,
+                                                formData.validationRuleStockSymbol === stock.symbol && styles.pickerOptionActive,
+                                              ]}
+                                              onPress={() => {
+                                                setFormData({
+                                                  ...formData,
+                                                  validationRuleStockSymbol: stock.symbol,
+                                                  validationRuleStockName: stock.name,
+                                                });
+                                                setStockPickerVisible(false);
+                                              }}
+                                            >
+                                              <View style={{ flex: 1 }}>
+                                                <Text
+                                                  style={[
+                                                    styles.pickerOptionText,
+                                                    formData.validationRuleStockSymbol === stock.symbol && styles.pickerOptionTextActive,
+                                                  ]}
+                                                >
+                                                  {stock.symbol} - {stock.name}
+                                                </Text>
+                                                <Text style={styles.pickerOptionSubtext}>
+                                                  Price: {stock.current_price.toFixed(2)} coins
+                                                </Text>
+                                              </View>
+                                              {formData.validationRuleStockSymbol === stock.symbol && (
+                                                <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                              )}
+                                            </TouchableOpacity>
+                                          ))}
+                                        </ScrollView>
+                                      </View>
+                                    </TouchableWithoutFeedback>
+                                  </View>
+                                </TouchableWithoutFeedback>
+                              </Modal>
+                            </View>
+                          )}
+                        </>
+                      )}
 
-                    <TouchableOpacity
-                      style={[styles.saveButton, (createMutation.isPending || updateMutation.isPending) && styles.buttonDisabled]}
-                      onPress={handleSave}
-                      disabled={createMutation.isPending || updateMutation.isPending}
-                    >
-                      <Text style={styles.saveButtonText}>
-                        {createMutation.isPending || updateMutation.isPending
-                          ? 'Saving...'
-                          : editingTask
-                          ? 'Update'
-                          : 'Create'}
-                      </Text>
-                    </TouchableOpacity>
-                  </ScrollView>
+                      <TouchableOpacity
+                        style={[styles.saveButton, (createMutation.isPending || updateMutation.isPending) && styles.buttonDisabled]}
+                        onPress={handleSave}
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                      >
+                        <Text style={styles.saveButtonText}>
+                          {createMutation.isPending || updateMutation.isPending
+                            ? 'Saving...'
+                            : editingTask
+                              ? 'Update'
+                              : 'Create'}
+                        </Text>
+                      </TouchableOpacity>
+                    </ScrollView>
                   </View>
                 </TouchableWithoutFeedback>
               </View>

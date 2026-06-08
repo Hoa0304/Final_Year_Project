@@ -2,12 +2,7 @@ import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
 import { createTransaction } from '../services/transaction.service';
 import { AuthRequest } from '../middleware/auth.middleware';
-import {
-  isBlockchainEnabled,
-  generateUserAddress,
-  claimTaskReward as claimTaskRewardOnBlockchain,
-  isTaskRewardClaimed,
-} from '../services/blockchain.service';
+
 
 /**
  * Get action type and navigation target based on task title/description
@@ -37,32 +32,7 @@ function getTaskActionType(taskTitle: string, taskDescription?: string | null): 
     return { actionType: 'marketplace', canComplete: false };
   }
 
-  // Check for game/play related tasks
-  // Match: "Play Game", "Game Winner", etc.
-  if (
-    titleLower.includes('game') ||
-    titleLower.includes('play') ||
-    combined.includes('play') || 
-    combined.includes('game')
-  ) {
-    console.log(`[getTaskActionType] Matched GAMES for: "${taskTitle}"`);
-    return { actionType: 'games', canComplete: false };
-  }
 
-  // Check for stock/invest related tasks
-  // Match: "Stock Trader", "Buy Stock", "Invest", etc.
-  if (
-    titleLower.includes('stock') ||
-    titleLower.includes('trader') ||
-    titleLower.includes('invest') ||
-    combined.includes('stock') || 
-    combined.includes('invest') || 
-    combined.includes('buy stock') ||
-    combined.includes('trader')
-  ) {
-    console.log(`[getTaskActionType] Matched STOCKS for: "${taskTitle}"`);
-    return { actionType: 'stocks', canComplete: false };
-  }
 
   // Check for task completion related tasks
   // Match: "Task Master", "Complete 3 Tasks", etc.
@@ -323,54 +293,7 @@ async function validateTaskRequirements(
     }
   }
 
-  // Check for "play" or "game" requirement
-  if (combined.includes('play') || combined.includes('game')) {
-    const numberMatch = combined.match(/(?:play|game).*?(\d+)/);
-    const requiredCount = numberMatch ? parseInt(numberMatch[1]) : 1;
 
-    // Only count game plays AFTER the task was created
-    const { count, error } = await supabase
-      .from('user_game_plays')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('played_at', taskCreatedAt); // Only games played after task creation
-
-    if (error) {
-      console.error('Error checking game plays:', error);
-      return { isValid: false, message: 'Error validating task requirements' };
-    }
-
-    if ((count || 0) < requiredCount) {
-      return {
-        isValid: false,
-        message: `You need to play at least ${requiredCount} game(s) to complete this task. You have played ${count || 0} game(s) since this task was created.`,
-      };
-    }
-  }
-
-  // Check for "stock" or "invest" requirement
-  if (combined.includes('stock') || combined.includes('invest') || combined.includes('buy stock')) {
-    // Check if user has any stock purchases AFTER the task was created
-    const { data: stockTransactions, error } = await supabase
-      .from('stock_transactions')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('transaction_type', 'buy')
-      .gte('created_at', taskCreatedAt) // Only purchases after task creation
-      .limit(1);
-
-    if (error) {
-      console.error('Error checking stocks:', error);
-      return { isValid: false, message: 'Error validating task requirements' };
-    }
-
-    if (!stockTransactions || stockTransactions.length === 0) {
-      return {
-        isValid: false,
-        message: 'You need to buy at least one stock after this task was created to complete it.',
-      };
-    }
-  }
 
   return { isValid: true };
 }
@@ -440,40 +363,7 @@ export async function completeTask(req: AuthRequest, res: Response) {
       return res.status(500).json({ error: 'Failed to complete task' });
     }
 
-    // Claim task reward on blockchain if enabled (prevent double-claiming)
-    if (isBlockchainEnabled()) {
-      try {
-        const userAddress = generateUserAddress(userId);
-        const alreadyClaimed = await isTaskRewardClaimed(task.id, userAddress);
-        
-        if (alreadyClaimed) {
-          // Rollback user_task record
-          await supabase
-            .from('user_tasks')
-            .delete()
-            .eq('user_id', userId)
-            .eq('task_id', id);
-          
-          return res.status(400).json({ error: 'Task reward already claimed on blockchain' });
-        }
 
-        // Claim on blockchain
-        await claimTaskRewardOnBlockchain(task.id, userAddress, task.reward_amount);
-        console.log(`Task reward claimed on blockchain for task ${task.id}`);
-      } catch (blockchainError: any) {
-        console.error('Blockchain claim task reward error:', blockchainError);
-        // Rollback user_task record
-        await supabase
-          .from('user_tasks')
-          .delete()
-          .eq('user_id', userId)
-          .eq('task_id', id);
-        
-        return res.status(500).json({ 
-          error: `Failed to claim task reward on blockchain: ${blockchainError.message}` 
-        });
-      }
-    }
 
     // Grant reward coins (this will also register on blockchain if enabled)
     await createTransaction({
@@ -588,81 +478,7 @@ async function validateTaskByRule(
       return { isValid: true };
     }
 
-    case 'play_game': {
-      // Play game(s) - can specify gameId
-      const gameId = rule.gameId;
 
-      let query = supabase
-        .from('user_game_plays')
-        .select('*', { count: 'exact', head: false })
-        .eq('user_id', userId)
-        .gte('played_at', taskCreatedAt);
-
-      if (gameId) {
-        query = query.eq('game_id', gameId);
-      }
-
-      const { count, error } = await query;
-
-      if (error) {
-        console.error('Error checking game plays:', error);
-        return { isValid: false, message: 'Error validating task requirements' };
-      }
-
-      if ((count || 0) < requiredCount) {
-        return {
-          isValid: false,
-          message: `You need to play at least ${requiredCount} game(s) to complete this task. You have played ${count || 0} game(s) since this task was created.`,
-        };
-      }
-      return { isValid: true };
-    }
-
-    case 'buy_stock': {
-      // Buy stock(s) - can specify stockSymbol
-      const stockSymbol = rule.stockSymbol;
-
-      let query = supabase
-        .from('stock_transactions')
-        .select(`
-          id,
-          stocks:stock_id (
-            symbol
-          )
-        `)
-        .eq('user_id', userId)
-        .eq('transaction_type', 'buy')
-        .gte('created_at', taskCreatedAt);
-
-      const { data: transactions, error } = await query;
-
-      if (error) {
-        console.error('Error checking stocks:', error);
-        return { isValid: false, message: 'Error validating task requirements' };
-      }
-
-      let matchingTransactions = transactions || [];
-      if (stockSymbol) {
-        matchingTransactions = matchingTransactions.filter((tx: any) => {
-          return tx.stocks && tx.stocks.symbol === stockSymbol;
-        });
-      }
-
-      if (matchingTransactions.length < requiredCount) {
-        if (stockSymbol) {
-          return {
-            isValid: false,
-            message: `You need to buy at least ${requiredCount} stock(s) with symbol "${stockSymbol}" to complete this task. You have bought ${matchingTransactions.length} matching stock(s) since this task was created.`,
-          };
-        } else {
-          return {
-            isValid: false,
-            message: `You need to buy at least ${requiredCount} stock(s) to complete this task. You have bought ${matchingTransactions.length} stock(s) since this task was created.`,
-          };
-        }
-      }
-      return { isValid: true };
-    }
 
     case 'complete_tasks': {
       // Complete other task(s)

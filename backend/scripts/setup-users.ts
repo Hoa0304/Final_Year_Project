@@ -8,7 +8,7 @@ async function setupUsers() {
     {
       email: 'admin@hmall.com',
       password: 'admin123',
-      fullName: 'Admin User',
+      fullName: 'Super Admin',
       role: 'admin',
       balance: 100000.00
     },
@@ -18,6 +18,13 @@ async function setupUsers() {
       fullName: 'Vendor User',
       role: 'vendor',
       balance: 5000.00
+    },
+    {
+      email: 'buyer@hmall.com',
+      password: 'buyer123',
+      fullName: 'Buyer User',
+      role: 'user',
+      balance: 10000.00
     }
   ];
 

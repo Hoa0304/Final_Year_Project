@@ -33,7 +33,7 @@ export default function TasksScreen() {
       // Invalidate notifications to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
-      Alert.alert('Success', `Task completed! You earned ${data.reward} coins.`);
+      Alert.alert('Success', `You've earned ${Math.round(data.reward).toLocaleString('en-US')} Shopee Coins!`);
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
     },
@@ -54,21 +54,21 @@ export default function TasksScreen() {
 
   function handleDoIt(actionType: string) {
     console.log('handleDoIt called with actionType:', actionType);
-    
+
     // Navigate to the appropriate screen based on action type
     // Use CommonActions to navigate to tabs in the same Tab Navigator
     let targetScreen = '';
-    
+
     switch (actionType) {
       case 'marketplace':
         targetScreen = 'Marketplace';
         break;
       case 'games':
-        targetScreen = 'Games';
-        break;
+        Alert.alert('Info', 'The Games feature has been discontinued.');
+        return;
       case 'stocks':
-        targetScreen = 'Stocks';
-        break;
+        Alert.alert('Info', 'The Stocks feature has been discontinued.');
+        return;
       case 'tasks':
         // Already on tasks screen, just scroll to top or show message
         Alert.alert('Info', 'Complete other tasks first to unlock this one!');
@@ -109,7 +109,6 @@ export default function TasksScreen() {
   function renderTask({ item }: { item: Task }) {
     const isCompleted = item.userStatus === 'completed' || item.userStatus === 'claimed';
     const canComplete = item.canComplete ?? false;
-    // Handle undefined actionType (convert to null)
     const actionType = item.actionType ?? null;
 
     return (
@@ -125,25 +124,25 @@ export default function TasksScreen() {
         {item.description && <Text style={styles.taskDescription}>{item.description}</Text>}
         <View style={styles.taskFooter}>
           <View style={styles.rewardContainer}>
-            <Ionicons name="cash" size={20} color="#FF9500" />
-            <Text style={styles.rewardAmount}>{item.reward_amount.toFixed(2)} coins</Text>
+            <Ionicons name="logo-bitcoin" size={18} color="#F59E0B" />
+            <Text style={styles.rewardAmount}>{Math.round(item.reward_amount).toLocaleString('vi-VN')} xu</Text>
           </View>
           {isCompleted ? (
-            <TouchableOpacity style={styles.completeButtonDisabled} disabled>
-              <Text style={styles.completeButtonText}>Completed</Text>
-            </TouchableOpacity>
+            <View style={styles.completeButtonDisabled}>
+              <Text style={styles.completeButtonTextDisabled}>Claimed</Text>
+            </View>
           ) : canComplete ? (
-          <TouchableOpacity
+            <TouchableOpacity
               style={styles.completeButton}
-            onPress={() => handleCompleteTask(item.id)}
-              disabled={completeTaskMutation.isLoading}
-          >
-            {completeTaskMutation.isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-                <Text style={styles.completeButtonText}>Complete</Text>
-            )}
-          </TouchableOpacity>
+              onPress={() => handleCompleteTask(item.id)}
+              disabled={completeTaskMutation.isPending}
+            >
+              {completeTaskMutation.isPending ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.completeButtonText}>Claim Reward</Text>
+              )}
+            </TouchableOpacity>
           ) : (
             <TouchableOpacity
               style={styles.doItButton}
@@ -153,12 +152,12 @@ export default function TasksScreen() {
                   handleDoIt(actionType);
                 } else {
                   console.log('No actionType available for task:', item.title);
-                  Alert.alert('Info', 'This task does not require a specific action. Please complete the requirements manually.');
+                  Alert.alert('Information', 'This task does not have a direct link. Please perform the action manually.');
                 }
               }}
             >
-              <Ionicons name="arrow-forward" size={16} color="#007AFF" style={{ marginRight: 4 }} />
-              <Text style={styles.doItButtonText}>Do it</Text>
+              <Text style={styles.doItButtonText}>Start Now</Text>
+              <Ionicons name="chevron-forward" size={16} color="#818CF8" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           )}
         </View>
@@ -166,34 +165,71 @@ export default function TasksScreen() {
     );
   }
 
+  const totalAvailableReward = tasks
+    ?.filter((t) => t.userStatus !== 'completed' && t.userStatus !== 'claimed')
+    .reduce((sum, t) => sum + t.reward_amount, 0) || 0;
+  const completedCount = tasks?.filter((t) => t.userStatus === 'completed' || t.userStatus === 'claimed').length || 0;
+  const totalCount = tasks?.length || 0;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>Tasks</Text>
-          <Text style={styles.subtitle}>Complete tasks to earn rewards!</Text>
-        </View>
-      </View>
-      <FlatList
-        data={tasks}
-        renderItem={renderTask}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={refetch} />}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No tasks available</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#020617" />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#F8FAFC" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.title}>Earn Coins Challenges</Text>
+            <Text style={styles.subtitle}>Complete challenges to earn Shopee Coins!</Text>
           </View>
-        }
-      />
-    </View>
+        </View>
+
+        {/* Hero stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Ionicons name="logo-bitcoin" size={22} color="#F59E0B" />
+            <Text style={styles.statValue}>{Math.round(totalAvailableReward).toLocaleString('en-US')}</Text>
+            <Text style={styles.statLabel}>Available</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCard}>
+            <Ionicons name="checkmark-circle" size={22} color="#10B981" />
+            <Text style={styles.statValue}>{completedCount}/{totalCount}</Text>
+            <Text style={styles.statLabel}>Claimed</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCard}>
+            <Ionicons name="trophy" size={22} color="#818CF8" />
+            <Text style={styles.statValue}>{totalCount - completedCount}</Text>
+            <Text style={styles.statLabel}>Remaining</Text>
+          </View>
+        </View>
+
+        <FlatList
+          data={tasks}
+          renderItem={renderTask}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading || false}
+              onRefresh={refetch}
+              tintColor="#6366F1"
+              colors={['#6366F1']}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="construct-outline" size={48} color="#475569" style={{ marginBottom: 12 }} />
+              <Text style={styles.emptyText}>No tasks available at this time</Text>
+            </View>
+          }
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -201,90 +237,132 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: Platform.OS === 'ios' ? 80 : StatusBar.currentHeight || 0,
+    backgroundColor: '#020617',
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
   },
   header: {
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: '#020617',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
     flexDirection: 'row',
     alignItems: 'center',
   },
   backButton: {
     marginRight: 12,
-    padding: 4,
+    padding: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   headerContent: {
     flex: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#94A3B8',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#0F172A',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    padding: 14,
+    alignItems: 'center',
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: '#1E293B',
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#F1F5F9',
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#64748B',
+    textAlign: 'center',
   },
   listContent: {
-    padding: 15,
+    padding: 16,
+    paddingBottom: 40,
   },
   taskCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   taskHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 10,
+    gap: 12,
   },
   taskTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
-    color: '#000',
+    color: '#F8FAFC',
   },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
   },
   statusBadgeCompleted: {
-    backgroundColor: '#34C759',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.2)',
   },
   statusText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
+    fontSize: 11,
+    color: '#818CF8',
+    fontWeight: 'bold',
   },
   statusTextCompleted: {
-    color: '#fff',
+    color: '#10B981',
   },
   taskDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 15,
+    color: '#94A3B8',
+    marginBottom: 16,
+    lineHeight: 20,
   },
   taskFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(30, 41, 59, 0.4)',
+    paddingTop: 14,
   },
   rewardContainer: {
     flexDirection: 'row',
@@ -293,43 +371,64 @@ const styles = StyleSheet.create({
   rewardAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#FF9500',
-    marginLeft: 5,
+    color: '#F59E0B',
+    marginLeft: 6,
   },
   completeButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 12,
+    minWidth: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   completeButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    minWidth: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   completeButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
+  },
+  completeButtonTextDisabled: {
+    color: '#475569',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   doItButton: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
   },
   doItButtonText: {
-    color: '#007AFF',
+    color: '#818CF8',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   emptyContainer: {
-    padding: 40,
+    padding: 60,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 14,
+    color: '#94A3B8',
+    textAlign: 'center',
   },
 });
 

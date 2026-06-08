@@ -22,13 +22,7 @@ export async function getSpendingRecommendations(): Promise<Recommendation[]> {
   return response.data.recommendations;
 }
 
-/**
- * Get investing recommendations
- */
-export async function getInvestingRecommendations(): Promise<Recommendation[]> {
-  const response = await api.get<RecommendationsResponse>('/recommendations/investing');
-  return response.data.recommendations;
-}
+
 
 /**
  * ML Recommendation interface

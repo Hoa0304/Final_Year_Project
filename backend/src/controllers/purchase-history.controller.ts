@@ -25,17 +25,15 @@ export async function getPurchaseHistory(req: AuthRequest, res: Response) {
 
     // Transform data from view
     const history = purchases?.map((p: any) => ({
-      orderId: p.order_id,
+      id: p.order_id,
       productId: p.product_id,
       productName: p.product_name,
-      productImage: p.product_image,
+      productImageUrl: p.product_image,
       productCategory: p.product_category,
-      productPriceAtPurchase: p.product_price_at_purchase,
+      productPrice: p.product_price_at_purchase,
       quantity: p.quantity,
       totalAmount: p.total_amount,
-      transactionId: p.transaction_id,
-      transactionDescription: p.transaction_description,
-      transactionLabel: p.transaction_label,
+      status: p.status,
       purchasedAt: p.purchased_at
     })) || [];
 

@@ -50,7 +50,7 @@ export interface ProductFilters {
 
 export async function getProducts(filters?: ProductFilters): Promise<Product[]> {
   const params: any = {};
-  
+
   if (filters?.category) params.category = filters.category;
   if (filters?.search) params.search = filters.search;
   if (filters?.minPrice !== undefined) params.minPrice = filters.minPrice;

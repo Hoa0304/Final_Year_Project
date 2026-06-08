@@ -556,33 +556,52 @@ export async function getAllTransactions(req: Request, res: Response) {
   }
 }
 
+
+
 /**
- * Sync user balances from database to blockchain (admin only)
- * This is useful when users were created before blockchain was enabled
+ * Approve or reject a product
  */
-export async function syncBalancesToBlockchainController(req: AuthRequest, res: Response) {
+export async function approveProduct(req: Request, res: Response) {
   try {
-    // Import sync function
-    const { syncBalancesToBlockchain } = await import('../scripts/sync-balances-to-blockchain');
-    
-    // This is an async operation, so we'll start it and return immediately
-    // In production, you might want to use a job queue
-    syncBalancesToBlockchain()
-      .then(() => {
-        console.log('✅ Balance sync completed');
-      })
-      .catch((error) => {
-        console.error('❌ Balance sync failed:', error);
-      });
+    const { id } = req.params;
+    const { status, reason } = req.body;
+    const adminId = (req as AuthRequest).user!.userId;
+
+    if (!['approved', 'rejected', 'hidden'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be approved, rejected or hidden' });
+    }
+
+    const { data: product, error } = await supabase
+      .from('products')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Approve product error:', error);
+      return res.status(500).json({ error: 'Failed to update product status' });
+    }
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Log the moderation action
+    await supabase.from('moderation_logs').insert({
+      admin_id: adminId,
+      action: status === 'approved' ? 'approve_product' : 'reject_product',
+      target_id: id,
+      target_type: 'product',
+      details: { reason }
+    });
 
     res.json({
-      message: 'Balance sync started. Check server logs for progress.',
-      note: 'This operation may take a while. Check server logs for details.',
+      message: `Product ${status} successfully`,
+      product
     });
-  } catch (error: any) {
-    console.error('Sync balances error:', error);
-    res.status(500).json({ error: 'Failed to start balance sync' });
+  } catch (error) {
+    console.error('Approve product error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 }
-
-

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,37 +11,26 @@ import {
   Image,
   TouchableOpacity,
   Alert,
-  ScrollView,
-  TextInput,
-  Modal,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCart, updateCartItem, removeFromCart, clearCart, CartItem } from '../../services/shopping-cart.service';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { purchaseProduct, Product } from '../../services/product.service';
-import { getVendorVouchers, getUserIssuedVouchers, Voucher, claimVoucher } from '../../services/voucher.service';
+import { purchaseProduct } from '../../services/product.service';
 import { getVendorsByIds, Vendor } from '../../services/vendor.service';
 import { calculateDiscountedPrice } from '../../utils/price.utils';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface VendorGroup {
   vendorId: string;
   vendor?: Vendor;
   items: CartItem[];
-  selectedVoucherId?: string;
-  selectedVoucherCode?: string;
 }
 
 export default function ShoppingCartScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
-  const [selectedVouchers, setSelectedVouchers] = useState<Record<string, { voucherId?: string; voucherCode?: string }>>({});
-  const [voucherModalVisible, setVoucherModalVisible] = useState<Record<string, boolean>>({});
-  const [voucherCodeInput, setVoucherCodeInput] = useState<Record<string, string>>({});
 
   const { data: cartData, isLoading, refetch } = useQuery({
     queryKey: ['cart'],
@@ -53,7 +42,7 @@ export default function ShoppingCartScreen() {
   // Group cart items by vendor
   const vendorGroups = useMemo(() => {
     const groups: Record<string, VendorGroup> = {};
-    
+
     cartItems.forEach((item) => {
       const vendorId = item.product?.created_by || 'unknown';
       if (!groups[vendorId]) {
@@ -88,40 +77,6 @@ export default function ShoppingCartScreen() {
     }));
   }, [vendorGroups, vendors]);
 
-  // Fetch vouchers for each vendor
-  const vendorVouchersQueries = useQuery({
-    queryKey: ['vendor-vouchers-cart', vendorIds],
-    queryFn: async () => {
-      const vouchersMap: Record<string, Voucher[]> = {};
-      await Promise.all(
-        vendorIds.map(async (vendorId) => {
-          try {
-            const vouchers = await getVendorVouchers(vendorId);
-            vouchersMap[vendorId] = vouchers;
-          } catch (error) {
-            console.error(`Error fetching vouchers for vendor ${vendorId}:`, error);
-            vouchersMap[vendorId] = [];
-          }
-        })
-      );
-      return vouchersMap;
-    },
-    enabled: vendorIds.length > 0,
-  });
-
-  const vendorVouchers = vendorVouchersQueries.data || {};
-
-  // Fetch user's issued vouchers to check if vouchers are already claimed
-  const { data: userIssuedVouchers = [] } = useQuery({
-    queryKey: ['user-issued-vouchers-cart'],
-    queryFn: getUserIssuedVouchers,
-  });
-
-  // Create a set of claimed voucher IDs
-  const claimedVoucherIds = useMemo(() => {
-    return new Set(userIssuedVouchers.map((issuance: any) => issuance.voucher_id || issuance.vouchers?.id));
-  }, [userIssuedVouchers]);
-
   const updateItemMutation = useMutation({
     mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
       updateCartItem(itemId, quantity),
@@ -141,40 +96,13 @@ export default function ShoppingCartScreen() {
     mutationFn: clearCart,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      Alert.alert('Success', 'Cart cleared');
-    },
-  });
-
-  const claimVoucherMutation = useMutation({
-    mutationFn: (voucherId: string) => claimVoucher(voucherId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-issued-vouchers-cart'] });
-      queryClient.invalidateQueries({ queryKey: ['vendor-vouchers-cart'] });
-      Alert.alert('Success', 'Voucher claimed successfully!');
-    },
-    onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to claim voucher');
+      Alert.alert('Success', 'Cart cleared successfully');
     },
   });
 
   const purchaseMutation = useMutation({
-    mutationFn: async ({ 
-      productId, 
-      quantity, 
-      voucherId, 
-      voucherCode 
-    }: { 
-      productId: string; 
-      quantity: number; 
-      voucherId?: string; 
-      voucherCode?: string;
-    }) => {
-      await purchaseProduct({ 
-        productId, 
-        quantity, 
-        voucherId, 
-        voucherCode 
-      });
+    mutationFn: async ({ productId, quantity }: { productId: string; quantity: number }) => {
+      await purchaseProduct({ productId, quantity });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
@@ -185,10 +113,8 @@ export default function ShoppingCartScreen() {
 
   function handleQuantityChange(item: CartItem, delta: number) {
     const newQuantity = item.quantity + delta;
-    if (newQuantity < 1) {
-      Alert.alert('Error', 'Quantity must be at least 1');
-      return;
-    }
+    if (newQuantity < 1) return;
+
     const stockQuantity = item.product?.stockQuantity || item.stockQuantity || 0;
     if (newQuantity > stockQuantity) {
       Alert.alert('Error', 'Insufficient stock');
@@ -200,8 +126,8 @@ export default function ShoppingCartScreen() {
   function handleRemoveItem(item: CartItem) {
     const productName = item.product?.name || item.productName || 'this item';
     Alert.alert(
-      'Remove Item',
-      `Remove ${productName} from cart?`,
+      'Remove Product',
+      `Are you sure you want to remove ${productName} from the cart?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -213,43 +139,20 @@ export default function ShoppingCartScreen() {
     );
   }
 
-  // Calculate total for a vendor group with discount and voucher
-  function calculateVendorGroupTotal(group: VendorGroup): { original: number; discount: number; voucherDiscount: number; final: number } {
+  // Calculate total for a vendor group
+  function calculateVendorGroupTotal(group: VendorGroup): { original: number; final: number } {
     let original = 0;
-    
+
     group.items.forEach((item) => {
       const product = item.product;
       if (product) {
-        const discountedPrice = calculateDiscountedPrice(product.price, product.discountPercentage);
-        original += discountedPrice * item.quantity;
+        original += product.price * item.quantity;
       } else {
         original += (item.productPrice || 0) * item.quantity;
       }
     });
 
-    const discount = 0; // Product discount already applied in discountedPrice
-    let voucherDiscount = 0;
-
-    // Apply voucher discount if selected
-    if (selectedVouchers[group.vendorId]?.voucherId || selectedVouchers[group.vendorId]?.voucherCode) {
-      const vouchers = vendorVouchers[group.vendorId] || [];
-      const selectedVoucher = vouchers.find(
-        v => v.id === selectedVouchers[group.vendorId]?.voucherId || 
-             v.code === selectedVouchers[group.vendorId]?.voucherCode
-      );
-
-      if (selectedVoucher) {
-        if (selectedVoucher.discount_type === 'percentage') {
-          voucherDiscount = original * (selectedVoucher.discount_value / 100);
-        } else if (selectedVoucher.discount_type === 'fixed_amount') {
-          voucherDiscount = Math.min(selectedVoucher.discount_value, original);
-        }
-      }
-    }
-
-    const final = Math.max(0, original - voucherDiscount);
-
-    return { original, discount, voucherDiscount, final };
+    return { original, final: original };
   }
 
   // Calculate grand total
@@ -258,111 +161,37 @@ export default function ShoppingCartScreen() {
       const { final } = calculateVendorGroupTotal(group);
       return sum + final;
     }, 0);
-  }, [vendorGroupsWithInfo, selectedVouchers, vendorVouchers]);
+  }, [vendorGroupsWithInfo]);
 
-  async function handleCheckoutVendorGroup(group: VendorGroup) {
-    const { final } = calculateVendorGroupTotal(group);
-    const voucher = selectedVouchers[group.vendorId];
-    const vendorName = group.vendor?.full_name || group.vendor?.email || 'Vendor';
-
-    Alert.alert(
-      'Checkout',
-      `Purchase ${group.items.length} item(s) from ${vendorName} for ${final.toFixed(0)} coins?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Purchase',
-          onPress: async () => {
-            try {
-              // Purchase all items in this vendor group
-              for (const item of group.items) {
-                await purchaseMutation.mutateAsync({ 
-                  productId: item.productId, 
-                  quantity: item.quantity,
-                  voucherId: voucher?.voucherId,
-                  voucherCode: voucher?.voucherCode,
-                });
-              }
-              
-              // Remove items from cart after successful purchase
-              for (const item of group.items) {
-                await removeFromCart(item.id);
-              }
-              
-              queryClient.invalidateQueries({ queryKey: ['cart'] });
-              Alert.alert('Success', `Purchase from ${vendorName} completed!`);
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.error || error.message || 'Failed to complete purchase');
-            }
-          },
-        },
-      ]
-    );
-  }
-
-  function handleSelectVoucher(group: VendorGroup, voucherId?: string, voucherCode?: string) {
-    setSelectedVouchers(prev => ({
-      ...prev,
-      [group.vendorId]: { voucherId, voucherCode },
-    }));
-    setVoucherModalVisible(prev => ({ ...prev, [group.vendorId]: false }));
-  }
-
-  function handleApplyVoucherCode(group: VendorGroup) {
-    const code = voucherCodeInput[group.vendorId]?.trim();
-    if (!code) {
-      Alert.alert('Error', 'Please enter a voucher code');
-      return;
-    }
-
-    // Check if voucher code exists in vendor vouchers
-    const vouchers = vendorVouchers[group.vendorId] || [];
-    const voucher = vouchers.find(v => v.code.toLowerCase() === code.toLowerCase());
-    
-    if (voucher) {
-      handleSelectVoucher(group, voucher.id, voucher.code);
-      setVoucherCodeInput(prev => ({ ...prev, [group.vendorId]: '' }));
-    } else {
-      Alert.alert('Error', 'Invalid voucher code');
-    }
+  function handleCheckoutVendorGroup(group: VendorGroup) {
+    navigation.navigate('Checkout', { cartItems: group.items, vendor: group.vendor });
   }
 
   function renderVendorGroup({ item: group }: { item: VendorGroup }) {
-    const vouchers = vendorVouchers[group.vendorId] || [];
-    const selectedVoucher = selectedVouchers[group.vendorId];
-    const { original, discount, voucherDiscount, final } = calculateVendorGroupTotal(group);
-    const vendorName = group.vendor?.full_name || group.vendor?.email || 'Unknown Vendor';
+    const { final } = calculateVendorGroupTotal(group);
+    const vendorName = group.vendor?.full_name || group.vendor?.email || 'Vendor';
 
     return (
       <View style={styles.vendorGroup}>
         <View style={styles.vendorHeader}>
-          <View>
-            <Text style={styles.vendorName}>{vendorName}</Text>
-            <Text style={styles.vendorItemCount}>{group.items.length} item(s)</Text>
+          <View style={styles.vendorTitleRow}>
+            <Ionicons name="storefront-outline" size={18} color="#818CF8" style={{ marginRight: 6 }} />
+            <Text style={styles.vendorName} numberOfLines={1}>{vendorName}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.voucherButton}
-            onPress={() => setVoucherModalVisible(prev => ({ ...prev, [group.vendorId]: true }))}
-          >
-            <Ionicons name="ticket-outline" size={20} color="#007AFF" />
-            <Text style={styles.voucherButtonText}>
-              {selectedVoucher ? 'Change Voucher' : 'Apply Voucher'}
-            </Text>
-          </TouchableOpacity>
+          <Text style={styles.vendorItemCount}>{group.items.length} item(s)</Text>
         </View>
 
         {/* Cart Items */}
         {group.items.map((item) => {
           const product = item.product || {
-            name: item.productName || 'Unknown Product',
+            name: item.productName || 'Unknown product',
             price: item.productPrice || 0,
             imageUrl: item.productImageUrl,
             stockQuantity: item.stockQuantity || 0,
             discountPercentage: null,
           };
 
-          const discountedPrice = calculateDiscountedPrice(product.price, product.discountPercentage);
-          const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
+          const priceVnd = product.price;
 
           return (
             <View key={item.id} style={styles.cartItem}>
@@ -370,83 +199,55 @@ export default function ShoppingCartScreen() {
                 <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
               ) : (
                 <View style={styles.productImagePlaceholder}>
-                  <Ionicons name="image-outline" size={32} color="#ccc" />
+                  <Ionicons name="image-outline" size={24} color="#475569" />
                 </View>
               )}
               <View style={styles.itemInfo}>
                 <Text style={styles.productName} numberOfLines={2}>
                   {product.name}
                 </Text>
+
                 <View style={styles.priceRow}>
-                  {hasDiscount ? (
-                    <>
-                      <Text style={styles.productPriceOriginal}>{product.price.toFixed(0)}</Text>
-                      <Text style={styles.productPrice}>{discountedPrice.toFixed(0)} coins</Text>
-                    </>
-                  ) : (
-                    <Text style={styles.productPrice}>{product.price.toFixed(0)} coins</Text>
-                  )}
+                  <Text style={styles.productPrice}>{priceVnd.toLocaleString('en-US')} VND</Text>
                 </View>
+
                 <View style={styles.quantityControls}>
                   <TouchableOpacity
                     style={styles.quantityButton}
                     onPress={() => handleQuantityChange(item, -1)}
                     disabled={item.quantity <= 1}
                   >
-                    <Ionicons name="remove" size={20} color={item.quantity <= 1 ? '#ccc' : '#007AFF'} />
+                    <Ionicons name="remove" size={16} color={item.quantity <= 1 ? '#475569' : '#818CF8'} />
                   </TouchableOpacity>
                   <Text style={styles.quantityText}>{item.quantity}</Text>
                   <TouchableOpacity
                     style={styles.quantityButton}
                     onPress={() => handleQuantityChange(item, 1)}
-                    disabled={item.quantity >= product.stockQuantity}
+                    disabled={item.quantity >= (product.stockQuantity || 0)}
                   >
                     <Ionicons
                       name="add"
-                      size={20}
-                      color={item.quantity >= product.stockQuantity ? '#ccc' : '#007AFF'}
+                      size={16}
+                      color={item.quantity >= (product.stockQuantity || 0) ? '#475569' : '#818CF8'}
                     />
                   </TouchableOpacity>
                 </View>
               </View>
               <View style={styles.itemActions}>
-                <Text style={styles.subtotal}>{(discountedPrice * item.quantity).toFixed(0)} coins</Text>
+                <Text style={styles.subtotal}>{(priceVnd * item.quantity).toLocaleString('en-US')} VND</Text>
                 <TouchableOpacity onPress={() => handleRemoveItem(item)}>
-                  <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             </View>
           );
         })}
 
-        {/* Selected Voucher Display */}
-        {selectedVoucher && (
-          <View style={styles.selectedVoucherContainer}>
-            <Ionicons name="checkmark-circle" size={20} color="#34C759" />
-            <Text style={styles.selectedVoucherText}>
-              Voucher applied: {selectedVoucher.voucherCode || 'Selected'}
-            </Text>
-            <TouchableOpacity onPress={() => handleSelectVoucher(group)}>
-              <Ionicons name="close-circle" size={20} color="#FF3B30" />
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* Price Summary */}
         <View style={styles.priceSummary}>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Subtotal:</Text>
-            <Text style={styles.priceValue}>{original.toFixed(0)} coins</Text>
-          </View>
-          {voucherDiscount > 0 && (
-            <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Voucher Discount:</Text>
-              <Text style={[styles.priceValue, styles.discountText]}>-{voucherDiscount.toFixed(0)} coins</Text>
-            </View>
-          )}
-          <View style={[styles.priceRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalValue}>{final.toFixed(0)} coins</Text>
+          <View style={[styles.priceRowSummary, styles.totalRow]}>
+            <Text style={styles.totalLabel}>Total price:</Text>
+            <Text style={styles.totalValue}>{final.toLocaleString('en-US')} VND</Text>
           </View>
         </View>
 
@@ -454,162 +255,54 @@ export default function ShoppingCartScreen() {
         <TouchableOpacity
           style={styles.checkoutVendorButton}
           onPress={() => handleCheckoutVendorGroup(group)}
-          disabled={purchaseMutation.isPending}
         >
-          <Text style={styles.checkoutVendorButtonText}>
-            Checkout {group.items.length} item(s)
-          </Text>
-        </TouchableOpacity>
-
-        {/* Voucher Selection Modal */}
-        <Modal
-          visible={voucherModalVisible[group.vendorId] || false}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setVoucherModalVisible(prev => ({ ...prev, [group.vendorId]: false }))}
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalOverlay}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          <LinearGradient
+            colors={['#6366F1', '#4F46E5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.checkoutVendorButtonGradient}
           >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={() => {}}>
-                  <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Voucher</Text>
-                <TouchableOpacity
-                  onPress={() => setVoucherModalVisible(prev => ({ ...prev, [group.vendorId]: false }))}
-                >
-                  <Ionicons name="close" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView style={styles.voucherList}>
-                {/* Voucher Code Input */}
-                <View style={styles.voucherCodeContainer}>
-                  <TextInput
-                    style={styles.voucherCodeInput}
-                    placeholder="Enter voucher code"
-                    placeholderTextColor="#999"
-                    value={voucherCodeInput[group.vendorId] || ''}
-                    onChangeText={(text) => setVoucherCodeInput(prev => ({ ...prev, [group.vendorId]: text }))}
-                    color="#000"
-                  />
-                  <TouchableOpacity
-                    style={styles.applyCodeButton}
-                    onPress={() => handleApplyVoucherCode(group)}
-                  >
-                    <Text style={styles.applyCodeButtonText}>Apply</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* No Voucher Option */}
-                <TouchableOpacity
-                  style={[styles.voucherOption, !selectedVoucher && styles.voucherOptionSelected]}
-                  onPress={() => handleSelectVoucher(group)}
-                >
-                  <Text style={styles.voucherOptionText}>No Voucher</Text>
-                </TouchableOpacity>
-
-                {/* Available Vouchers */}
-                {vouchers.map((voucher) => {
-                  const isClaimed = claimedVoucherIds.has(voucher.id);
-                  const isOutOfStock = voucher.total_usage_limit && voucher.current_usage_count >= voucher.total_usage_limit;
-                  const isExpired = new Date(voucher.expires_at) < new Date();
-                  const isSelected = selectedVoucher?.voucherId === voucher.id || selectedVoucher?.voucherCode === voucher.code;
-                  const canUse = isClaimed && !isOutOfStock && !isExpired;
-
-                  return (
-                    <View key={voucher.id} style={styles.voucherCard}>
-                      <View style={styles.voucherCardHeader}>
-                        <Text style={styles.voucherCardCode}>{voucher.code}</Text>
-                        {isSelected && (
-                          <Ionicons name="checkmark-circle" size={20} color="#34C759" />
-                        )}
-                      </View>
-                      <Text style={styles.voucherCardTitle}>{voucher.title}</Text>
-                      {voucher.description && (
-                        <Text style={styles.voucherCardDescription}>{voucher.description}</Text>
-                      )}
-                      <View style={styles.voucherCardDiscount}>
-                        <Text style={styles.voucherCardDiscountText}>
-                          {voucher.discount_value}
-                          {voucher.discount_type === 'percentage' ? '% OFF' : ' coins'}
-                        </Text>
-                      </View>
-                      <View style={styles.voucherCardDetails}>
-                        <Text style={styles.voucherCardDetailText}>
-                          Expires: {new Date(voucher.expires_at).toLocaleDateString()}
-                        </Text>
-                        {voucher.total_usage_limit && (
-                          <Text style={styles.voucherCardDetailText}>
-                            Remaining: {voucher.total_usage_limit - voucher.current_usage_count} / {voucher.total_usage_limit}
-                          </Text>
-                        )}
-                      </View>
-                      {!isClaimed && voucher.is_claimable && !isOutOfStock && !isExpired && (
-                        <TouchableOpacity
-                          style={styles.claimVoucherButton}
-                          onPress={() => {
-                            claimVoucherMutation.mutate(voucher.id);
-                          }}
-                          disabled={claimVoucherMutation.isPending}
-                        >
-                          <Text style={styles.claimVoucherButtonText}>
-                            {claimVoucherMutation.isPending ? 'Claiming...' : 'Claim First'}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                      {canUse && (
-                        <TouchableOpacity
-                          style={[styles.selectVoucherButton, isSelected && styles.selectVoucherButtonSelected]}
-                          onPress={() => handleSelectVoucher(group, voucher.id, voucher.code)}
-                        >
-                          <Text style={[styles.selectVoucherButtonText, isSelected && styles.selectVoucherButtonTextSelected]}>
-                            {isSelected ? 'Selected' : 'Select'}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                      {!canUse && !voucher.is_claimable && (
-                        <Text style={styles.voucherNotAvailableText}>Not available</Text>
-                      )}
-                    </View>
-                  );
-                })}
-
-                {vouchers.length === 0 && (
-                  <Text style={styles.noVouchersText}>No vouchers available for this vendor</Text>
-                )}
-              </ScrollView>
-                  </View>
-                </TouchableWithoutFeedback>
-              </View>
-            </TouchableWithoutFeedback>
-          </KeyboardAvoidingView>
-        </Modal>
+            <Text style={styles.checkoutVendorButtonText}>
+              Checkout this group ({final.toLocaleString('en-US')} VND)
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-      >
-        <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#020617" />
+
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color="#F8FAFC" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Shopping Cart</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <View style={styles.container}>
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text>Loading cart...</Text>
+            <ActivityIndicator size="large" color="#6366F1" />
+            <Text style={styles.loadingText}>Loading shopping cart...</Text>
           </View>
         ) : vendorGroupsWithInfo.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="cart-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>Your cart is empty</Text>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="cart-outline" size={64} color="#6366F1" />
+            </View>
+            <Text style={styles.emptyTextTitle}>Your shopping cart is empty</Text>
+            <Text style={styles.emptyTextSub}>Explore products in the Marketplace</Text>
+            <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={() => navigation.navigate('Marketplace')}
+            >
+              <Text style={styles.exploreButtonText}>Shop Now</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
@@ -618,12 +311,25 @@ export default function ShoppingCartScreen() {
               renderItem={renderVendorGroup}
               keyExtractor={(item) => item.vendorId}
               contentContainerStyle={styles.listContent}
-              refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={refetch} />}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isLoading || false}
+                  onRefresh={refetch}
+                  tintColor="#6366F1"
+                  colors={['#6366F1']}
+                  progressBackgroundColor="#0F172A"
+                />
+              }
             />
+
+            {/* Grand Total Footer */}
             <View style={styles.footer}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Grand Total:</Text>
-                <Text style={styles.totalAmount}>{grandTotal.toFixed(0)} coins</Text>
+              <View style={styles.grandTotalRow}>
+                <View>
+                  <Text style={styles.grandTotalLabel}>Total payment:</Text>
+                  <Text style={styles.grandTotalSub}>You can use Shopee Coins for a discount at checkout</Text>
+                </View>
+                <Text style={styles.grandTotalAmount}>{grandTotal.toLocaleString('en-US')} VND</Text>
               </View>
               <View style={styles.footerButtons}>
                 <TouchableOpacity
@@ -631,17 +337,18 @@ export default function ShoppingCartScreen() {
                   onPress={() => {
                     Alert.alert(
                       'Clear Cart',
-                      'Remove all items from cart?',
+                      'Are you sure you want to remove all products from the cart?',
                       [
                         { text: 'Cancel', style: 'cancel' },
                         {
-                          text: 'Clear',
+                          text: 'Clear All',
                           style: 'destructive',
                           onPress: () => clearCartMutation.mutate(),
                         },
                       ]
                     );
                   }}
+                  disabled={clearCartMutation.isPending}
                 >
                   <Text style={styles.clearButtonText}>Clear All</Text>
                 </TouchableOpacity>
@@ -649,8 +356,7 @@ export default function ShoppingCartScreen() {
             </View>
           </>
         )}
-        </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -658,411 +364,306 @@ export default function ShoppingCartScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: Platform.OS === 'ios' ? 80 : StatusBar.currentHeight || 0,
+    backgroundColor: '#020617', // Dark background
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#020617',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+  },
+  backButton: {
+    padding: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#F8FAFC',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#94A3B8',
+  },
   listContent: {
-    padding: 15,
-    paddingBottom: 100,
+    padding: 16,
+    paddingBottom: 150,
   },
   vendorGroup: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   vendorHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-    paddingBottom: 15,
+    marginBottom: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
   },
-  vendorName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  vendorItemCount: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  voucherButton: {
+  vendorTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 6,
+    flex: 1,
+    marginRight: 8,
   },
-  voucherButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#007AFF',
+  vendorName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#F8FAFC',
+  },
+  vendorItemCount: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
   },
   cartItem: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
+    backgroundColor: 'rgba(30, 41, 59, 0.3)',
+    borderRadius: 14,
     padding: 12,
-    marginBottom: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 41, 59, 0.6)',
   },
   productImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
+    width: 70,
+    height: 70,
+    borderRadius: 10,
     marginRight: 12,
   },
   productImagePlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   itemInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
   productName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#000',
-    marginBottom: 4,
+    color: '#F8FAFC',
+    marginBottom: 6,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 6,
     marginBottom: 8,
   },
   productPrice: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#007AFF',
+    fontWeight: 'bold',
+    color: '#34D399', // Emerald color
   },
   productPriceOriginal: {
     fontSize: 12,
-    color: '#999',
+    color: '#64748B',
     textDecorationLine: 'line-through',
+  },
+  discountBadge: {
+    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  discountBadgeText: {
+    fontSize: 10,
+    color: '#34D399',
+    fontWeight: 'bold',
   },
   quantityControls: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   quantityButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#f0f0f0',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   quantityText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginHorizontal: 12,
-    minWidth: 24,
+    minWidth: 20,
     textAlign: 'center',
-    color: '#000',
+    color: '#F8FAFC',
   },
   itemActions: {
     alignItems: 'flex-end',
     justifyContent: 'space-between',
+    paddingLeft: 8,
   },
   subtotal: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#34D399',
     marginBottom: 8,
   },
-  selectedVoucherContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e8f5e9',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-    gap: 8,
-  },
-  selectedVoucherText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#2e7d32',
-    fontWeight: '600',
-  },
   priceSummary: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    marginTop: 8,
   },
-  priceLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  priceValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-  },
-  discountText: {
-    color: '#34C759',
+  priceRowSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
   },
   totalRow: {
-    marginTop: 8,
-    paddingTop: 8,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#1E293B',
   },
   totalLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#94A3B8',
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#818CF8',
   },
   checkoutVendorButton: {
-    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 16,
+  },
+  checkoutVendorButtonGradient: {
     paddingVertical: 12,
-    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 15,
+    justifyContent: 'center',
   },
   checkoutVendorButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingBottom: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  voucherList: {
-    padding: 20,
-  },
-  voucherCodeContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  voucherCodeInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#000',
-  },
-  applyCodeButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    justifyContent: 'center',
-  },
-  applyCodeButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  voucherOption: {
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  voucherOptionSelected: {
-    backgroundColor: '#e3f2fd',
-    borderWidth: 2,
-    borderColor: '#007AFF',
-  },
-  voucherOptionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
-  voucherCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-  },
-  voucherCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  voucherCardCode: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  voucherCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 4,
-  },
-  voucherCardDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontWeight: 'bold',
   },
-  voucherCardDiscount: {
-    marginBottom: 8,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 80,
   },
-  voucherCardDiscountText: {
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyTextTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#34C759',
-  },
-  voucherCardDetails: {
-    marginBottom: 10,
-  },
-  voucherCardDetailText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  claimVoucherButton: {
-    backgroundColor: '#FF9500',
-    padding: 10,
-    borderRadius: 6,
-    alignItems: 'center',
+    color: '#F8FAFC',
     marginBottom: 8,
   },
-  claimVoucherButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  selectVoucherButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  selectVoucherButtonSelected: {
-    backgroundColor: '#34C759',
-  },
-  selectVoucherButtonText: {
-    color: '#000',
-    fontWeight: '600',
-  },
-  selectVoucherButtonTextSelected: {
-    color: '#fff',
-  },
-  voucherNotAvailableText: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
+  emptyTextSub: {
+    fontSize: 14,
+    color: '#94A3B8',
     textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
   },
-  noVouchersText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 20,
+  exploreButton: {
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  exploreButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
   footer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
-    padding: 15,
+    backgroundColor: '#0F172A',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#1E293B',
+    padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
   },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+  grandTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  totalAmount: {
-    fontSize: 24,
+  grandTotalLabel: {
+    fontSize: 15,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#F8FAFC',
+  },
+  grandTotalSub: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  grandTotalAmount: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#818CF8',
   },
   footerButtons: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
   },
   footerButton: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   clearButton: {
-    backgroundColor: '#f0f0f0',
-  },
-  checkoutButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   clearButtonText: {
-    color: '#666',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  checkoutButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 15,
+    color: '#EF4444',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

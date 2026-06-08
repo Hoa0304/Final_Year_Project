@@ -118,8 +118,8 @@ export function requireAdminVendor(req: AuthRequest, res: Response, next: NextFu
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  if (req.user.role !== 'admin_vendor' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'AdminVendor access required' });
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
   }
 
   next();
@@ -134,8 +134,8 @@ export function requireAdminClient(req: AuthRequest, res: Response, next: NextFu
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  if (req.user.role !== 'admin_client' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'AdminClient access required' });
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
   }
 
   next();
@@ -150,7 +150,7 @@ export function requireAnyAdmin(req: AuthRequest, res: Response, next: NextFunct
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const isAdmin = ['admin', 'admin_vendor', 'admin_client'].includes(req.user.role);
+  const isAdmin = req.user.role === 'admin';
   if (!isAdmin) {
     return res.status(403).json({ error: 'Admin access required' });
   }
@@ -175,7 +175,7 @@ export function requireVendor(req: AuthRequest, res: Response, next: NextFunctio
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  if (req.user.role !== 'vendor' && req.user.role !== 'admin' && req.user.role !== 'admin_vendor') {
+  if (req.user.role !== 'vendor' && req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Vendor or Admin access required' });
   }
 
@@ -191,7 +191,7 @@ export function requireAdminOrVendor(req: AuthRequest, res: Response, next: Next
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const isAuthorized = ['admin', 'admin_vendor', 'vendor'].includes(req.user.role);
+  const isAuthorized = ['admin', 'vendor'].includes(req.user.role);
   if (!isAuthorized) {
     return res.status(403).json({ error: 'Admin or Vendor access required' });
   }

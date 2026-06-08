@@ -201,25 +201,25 @@ export default function ExpenseManagementScreen() {
         {/* Total Spending */}
         <View style={[styles.summaryCard, styles.spendingCard]}>
           <View style={styles.summaryCardHeader}>
-            <Ionicons name="arrow-up-circle" size={24} color="#FF3B30" />
-            <Text style={styles.summaryCardLabel}>Total Spending</Text>
+            <Ionicons name="arrow-up-circle" size={24} color="#EF4444" />
+            <Text style={styles.summaryCardLabel}>Total Expense</Text>
           </View>
           <Text style={styles.summaryCardAmount}>
-            {summary.totalSpending.toFixed(2)} coins
+            {Math.round(summary.totalSpending).toLocaleString('vi-VN')} xu
           </Text>
           <Text style={styles.summaryCardSubtext}>
-            {summary.transactionCount} transactions
+            {summary.transactionCount} transaction(s)
           </Text>
         </View>
 
         {/* Total Earnings */}
         <View style={[styles.summaryCard, styles.earningCard]}>
           <View style={styles.summaryCardHeader}>
-            <Ionicons name="arrow-down-circle" size={24} color="#34C759" />
-            <Text style={styles.summaryCardLabel}>Total Earnings</Text>
+            <Ionicons name="arrow-down-circle" size={24} color="#10B981" />
+            <Text style={styles.summaryCardLabel}>Total Income</Text>
           </View>
           <Text style={styles.summaryCardAmount}>
-            {summary.totalEarnings.toFixed(2)} coins
+            {Math.round(summary.totalEarnings).toLocaleString('vi-VN')} xu
           </Text>
         </View>
 
@@ -234,20 +234,20 @@ export default function ExpenseManagementScreen() {
             <Ionicons
               name={summary.netAmount >= 0 ? 'trending-up' : 'trending-down'}
               size={24}
-              color={summary.netAmount >= 0 ? '#34C759' : '#FF3B30'}
+              color={summary.netAmount >= 0 ? '#10B981' : '#EF4444'}
             />
-            <Text style={styles.summaryCardLabel}>Net Amount</Text>
+            <Text style={styles.summaryCardLabel}>Net Balance</Text>
           </View>
           <Text
             style={[
               styles.summaryCardAmount,
               {
-                color: summary.netAmount >= 0 ? '#34C759' : '#FF3B30',
+                color: summary.netAmount >= 0 ? '#10B981' : '#EF4444',
               },
             ]}
           >
             {summary.netAmount >= 0 ? '+' : ''}
-            {summary.netAmount.toFixed(2)} coins
+            {Math.round(summary.netAmount).toLocaleString('vi-VN')} xu
           </Text>
         </View>
       </View>
@@ -264,23 +264,31 @@ export default function ExpenseManagementScreen() {
     const isOverBudget = percentage >= 100;
     const isWarning = percentage >= 80;
 
+    const typeMap: Record<string, string> = {
+      daily: 'Daily Budget',
+      weekly: 'Weekly Budget',
+      monthly: 'Monthly Budget',
+      yearly: 'Yearly Budget',
+    };
+    const budgetLabel = typeMap[budget.budget_type] || 'Budget';
+
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Budget Progress</Text>
           <TouchableOpacity onPress={() => handleSetBudget()}>
-            <Ionicons name="settings-outline" size={20} color="#007AFF" />
+            <Ionicons name="settings-outline" size={20} color="#0ea5e9" />
           </TouchableOpacity>
         </View>
         <View style={styles.budgetCard}>
           <View style={styles.budgetHeader}>
             <View>
               <Text style={styles.budgetLabel}>
-                {budget.budget_type.charAt(0).toUpperCase() + budget.budget_type.slice(1)} Budget
+                {budgetLabel}
               </Text>
-              <Text style={styles.budgetAmount}>{budget.amount.toFixed(2)} coins</Text>
+              <Text style={styles.budgetAmount}>{Math.round(budget.amount).toLocaleString('vi-VN')} xu</Text>
             </View>
-            <View style={[styles.budgetPercentageBadge, { backgroundColor: isOverBudget ? '#FF3B30' : isWarning ? '#FF9500' : '#34C759' }]}>
+            <View style={[styles.budgetPercentageBadge, { backgroundColor: isOverBudget ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981' }]}>
               <Text style={styles.budgetPercentageText}>{percentage.toFixed(0)}%</Text>
             </View>
           </View>
@@ -290,7 +298,7 @@ export default function ExpenseManagementScreen() {
                 styles.budgetProgressFill,
                 {
                   width: `${Math.min(percentage, 100)}%`,
-                  backgroundColor: isOverBudget ? '#FF3B30' : isWarning ? '#FF9500' : '#34C759',
+                  backgroundColor: isOverBudget ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981',
                 },
               ]}
             />
@@ -298,14 +306,14 @@ export default function ExpenseManagementScreen() {
           <View style={styles.budgetDetails}>
             <View style={styles.budgetDetailItem}>
               <Text style={styles.budgetDetailLabel}>Spent</Text>
-              <Text style={[styles.budgetDetailValue, { color: '#FF3B30' }]}>
-                {spent.toFixed(2)} coins
+              <Text style={[styles.budgetDetailValue, { color: '#EF4444' }]}>
+                {Math.round(spent).toLocaleString('vi-VN')} xu
               </Text>
             </View>
             <View style={styles.budgetDetailItem}>
               <Text style={styles.budgetDetailLabel}>Remaining</Text>
-              <Text style={[styles.budgetDetailValue, { color: remaining > 0 ? '#34C759' : '#FF3B30' }]}>
-                {remaining.toFixed(2)} coins
+              <Text style={[styles.budgetDetailValue, { color: remaining > 0 ? '#10B981' : '#EF4444' }]}>
+                {Math.round(remaining).toLocaleString('vi-VN')} xu
               </Text>
             </View>
           </View>
@@ -327,7 +335,7 @@ export default function ExpenseManagementScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Savings Goals</Text>
           <TouchableOpacity onPress={handleCreateSavingsGoal}>
-            <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
+            <Ionicons name="add-circle-outline" size={24} color="#0ea5e9" />
           </TouchableOpacity>
         </View>
         {savingsGoalsData.goals.map((goal) => {
@@ -353,11 +361,11 @@ export default function ExpenseManagementScreen() {
               </View>
               <View style={styles.savingsGoalAmounts}>
                 <Text style={styles.savingsGoalCurrent}>
-                  {goal.current_amount.toFixed(2)} / {goal.target_amount.toFixed(2)} coins
+                  {Math.round(goal.current_amount).toLocaleString('vi-VN')} / {Math.round(goal.target_amount).toLocaleString('vi-VN')} xu
                 </Text>
                 {goal.target_date && (
                   <Text style={styles.savingsGoalDate}>
-                    Target: {new Date(goal.target_date).toLocaleDateString()}
+                    Target: {new Date(goal.target_date).toLocaleDateString('en-US')}
                   </Text>
                 )}
               </View>
@@ -375,7 +383,7 @@ export default function ExpenseManagementScreen() {
     if (!stats || !stats.topCategories || stats.topCategories.length === 0) {
       return (
         <View style={styles.emptyContainer}>
-          <Ionicons name="pie-chart-outline" size={48} color="#ccc" />
+          <Ionicons name="pie-chart-outline" size={48} color="#475569" />
           <Text style={styles.emptyText}>No spending data available</Text>
         </View>
       );
@@ -383,7 +391,7 @@ export default function ExpenseManagementScreen() {
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Top Spending Categories</Text>
+        <Text style={styles.sectionTitle}>Top Expense Categories</Text>
         {stats.topCategories.map((category, index) => (
           <View key={category.category} style={styles.categoryItem}>
             <View style={styles.categoryHeader}>
@@ -396,7 +404,7 @@ export default function ExpenseManagementScreen() {
               </View>
               <View style={styles.categoryAmountContainer}>
                 <Text style={styles.categoryAmount}>
-                  {category.amount.toFixed(2)} coins
+                  {Math.round(category.amount).toLocaleString('vi-VN')} xu
                 </Text>
                 <Text style={styles.categoryPercentage}>
                   {category.percentage.toFixed(1)}%
@@ -425,7 +433,7 @@ export default function ExpenseManagementScreen() {
    * Get color for category based on index
    */
   function getCategoryColor(index: number): string {
-    const colors = ['#007AFF', '#34C759', '#FF9500', '#AF52DE', '#FF3B30'];
+    const colors = ['#38BDF8', '#10B981', '#F59E0B', '#A855F7', '#EF4444'];
     return colors[index % colors.length];
   }
 
@@ -443,7 +451,7 @@ export default function ExpenseManagementScreen() {
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Daily Spending Trend (Last 7 Days)</Text>
+        <Text style={styles.sectionTitle}>Daily Expense Trend (Last 7 Days)</Text>
         <View style={styles.trendContainer}>
           {last7Days.map((day, index) => {
             const date = new Date(day.date);
@@ -458,7 +466,7 @@ export default function ExpenseManagementScreen() {
                       styles.trendBar,
                       {
                         height: `${Math.max(height, 5)}%`,
-                        backgroundColor: '#007AFF',
+                        backgroundColor: '#38BDF8',
                       },
                     ]}
                   />
@@ -488,11 +496,11 @@ export default function ExpenseManagementScreen() {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Category Breakdown</Text>
+          <Text style={styles.sectionTitle}>Category Details</Text>
           <TouchableOpacity
             onPress={() => (navigation as any).navigate('Transactions')}
           >
-            <Text style={styles.seeAllText}>View All</Text>
+            <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>
         {categories.slice(0, 5).map(([category, data]) => (
@@ -507,14 +515,14 @@ export default function ExpenseManagementScreen() {
             <View style={styles.breakdownInfo}>
               <Text style={styles.breakdownCategory}>{category}</Text>
               <Text style={styles.breakdownCount}>
-                {data.count} transaction{data.count !== 1 ? 's' : ''}
+                {data.count} transactions
               </Text>
             </View>
             <View style={styles.breakdownAmountContainer}>
               <Text style={styles.breakdownAmount}>
-                {data.amount.toFixed(2)} coins
+                {Math.round(data.amount).toLocaleString('vi-VN')} xu
               </Text>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+              <Ionicons name="chevron-forward" size={20} color="#64748B" />
             </View>
           </TouchableOpacity>
         ))}
@@ -528,17 +536,17 @@ export default function ExpenseManagementScreen() {
   function getInsightColor(type: string): string {
     switch (type) {
       case 'warning':
-        return '#FF9500';
+        return '#F59E0B';
       case 'alert':
-        return '#FF3B30';
+        return '#EF4444';
       case 'suggestion':
-        return '#007AFF';
+        return '#38BDF8';
       case 'insight':
-        return '#34C759';
+        return '#10B981';
       case 'tip':
-        return '#AF52DE';
+        return '#A855F7';
       default:
-        return '#666';
+        return '#64748B';
     }
   }
 
@@ -568,13 +576,13 @@ export default function ExpenseManagementScreen() {
   function getPriorityColor(priority: string): string {
     switch (priority) {
       case 'high':
-        return '#FF3B30';
+        return '#EF4444';
       case 'medium':
-        return '#FF9500';
+        return '#F59E0B';
       case 'low':
-        return '#34C759';
+        return '#10B981';
       default:
-        return '#666';
+        return '#64748B';
     }
   }
 
@@ -584,13 +592,13 @@ export default function ExpenseManagementScreen() {
   function getActionLabel(actionType?: string): string {
     switch (actionType) {
       case 'budget':
-        return 'set budget';
+        return 'set a budget';
       case 'save':
-        return 'create savings goal';
+        return 'create a savings goal';
       case 'reduce':
-        return 'view transactions';
+        return 'view transaction history';
       case 'earn':
-        return 'earn coins';
+        return 'earn more xu';
       case 'diversify':
         return 'explore marketplace';
       default:
@@ -608,12 +616,18 @@ export default function ExpenseManagementScreen() {
 
     const { insights, prediction } = insightsData;
 
+    const trendMap: Record<string, string> = {
+      increasing: 'Increasing',
+      decreasing: 'Decreasing',
+      stable: 'Stable',
+    };
+
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.aiHeader}>
-            <Ionicons name="sparkles" size={24} color="#007AFF" />
-            <Text style={styles.sectionTitle}>AI Insights & Recommendations</Text>
+            <Ionicons name="sparkles" size={24} color="#38BDF8" />
+            <Text style={styles.sectionTitle}>AI Analytics & Recommendations</Text>
           </View>
         </View>
 
@@ -621,100 +635,101 @@ export default function ExpenseManagementScreen() {
         {prediction && prediction.confidence > 0.3 && (
           <View style={styles.predictionCard}>
             <View style={styles.predictionHeader}>
-              <Ionicons 
-                name={prediction.trend === 'increasing' ? 'trending-up' : prediction.trend === 'decreasing' ? 'trending-down' : 'remove'} 
-                size={20} 
-                color={prediction.trend === 'increasing' ? '#FF3B30' : prediction.trend === 'decreasing' ? '#34C759' : '#666'} 
+              <Ionicons
+                name={prediction.trend === 'increasing' ? 'trending-up' : prediction.trend === 'decreasing' ? 'trending-down' : 'remove'}
+                size={20}
+                color={prediction.trend === 'increasing' ? '#EF4444' : prediction.trend === 'decreasing' ? '#10B981' : '#64748B'}
               />
-              <Text style={styles.predictionTitle}>Next 7 Days Prediction</Text>
+              <Text style={styles.predictionTitle}>Expense Forecast (Next 7 Days)</Text>
             </View>
             <Text style={styles.predictionAmount}>
-              {prediction.predictedAmount.toFixed(2)} coins
+              {Math.round(prediction.predictedAmount).toLocaleString('vi-VN')} xu
             </Text>
             <Text style={styles.predictionTrend}>
-              Trend: {prediction.trend} • Confidence: {(prediction.confidence * 100).toFixed(0)}%
+              Trend: {trendMap[prediction.trend] || prediction.trend} • Confidence: {(prediction.confidence * 100).toFixed(0)}%
             </Text>
           </View>
         )}
 
         {/* Insights List */}
-        {insights.map((insight, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.insightCard,
-              {
-                borderLeftColor: getInsightColor(insight.type),
-                borderLeftWidth: 4,
-              },
-            ]}
-            onPress={() => handleInsightAction(insight)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.insightHeader}>
-              <View style={[styles.insightIcon, { backgroundColor: getInsightColor(insight.type) + '20' }]}>
-                <Ionicons
-                  name={getInsightIcon(insight.type)}
-                  size={20}
-                  color={getInsightColor(insight.type)}
-                />
-              </View>
-              <View style={styles.insightContent}>
-                <Text style={styles.insightTitle}>{insight.title}</Text>
-                <Text style={styles.insightMessage}>{insight.message}</Text>
-                {insight.amount && (
-                  <Text style={styles.insightAmount}>
-                    Amount: {insight.amount.toFixed(2)} coins
-                  </Text>
-                )}
-                {insight.actionType && (
-                  <View style={styles.insightActionHint}>
-                    <Ionicons name="arrow-forward-circle" size={16} color={getInsightColor(insight.type)} />
-                    <Text style={[styles.insightActionText, { color: getInsightColor(insight.type) }]}>
-                      Tap to {getActionLabel(insight.actionType)}
+        {insights.map((insight, index) => {
+          const priorityMap: Record<string, string> = {
+            high: 'HIGH',
+            medium: 'MEDIUM',
+            low: 'LOW',
+          };
+          const priorityLabel = priorityMap[insight.priority] || insight.priority;
+
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.insightCard,
+                {
+                  borderLeftColor: getInsightColor(insight.type),
+                  borderLeftWidth: 4,
+                },
+              ]}
+              onPress={() => handleInsightAction(insight)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.insightHeader}>
+                <View style={[styles.insightIcon, { backgroundColor: getInsightColor(insight.type) + '20' }]}>
+                  <Ionicons
+                    name={getInsightIcon(insight.type)}
+                    size={20}
+                    color={getInsightColor(insight.type)}
+                  />
+                </View>
+                <View style={styles.insightContent}>
+                  <Text style={styles.insightTitle}>{insight.title}</Text>
+                  <Text style={styles.insightMessage}>{insight.message}</Text>
+                  {insight.amount && (
+                    <Text style={styles.insightAmount}>
+                      Amount: {Math.round(insight.amount).toLocaleString('vi-VN')} xu
                     </Text>
-                  </View>
-                )}
+                  )}
+                  {insight.actionType && (
+                    <View style={styles.insightActionHint}>
+                      <Ionicons name="arrow-forward-circle" size={16} color={getInsightColor(insight.type)} />
+                      <Text style={[styles.insightActionText, { color: getInsightColor(insight.type) }]}>
+                        Tap to {getActionLabel(insight.actionType)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(insight.priority) }]}>
+                  <Text style={styles.priorityText}>{priorityLabel}</Text>
+                </View>
               </View>
-              <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(insight.priority) }]}>
-                <Text style={styles.priorityText}>{insight.priority.toUpperCase()}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     );
   }
 
+  const periodLabel = budgetPeriod === 'daily' ? 'Daily' : budgetPeriod === 'weekly' ? 'Weekly' : 'Monthly';
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Expense Management</Text>
+        <View style={styles.placeholder} />
       </View>
       <ScrollView
         style={styles.container}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38BDF8" />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Expense Management</Text>
-          <View style={styles.placeholder} />
-        </View>
-
         {/* Period Selector */}
         {renderPeriodSelector()}
 
@@ -761,43 +776,41 @@ export default function ExpenseManagementScreen() {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
+              <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Set Budget</Text>
-              <TouchableOpacity onPress={() => setShowBudgetModal(false)}>
-                <Ionicons name="close" size={24} color="#000" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.modalLabel}>Budget Amount (coins)</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={budgetAmount}
-              onChangeText={setBudgetAmount}
-              placeholder="Enter budget amount"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              color="#000"
-            />
-            <Text style={styles.modalHint}>
-              Period: {budgetPeriod.charAt(0).toUpperCase() + budgetPeriod.slice(1)}
-            </Text>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonPrimary]}
-              onPress={() => {
-                const amount = parseFloat(budgetAmount);
-                if (amount > 0) {
-                  setBudgetMutation.mutate(amount);
-                } else {
-                  Alert.alert('Error', 'Please enter a valid amount');
-                }
-              }}
-              disabled={setBudgetMutation.isPending}
-            >
-              <Text style={styles.modalButtonText}>
-                {setBudgetMutation.isPending ? 'Setting...' : 'Set Budget'}
-              </Text>
-            </TouchableOpacity>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Set Budget</Text>
+                    <TouchableOpacity onPress={() => setShowBudgetModal(false)}>
+                      <Ionicons name="close" size={24} color="#94A3B8" />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.modalLabel}>Budget Amount (xu)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={budgetAmount}
+                    onChangeText={setBudgetAmount}
+                    placeholder="Enter budget amount"
+                    keyboardType="numeric"
+                  />
+                  <Text style={styles.modalHint}>
+                    Period: {periodLabel}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonPrimary]}
+                    onPress={() => {
+                      const amount = parseFloat(budgetAmount);
+                      if (amount > 0) {
+                        setBudgetMutation.mutate(amount);
+                      } else {
+                        Alert.alert('Error', 'Please enter a valid amount');
+                      }
+                    }}
+                    disabled={setBudgetMutation.isPending}
+                  >
+                    <Text style={styles.modalButtonText}>
+                      {setBudgetMutation.isPending ? 'Setting...' : 'Set Budget'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -819,36 +832,34 @@ export default function ExpenseManagementScreen() {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
+              <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={styles.modalContent}>
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>Create Savings Goal</Text>
                     <TouchableOpacity onPress={() => setShowSavingsGoalModal(false)}>
-                      <Ionicons name="close" size={24} color="#000" />
+                      <Ionicons name="close" size={24} color="#94A3B8" />
                     </TouchableOpacity>
                   </View>
-                  
+
                   <View style={styles.modalBody}>
                     <Text style={styles.modalLabel}>Goal Title</Text>
                     <TextInput
                       style={styles.modalInput}
                       value={savingsGoalTitle}
                       onChangeText={setSavingsGoalTitle}
-                      placeholder="e.g., Save for new product"
-                      placeholderTextColor="#999"
-                      color="#000"
+                      placeholder="e.g., Save for new phone"
+                      placeholderTextColor="#64748B"
                       returnKeyType="next"
                     />
-                    
-                    <Text style={styles.modalLabel}>Target Amount (coins)</Text>
+
+                    <Text style={styles.modalLabel}>Target Amount (xu)</Text>
                     <TextInput
                       style={styles.modalInput}
                       value={savingsGoalAmount}
                       onChangeText={setSavingsGoalAmount}
                       placeholder="Enter target amount"
-                      placeholderTextColor="#999"
+                      placeholderTextColor="#64748B"
                       keyboardType="numeric"
-                      color="#000"
                       returnKeyType="done"
                       onSubmitEditing={() => {
                         const amount = parseFloat(savingsGoalAmount);
@@ -858,11 +869,11 @@ export default function ExpenseManagementScreen() {
                             targetAmount: amount,
                           });
                         } else {
-                          Alert.alert('Error', 'Please fill all fields');
+                          Alert.alert('Error', 'Please fill in all fields');
                         }
                       }}
                     />
-                    
+
                     <TouchableOpacity
                       style={[styles.modalButton, styles.modalButtonPrimary]}
                       onPress={() => {
@@ -873,7 +884,7 @@ export default function ExpenseManagementScreen() {
                             targetAmount: amount,
                           });
                         } else {
-                          Alert.alert('Error', 'Please fill all fields');
+                          Alert.alert('Error', 'Please fill in all fields');
                         }
                       }}
                       disabled={createSavingsGoalMutation.isPending}
@@ -896,22 +907,22 @@ export default function ExpenseManagementScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
     paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
   },
   backButton: {
     padding: 8,
@@ -919,7 +930,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
   },
   placeholder: {
     width: 40,
@@ -927,9 +938,9 @@ const styles = StyleSheet.create({
   periodSelector: {
     flexDirection: 'row',
     padding: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
   },
   periodButton: {
     flex: 1,
@@ -937,15 +948,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginHorizontal: 4,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     alignItems: 'center',
   },
   periodButtonActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0284c7',
   },
   periodButtonText: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     fontWeight: '500',
   },
   periodButtonTextActive: {
@@ -955,10 +966,11 @@ const styles = StyleSheet.create({
   loadingContainer: {
     padding: 40,
     alignItems: 'center',
+    backgroundColor: '#020617',
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
   },
   summaryContainer: {
     flexDirection: 'row',
@@ -969,30 +981,27 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   spendingCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#FF3B30',
+    borderLeftColor: '#EF4444',
   },
   earningCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#34C759',
+    borderLeftColor: '#10B981',
   },
   netPositiveCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#34C759',
+    borderLeftColor: '#10B981',
   },
   netNegativeCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#FF3B30',
+    borderLeftColor: '#EF4444',
   },
   summaryCardHeader: {
     flexDirection: 'row',
@@ -1001,22 +1010,22 @@ const styles = StyleSheet.create({
   },
   summaryCardLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginLeft: 8,
   },
   summaryCardAmount: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 5,
   },
   summaryCardSubtext: {
     fontSize: 12,
-    color: '#999',
+    color: '#64748B',
   },
   section: {
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     marginTop: 10,
   },
   sectionHeader: {
@@ -1028,11 +1037,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 15,
   },
   seeAllText: {
-    color: '#007AFF',
+    color: '#38BDF8',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -1048,7 +1057,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1056,7 +1065,7 @@ const styles = StyleSheet.create({
   categoryRankText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#666',
+    color: '#94A3B8',
   },
   categoryInfo: {
     flex: 1,
@@ -1064,12 +1073,12 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   categoryCount: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   categoryAmountContainer: {
     alignItems: 'flex-end',
@@ -1077,16 +1086,16 @@ const styles = StyleSheet.create({
   categoryAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   categoryPercentage: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -1118,12 +1127,12 @@ const styles = StyleSheet.create({
   },
   trendBarLabel: {
     fontSize: 11,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   trendBarAmount: {
     fontSize: 10,
-    color: '#999',
+    color: '#64748B',
   },
   breakdownItem: {
     flexDirection: 'row',
@@ -1131,7 +1140,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#1E293B',
   },
   breakdownInfo: {
     flex: 1,
@@ -1139,12 +1148,12 @@ const styles = StyleSheet.create({
   breakdownCategory: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   breakdownCount: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   breakdownAmountContainer: {
     flexDirection: 'row',
@@ -1153,16 +1162,17 @@ const styles = StyleSheet.create({
   breakdownAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
     marginRight: 8,
   },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
+    backgroundColor: '#020617',
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: '#64748B',
     marginTop: 15,
   },
   aiHeader: {
@@ -1171,12 +1181,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   predictionCard: {
-    backgroundColor: '#F0F8FF',
+    backgroundColor: '#0F172A',
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#007AFF20',
+    borderColor: '#38BDF820',
   },
   predictionHeader: {
     flexDirection: 'row',
@@ -1187,28 +1197,25 @@ const styles = StyleSheet.create({
   predictionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#38BDF8',
   },
   predictionAmount: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   predictionTrend: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   insightCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     padding: 15,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   insightHeader: {
     flexDirection: 'row',
@@ -1228,18 +1235,18 @@ const styles = StyleSheet.create({
   insightTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   insightMessage: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     lineHeight: 20,
     marginBottom: 4,
   },
   insightAmount: {
     fontSize: 12,
-    color: '#007AFF',
+    color: '#38BDF8',
     fontWeight: '500',
     marginTop: 4,
   },
@@ -1265,14 +1272,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   budgetCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   budgetHeader: {
     flexDirection: 'row',
@@ -1282,13 +1286,13 @@ const styles = StyleSheet.create({
   },
   budgetLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   budgetAmount: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
   },
   budgetPercentageBadge: {
     paddingHorizontal: 12,
@@ -1302,7 +1306,7 @@ const styles = StyleSheet.create({
   },
   budgetProgressBar: {
     height: 12,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     borderRadius: 6,
     overflow: 'hidden',
     marginBottom: 15,
@@ -1320,7 +1324,7 @@ const styles = StyleSheet.create({
   },
   budgetDetailLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#64748B',
     marginBottom: 4,
   },
   budgetDetailValue: {
@@ -1328,15 +1332,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   savingsGoalCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     padding: 15,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   savingsGoalHeader: {
     flexDirection: 'row',
@@ -1347,29 +1348,29 @@ const styles = StyleSheet.create({
   savingsGoalTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     flex: 1,
   },
   savingsGoalProgress: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#38BDF8',
   },
   savingsGoalDescription: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 10,
   },
   savingsGoalProgressBar: {
     height: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 8,
   },
   savingsGoalProgressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#38BDF8',
     borderRadius: 4,
   },
   savingsGoalAmounts: {
@@ -1380,21 +1381,23 @@ const styles = StyleSheet.create({
   savingsGoalCurrent: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
   },
   savingsGoalDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: '#1E293B',
     padding: 20,
     maxHeight: '90%',
     width: '100%',
@@ -1419,27 +1422,27 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
   },
   modalLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 8,
     marginTop: 15,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#1E293B',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#000',
-    backgroundColor: '#fff',
+    color: '#F8FAFC',
+    backgroundColor: '#020617',
   },
   modalHint: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
     marginTop: 5,
     marginBottom: 20,
   },
@@ -1450,7 +1453,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   modalButtonPrimary: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0284c7',
   },
   modalButtonText: {
     color: '#fff',

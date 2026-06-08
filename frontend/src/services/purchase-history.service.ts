@@ -10,6 +10,7 @@ export interface Purchase {
   productCategory?: string;
   quantity: number;
   totalAmount: number;
+  status: string;
   purchasedAt: string;
 }
 

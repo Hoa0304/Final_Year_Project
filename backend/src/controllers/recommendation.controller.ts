@@ -36,12 +36,6 @@ export async function getSpendingRecommendations(req: AuthRequest, res: Response
       .eq('is_active', true)
       .limit(50);
 
-    // Get available games
-    const { data: games } = await supabase
-      .from('games')
-      .select('id, name, reward_amount, max_plays_per_day')
-      .eq('is_active', true);
-
     // Call AI service
     try {
       const response = await axios.post(`${AI_SERVICE_URL}/recommendations/spending`, {
@@ -49,7 +43,7 @@ export async function getSpendingRecommendations(req: AuthRequest, res: Response
         balance: user?.virtual_balance || 0,
         recentTransactions: transactions || [],
         availableProducts: products || [],
-        availableGames: games || []
+        availableGames: []
       });
 
       // Save recommendations to database
@@ -104,111 +98,7 @@ export async function getSpendingRecommendations(req: AuthRequest, res: Response
   }
 }
 
-/**
- * Get investment recommendations based on user portfolio and balance
- * Calls AI service to generate personalized recommendations
- */
-export async function getInvestingRecommendations(req: AuthRequest, res: Response) {
-  try {
-    const userId = req.user!.userId;
 
-    // Get user data
-    const { data: user } = await supabase
-      .from('users')
-      .select('virtual_balance')
-      .eq('id', userId)
-      .single();
-
-    // Get user portfolio
-    const { data: portfolio } = await supabase
-      .from('user_stocks')
-      .select(`
-        *,
-        stocks (
-          id,
-          symbol,
-          name,
-          current_price,
-          price_change_percent
-        )
-      `)
-      .eq('user_id', userId);
-
-    // Get available stocks
-    const { data: stocks } = await supabase
-      .from('stocks')
-      .select('id, symbol, name, current_price, price_change_percent')
-      .eq('is_active', true);
-
-    // Get stock transaction history
-    const { data: stockTransactions } = await supabase
-      .from('stock_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    // Call AI service
-    try {
-      const response = await axios.post(`${AI_SERVICE_URL}/recommendations/investing`, {
-        userId,
-        balance: user?.virtual_balance || 0,
-        portfolio: portfolio || [],
-        availableStocks: stocks || [],
-        transactionHistory: stockTransactions || []
-      });
-
-      // Save recommendations to database
-      if (response.data.recommendations) {
-        const recommendations = response.data.recommendations.map((rec: any) => ({
-          user_id: userId,
-          recommendation_type: 'investing',
-          title: rec.title,
-          description: rec.description,
-          action_type: rec.actionType,
-          action_id: rec.actionId,
-          confidence_score: rec.confidence || 0.5
-        }));
-
-        // Delete old recommendations
-        await supabase
-          .from('ai_recommendations')
-          .delete()
-          .eq('user_id', userId)
-          .eq('recommendation_type', 'investing');
-
-        // Insert new recommendations
-        if (recommendations.length > 0) {
-          await supabase
-            .from('ai_recommendations')
-            .insert(recommendations);
-        }
-      }
-
-      res.json(response.data);
-    } catch (aiError: any) {
-      console.error('AI service error:', aiError.message);
-      
-      // Fallback: return basic recommendations from database
-      const { data: savedRecommendations } = await supabase
-        .from('ai_recommendations')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('recommendation_type', 'investing')
-        .eq('is_active', true)
-        .order('confidence_score', { ascending: false })
-        .limit(5);
-
-      res.json({
-        recommendations: savedRecommendations || [],
-        source: 'cached'
-      });
-    }
-  } catch (error) {
-    console.error('Get investing recommendations error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-}
 
 /**
  * Get ML-based product recommendations

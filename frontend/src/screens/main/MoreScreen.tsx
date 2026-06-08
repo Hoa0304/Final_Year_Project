@@ -60,14 +60,6 @@ export default function MoreScreen() {
       description: 'Complete tasks & earn rewards',
     },
     {
-      id: 'games',
-      title: 'Games',
-      icon: 'game-controller',
-      screen: 'Games',
-      color: '#AF52DE',
-      description: 'Play games & have fun',
-    },
-    {
       id: 'notifications',
       title: 'Notifications',
       icon: 'notifications',
@@ -109,13 +101,12 @@ export default function MoreScreen() {
                 onPress={() => handleNavigate(item.screen)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.menuIconContainer, { backgroundColor: item.color + '20' }]}>
-                  <Ionicons name={item.icon} size={28} color={item.color} />
+                <View style={styles.menuItemInner}>
+                  <View style={[styles.menuIconContainer, { backgroundColor: item.color + '15' }]}>
+                    <Ionicons name={item.icon} size={26} color={item.color} />
+                  </View>
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
                 </View>
-                <Text style={styles.menuItemTitle}>{item.title}</Text>
-                {item.description && (
-                  <Text style={styles.menuItemDescription}>{item.description}</Text>
-                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -124,20 +115,19 @@ export default function MoreScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Activities</Text>
           <View style={styles.menuGrid}>
-            {menuItems.slice(3, 5).map((item) => (
+            {menuItems.slice(3, 4).map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={styles.menuItem}
                 onPress={() => handleNavigate(item.screen)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.menuIconContainer, { backgroundColor: item.color + '20' }]}>
-                  <Ionicons name={item.icon} size={28} color={item.color} />
+                <View style={styles.menuItemInner}>
+                  <View style={[styles.menuIconContainer, { backgroundColor: item.color + '15' }]}>
+                    <Ionicons name={item.icon} size={26} color={item.color} />
+                  </View>
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
                 </View>
-                <Text style={styles.menuItemTitle}>{item.title}</Text>
-                {item.description && (
-                  <Text style={styles.menuItemDescription}>{item.description}</Text>
-                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -146,15 +136,15 @@ export default function MoreScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tools & Settings</Text>
           <View style={styles.menuList}>
-            {menuItems.slice(5).map((item) => (
+            {menuItems.slice(4).map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={styles.listItem}
                 onPress={() => handleNavigate(item.screen)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.listIconContainer, { backgroundColor: item.color + '20' }]}>
-                  <Ionicons name={item.icon} size={24} color={item.color} />
+                <View style={[styles.listIconContainer, { backgroundColor: item.color + '15' }]}>
+                  <Ionicons name={item.icon} size={22} color={item.color} />
                 </View>
                 <View style={styles.listItemContent}>
                   <Text style={styles.listItemTitle}>{item.title}</Text>
@@ -162,7 +152,7 @@ export default function MoreScreen() {
                     <Text style={styles.listItemDescription}>{item.description}</Text>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                <Ionicons name="chevron-forward" size={18} color="#475569" />
               </TouchableOpacity>
             ))}
           </View>
@@ -176,19 +166,19 @@ export default function MoreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#020617',
   },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#1E293B',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    color: '#000',
+    color: '#F8FAFC',
   },
   content: {
     flex: 1,
@@ -200,7 +190,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#94A3B8',
     textTransform: 'uppercase',
     marginBottom: 12,
     letterSpacing: 0.5,
@@ -213,44 +203,51 @@ const styles = StyleSheet.create({
   menuItem: {
     width: '33.33%',
     padding: 6,
-    alignItems: 'center',
   },
-  menuIconContainer: {
-    width: 64,
-    height: 64,
+  menuItemInner: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: 'rgba(30, 41, 59, 0.4)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    padding: 12,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    minHeight: 110,
+  },
+  menuIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
   menuItemTitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#000',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#E2E8F0',
     textAlign: 'center',
-  },
-  menuItemDescription: {
-    fontSize: 11,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginTop: 2,
   },
   menuList: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.4)',
+    borderRadius: 16,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#1E293B',
   },
   listIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -259,14 +256,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listItemTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#F8FAFC',
     marginBottom: 2,
   },
   listItemDescription: {
-    fontSize: 13,
-    color: '#8E8E93',
+    fontSize: 12,
+    color: '#64748B',
   },
 });
 

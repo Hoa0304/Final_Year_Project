@@ -3,7 +3,6 @@ import { supabase } from '../utils/supabase';
 import { createTransaction } from '../services/transaction.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { calculateDiscountedPrice } from '../utils/price.utils';
-import { redeemVoucher, getVoucherByCode, getVoucherById, randomVoucherAfterPurchase } from '../services/voucher.service';
 
 /**
  * Get all active products
@@ -225,7 +224,7 @@ export async function getProductById(req: Request, res: Response) {
 export async function purchaseProduct(req: AuthRequest, res: Response) {
   try {
     const userId = req.user!.userId;
-    const { productId, quantity = 1, voucher_id, voucher_code } = req.body;
+    const { productId, quantity = 1 } = req.body;
 
     if (!productId) {
       return res.status(400).json({ error: 'Product ID is required' });
@@ -235,7 +234,7 @@ export async function purchaseProduct(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Quantity must be at least 1' });
     }
 
-    console.log('📝 Purchase request:', { userId, productId, quantity, voucher_id, voucher_code });
+    console.log('📝 Purchase request:', { userId, productId, quantity });
 
     // Get product details
     const { data: product, error: productError } = await supabase
@@ -246,89 +245,18 @@ export async function purchaseProduct(req: AuthRequest, res: Response) {
       .single();
 
     if (productError || !product) {
-      console.error('❌ Product not found:', { productId, error: productError });
-      // Check if product exists but is inactive
-      const { data: inactiveProduct } = await supabase
-        .from('products')
-        .select('id, is_active')
-        .eq('id', productId)
-        .single();
-      
-      if (inactiveProduct) {
-        console.log('   Product exists but is inactive');
-      } else {
-        console.log('   Product does not exist in database');
-      }
       return res.status(404).json({ error: 'Product not found' });
     }
-
-    console.log('✅ Product found:', { id: product.id, name: product.name, stock: product.stock_quantity });
 
     // Check stock availability
     if (product.stock_quantity < quantity) {
       return res.status(400).json({ error: 'Insufficient stock' });
     }
 
-    // Calculate total amount using discounted price if discount exists
-    const discountedPrice = calculateDiscountedPrice(
-      product.price,
-      product.discount_percentage
-    );
-    const originalAmount = discountedPrice * quantity;
-    let totalAmount = originalAmount;
-    let voucherToApply = null;
-    let appliedVoucher = null;
-
-    // Validate and prepare voucher if provided (but don't redeem yet - need order ID first)
-    if (voucher_id || voucher_code) {
-      try {
-        // Get voucher by ID or code
-        let voucher = null;
-        if (voucher_id) {
-          voucher = await getVoucherById(voucher_id);
-        } else if (voucher_code) {
-          voucher = await getVoucherByCode(voucher_code);
-        }
-
-        if (!voucher) {
-          return res.status(404).json({ error: 'Voucher not found' });
-        }
-
-        // Validate voucher can be redeemed (but don't redeem yet)
-        const { validateVoucherRedemption } = await import('../services/voucher.service');
-        const validation = await validateVoucherRedemption(voucher.id, userId);
-        
-        if (!validation.can_redeem) {
-          return res.status(400).json({
-            error: validation.error || 'Cannot redeem voucher',
-            voucher_error: true
-          });
-        }
-
-        // Calculate discount amount to determine final price
-        const { calculateVoucherDiscount } = await import('../services/voucher.service');
-        const discountAmount = calculateVoucherDiscount(voucher, originalAmount);
-        
-        // Apply discount (for coin_bonus, we don't subtract from order amount)
-        if (voucher.discount_type !== 'coin_bonus') {
-          totalAmount = Math.max(0, originalAmount - discountAmount);
-        }
-
-        voucherToApply = {
-          id: voucher.id,
-          code: voucher.code,
-          discount_amount: discountAmount,
-          discount_type: voucher.discount_type
-        };
-
-        console.log('✅ Voucher validated and will be applied:', voucherToApply);
-      } catch (voucherError: any) {
-        console.error('Voucher validation error:', voucherError);
-        return res.status(400).json({
-          error: voucherError.message || 'Failed to validate voucher'
-        });
-      }
-    }
+    // Calculate total amount (products purchased directly via this endpoint always pay with coins)
+    // Applying the 10% coin discount: basePrice * quantity * 0.9
+    const discountedPrice = Math.round(product.price * 0.9);
+    const totalAmount = discountedPrice * quantity;
 
     // Get user balance
     const { data: user, error: userError } = await supabase
@@ -370,67 +298,20 @@ export async function purchaseProduct(req: AuthRequest, res: Response) {
       .update({ stock_quantity: product.stock_quantity - quantity })
       .eq('id', productId);
 
-    // Redeem voucher now that we have the order ID
-    if (voucherToApply) {
-      try {
-        const redemptionResult = await redeemVoucher({
-          voucher_id: voucherToApply.id,
-          user_id: userId,
-          original_amount: originalAmount,
-          reference_id: order.id,
-          reference_type: 'order'
-        });
-
-        if (redemptionResult.success) {
-          appliedVoucher = {
-            code: voucherToApply.code,
-            discount_amount: voucherToApply.discount_amount,
-            discount_type: voucherToApply.discount_type
-          };
-          console.log('✅ Voucher redeemed successfully:', appliedVoucher);
-        } else {
-          // This shouldn't happen since we validated earlier, but handle it
-          console.error('Voucher redemption failed after validation:', redemptionResult.error);
-        }
-      } catch (redemptionError: any) {
-        // Log error but don't fail the purchase (voucher was already validated)
-        console.error('Voucher redemption error after order creation:', redemptionError);
-      }
-    }
-
     // Create transaction
     await createTransaction({
       userId,
       type: 'spend',
       amount: totalAmount,
-      description: `Purchased ${quantity}x ${product.name}${appliedVoucher ? ` (Voucher: ${appliedVoucher.code})` : ''}`,
+      description: `Purchased ${quantity}x ${product.name}`,
       referenceId: order.id,
       referenceType: 'order'
     });
 
-    // Random voucher after purchase (if product has a vendor)
-    let randomVoucher = null;
-    if (product.created_by) {
-      try {
-        const { randomVoucherAfterPurchase } = await import('../services/voucher.service');
-        randomVoucher = await randomVoucherAfterPurchase(product.created_by, userId, productId);
-        if (randomVoucher) {
-          console.log('🎁 Random voucher issued after purchase:', randomVoucher.code);
-        }
-      } catch (voucherError) {
-        // Don't fail the purchase if random voucher fails
-        console.error('Failed to issue random voucher:', voucherError);
-      }
-    }
-
     // Send notification
     try {
       const { sendNotification } = await import('../services/notification.service');
-      let notificationMessage = `Your order for ${quantity}x ${product.name} has been completed successfully!`;
-      
-      if (randomVoucher) {
-        notificationMessage += ` You received a voucher: ${randomVoucher.code}!`;
-      }
+      const notificationMessage = `Your order for ${quantity}x ${product.name} has been completed successfully!`;
       
       await sendNotification(userId, {
         title: 'Order Completed',
@@ -443,11 +324,9 @@ export async function purchaseProduct(req: AuthRequest, res: Response) {
           productName: product.name,
           quantity,
           totalAmount,
-          ...(randomVoucher && { randomVoucher: { id: randomVoucher.id, code: randomVoucher.code } })
         },
       });
     } catch (notifError) {
-      // Don't fail the purchase if notification fails
       console.error('Failed to send notification:', notifError);
     }
 
@@ -459,19 +338,6 @@ export async function purchaseProduct(req: AuthRequest, res: Response) {
         quantity,
         totalAmount,
         status: order.status,
-        ...(appliedVoucher && {
-          voucher: appliedVoucher,
-          originalAmount: originalAmount,
-          discountApplied: appliedVoucher.discount_amount
-        }),
-        ...(randomVoucher && {
-          randomVoucher: {
-            code: randomVoucher.code,
-            title: randomVoucher.title,
-            discount_type: randomVoucher.discount_type,
-            discount_value: randomVoucher.discount_value
-          }
-        })
       }
     });
   } catch (error) {

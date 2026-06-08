@@ -153,9 +153,9 @@ export function isNotificationUnread(notification: Notification): boolean {
 
   // Check if delivered, sent, or pending but not read
   return (
-    (inAppHistory.status === 'delivered' || 
-     inAppHistory.status === 'sent' || 
-     inAppHistory.status === 'pending') &&
+    (inAppHistory.status === 'delivered' ||
+      inAppHistory.status === 'sent' ||
+      inAppHistory.status === 'pending') &&
     !inAppHistory.read_at
   );
 }

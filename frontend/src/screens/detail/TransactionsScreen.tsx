@@ -17,7 +17,6 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCategorizedTransactions, updateTransactionLabel, categorizeTransaction, CategorizedTransaction, getTransactionCategories } from '../../services/transaction-label.service';
-import { verifyTransactionOnBlockchain, getBlockchainTransaction, BlockchainTransaction } from '../../services/blockchain.service';
 import { Ionicons } from '@expo/vector-icons';
 
 const CATEGORIES = ['Shopping', 'Electronics', 'Entertainment', 'Earnings', 'Investment', 'Food', 'Transportation', 'Bills', 'Reward', 'Other'];
@@ -26,9 +25,6 @@ export default function TransactionsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [editingTransaction, setEditingTransaction] = useState<CategorizedTransaction | null>(null);
   const [newCategory, setNewCategory] = useState('');
-  const [verifyingTxId, setVerifyingTxId] = useState<number | null>(null);
-  const [verificationResult, setVerificationResult] = useState<{ verified: boolean; transaction?: BlockchainTransaction } | null>(null);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: transactions, isLoading, refetch } = useQuery({
@@ -82,53 +78,12 @@ export default function TransactionsScreen() {
 
   function getTransactionColor(type: string) {
     if (type === 'spend' || type === 'revoke' || type === 'stock_loss') {
-      return '#FF3B30';
+      return '#EF4444';
     }
-    return '#34C759';
+    return '#10B981';
   }
 
-  const verifyMutation = useMutation({
-    mutationFn: (txId: number) => verifyTransactionOnBlockchain(txId),
-    onSuccess: (data) => {
-      setVerificationResult(data);
-      setShowVerificationModal(true);
-    },
-    onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to verify transaction');
-    },
-  });
 
-  async function handleVerifyTransaction(item: CategorizedTransaction) {
-    // Try to get blockchain transaction ID from reference or use a placeholder
-    // In a real implementation, you might store blockchain tx ID in the transaction record
-    Alert.alert(
-      'Verify on Blockchain',
-      'This transaction should be recorded on blockchain. Would you like to verify?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Verify',
-          onPress: async () => {
-            // For now, we'll show a message that it's on-chain
-            // In production, you'd need to store blockchain tx ID in database
-            Alert.alert(
-              'Blockchain Verified',
-              'This transaction is recorded on blockchain and cannot be modified or deleted.',
-              [
-                {
-                  text: 'Learn More',
-                  onPress: () => {
-                    // Could navigate to blockchain screen or show info
-                  },
-                },
-                { text: 'OK' },
-              ]
-            );
-          },
-        },
-      ]
-    );
-  }
 
   function renderTransaction({ item }: { item: CategorizedTransaction }) {
     const iconColor = getTransactionColor(item.type);
@@ -171,16 +126,8 @@ export default function TransactionsScreen() {
           </Text>
           <View style={styles.transactionMeta}>
             <Text style={styles.transactionBalance}>
-              Balance: {item.balance_after.toFixed(2)} coins
+              Balance: {Math.round(item.balance_after).toLocaleString('en-US')} coins
             </Text>
-            {/* Blockchain indicator - transactions are automatically recorded on blockchain */}
-            <TouchableOpacity
-              style={styles.blockchainBadge}
-              onPress={() => handleVerifyTransaction(item)}
-            >
-              <Ionicons name="lock-closed" size={10} color="#34C759" />
-              <Text style={styles.blockchainBadgeText}>On-chain</Text>
-            </TouchableOpacity>
           </View>
         </View>
         <Text
@@ -190,7 +137,7 @@ export default function TransactionsScreen() {
           ]}
         >
           {isNegative ? '-' : '+'}
-          {item.amount.toFixed(2)}
+          {Math.round(item.amount).toLocaleString('en-US')}
         </Text>
       </TouchableOpacity>
     );
@@ -304,102 +251,37 @@ export default function TransactionsScreen() {
                 <Text style={styles.modalButtonSaveText}>Save</Text>
               </TouchableOpacity>
             </View>
-            </View>
           </View>
-        </Modal>
+        </View>
+      </Modal>
 
-        {/* Blockchain Verification Modal */}
-        <Modal
-          visible={showVerificationModal}
-          transparent
-          animationType="slide"
-          onRequestClose={() => {
-            setShowVerificationModal(false);
-            setVerificationResult(null);
-          }}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Blockchain Verification</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowVerificationModal(false);
-                    setVerificationResult(null);
-                  }}
-                >
-                  <Ionicons name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-              {verificationResult && (
-                <ScrollView style={styles.verificationContent}>
-                  {verificationResult.verified ? (
-                    <>
-                      <View style={styles.verifiedBadge}>
-                        <Ionicons name="checkmark-circle" size={48} color="#34C759" />
-                        <Text style={styles.verifiedTitle}>Verified on Blockchain</Text>
-                        <Text style={styles.verifiedText}>
-                          This transaction is recorded on blockchain and cannot be modified or deleted.
-                        </Text>
-                      </View>
-                      {verificationResult.transaction && (
-                        <View style={styles.transactionDetails}>
-                          <Text style={styles.detailLabel}>Transaction ID</Text>
-                          <Text style={styles.detailValue}>#{verificationResult.transaction.id}</Text>
-                          <Text style={styles.detailLabel}>Type</Text>
-                          <Text style={styles.detailValue}>{verificationResult.transaction.transactionType}</Text>
-                          <Text style={styles.detailLabel}>Amount</Text>
-                          <Text style={styles.detailValue}>{verificationResult.transaction.amount.toFixed(2)} VKU</Text>
-                          <Text style={styles.detailLabel}>Timestamp</Text>
-                          <Text style={styles.detailValue}>
-                            {new Date(verificationResult.transaction.timestamp * 1000).toLocaleString()}
-                          </Text>
-                        </View>
-                      )}
-                    </>
-                  ) : (
-                    <View style={styles.notVerifiedBadge}>
-                      <Ionicons name="alert-circle" size={48} color="#FF3B30" />
-                      <Text style={styles.notVerifiedTitle}>Not Found on Blockchain</Text>
-                      <Text style={styles.notVerifiedText}>
-                        This transaction was not found on blockchain. It may not have been recorded yet.
-                      </Text>
-                    </View>
-                  )}
-                </ScrollView>
-              )}
-            </View>
-          </View>
-        </Modal>
-      </SafeAreaView>
-    );
-  }
+
+    </SafeAreaView>
+  );
+}
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
     paddingTop: Platform.OS === 'ios' ? 80 : StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
   },
   listContent: {
     padding: 15,
   },
   transactionCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   transactionIcon: {
     marginRight: 15,
@@ -410,12 +292,12 @@ const styles = StyleSheet.create({
   transactionDescription: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   transactionDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#64748B',
     marginBottom: 4,
   },
   transactionMeta: {
@@ -425,21 +307,7 @@ const styles = StyleSheet.create({
   },
   transactionBalance: {
     fontSize: 12,
-    color: '#999',
-  },
-  blockchainBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    gap: 4,
-  },
-  blockchainBadgeText: {
-    fontSize: 10,
-    color: '#2E7D32',
-    fontWeight: '500',
+    color: '#94A3B8',
   },
   transactionAmount: {
     fontSize: 18,
@@ -451,14 +319,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: '#64748B',
     marginTop: 15,
   },
   filterContainer: {
-    backgroundColor: '#fff',
-    paddingVertical: 10,
+    backgroundColor: '#0F172A',
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
   },
   filterContent: {
     paddingHorizontal: 15,
@@ -467,19 +335,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   filterChipActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0ea5e920',
+    borderColor: '#0ea5e9',
   },
   filterChipText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#94A3B8',
   },
   filterChipTextActive: {
-    color: '#fff',
-    fontWeight: '600',
+    color: '#0ea5e9',
+    fontWeight: '700',
   },
   categoryRow: {
     marginTop: 4,
@@ -489,47 +361,53 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: 'rgba(14, 165, 233, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   categoryText: {
-    fontSize: 12,
-    color: '#1976D2',
-    fontWeight: '500',
+    fontSize: 11,
+    color: '#0ea5e9',
+    fontWeight: '600',
   },
   categorizeButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#1E293B',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   categorizeButtonText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#F8FAFC',
     marginBottom: 8,
   },
   modalDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 20,
   },
   categoryGrid: {
@@ -541,40 +419,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     marginRight: 10,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   categoryOptionActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0ea5e920',
+    borderColor: '#0ea5e9',
   },
   categoryOptionText: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
   },
   categoryOptionTextActive: {
-    color: '#fff',
-    fontWeight: '600',
+    color: '#0ea5e9',
+    fontWeight: '700',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 12,
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    marginHorizontal: 5,
   },
   modalButtonCancel: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
   },
   modalButtonSave: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0ea5e9',
   },
   modalButtonCancelText: {
-    color: '#666',
+    color: '#E2E8F0',
     fontWeight: '600',
   },
   modalButtonSaveText: {
@@ -593,39 +474,43 @@ const styles = StyleSheet.create({
   verifiedBadge: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
     borderRadius: 12,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
   },
   verifiedTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#10B981',
     marginTop: 10,
     marginBottom: 8,
   },
   verifiedText: {
     fontSize: 14,
-    color: '#4CAF50',
+    color: '#34D399',
     textAlign: 'center',
   },
   notVerifiedBadge: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFEBEE',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderRadius: 12,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
   },
   notVerifiedTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#C62828',
+    color: '#EF4444',
     marginTop: 10,
     marginBottom: 8,
   },
   notVerifiedText: {
     fontSize: 14,
-    color: '#E53935',
+    color: '#F87171',
     textAlign: 'center',
   },
   transactionDetails: {
@@ -633,13 +518,13 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#64748B',
     marginTop: 12,
     marginBottom: 4,
   },
   detailValue: {
     fontSize: 16,
-    color: '#000',
+    color: '#F8FAFC',
     fontWeight: '500',
   },
 });

@@ -62,10 +62,10 @@ export async function register(req: Request, res: Response) {
       return res.status(500).json({ error: 'Failed to create user' });
     }
 
-    // Grant initial balance (1000 coins) as a transaction
+    // Grant initial balance (10,000 coins) as a transaction
     // This ensures it's recorded on blockchain for transparency
     try {
-      const INITIAL_BALANCE = 1000.00;
+      const INITIAL_BALANCE = 10000.00;
       console.log(`💰 Granting initial balance of ${INITIAL_BALANCE} coins to user ${user.id}`);
       const transactionId = await createTransaction({
         userId: user.id,
@@ -95,9 +95,9 @@ export async function register(req: Request, res: Response) {
       try {
         await supabase
           .from('users')
-          .update({ virtual_balance: 1000.00 })
+          .update({ virtual_balance: 10000.00 })
           .eq('id', user.id);
-        console.log('⚠️ Fallback: Set balance directly to 1000 (not recorded on blockchain)');
+        console.log('⚠️ Fallback: Set balance directly to 10000 (not recorded on blockchain)');
       } catch (fallbackError: any) {
         console.error('❌ Fallback also failed:', fallbackError);
         throw new Error('Failed to set initial balance');

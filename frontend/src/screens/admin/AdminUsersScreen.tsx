@@ -94,7 +94,7 @@ export default function AdminUsersScreen() {
         <Text style={styles.userEmail}>{item.email}</Text>
         {item.full_name && <Text style={styles.userName}>{item.full_name}</Text>}
         <View style={styles.userDetails}>
-          <Text style={styles.userBalance}>Balance: {item.virtual_balance.toFixed(2)} coins</Text>
+          <Text style={styles.userBalance}>Balance: {Math.round(item.virtual_balance).toLocaleString('en-US')} coins</Text>
           <View style={[styles.roleBadge, item.role === 'admin' && styles.adminBadge, item.role === 'vendor' && styles.vendorBadge]}>
             <Text style={styles.roleText}>{item.role.toUpperCase()}</Text>
           </View>
@@ -105,14 +105,14 @@ export default function AdminUsersScreen() {
         onPress={() => openGrantModal(item)}
       >
         <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-        <Text style={styles.grantButtonText}>Grant</Text>
+        <Text style={styles.grantButtonText}>Manage</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-    <View style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Users Management</Text>
         </View>
@@ -122,15 +122,15 @@ export default function AdminUsersScreen() {
             <Text>Loading...</Text>
           </View>
         ) : (
-      <FlatList
-        data={response?.users || []}
-        keyExtractor={(item) => item.id}
+          <FlatList
+            data={response?.users || []}
+            keyExtractor={(item) => item.id}
             renderItem={renderUser}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.centerContainer}>
                 <Text style={styles.emptyText}>No users found</Text>
-          </View>
+              </View>
             }
           />
         )}
@@ -151,78 +151,78 @@ export default function AdminUsersScreen() {
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={() => {}}>
+                <TouchableWithoutFeedback onPress={() => { }}>
                   <View style={styles.modalContent}>
-                  <ScrollView
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <View style={styles.modalHeader}>
-                      <Text style={styles.modalTitle}>Grant/Revoke Coins</Text>
-                      <TouchableOpacity
-                        onPress={() => {
-                          Keyboard.dismiss();
-                          setModalVisible(false);
-                        }}
-                      >
-                        <Ionicons name="close" size={24} color="#000" />
-                      </TouchableOpacity>
-                    </View>
-
-                    {selectedUser && (
-                      <>
-                        <Text style={styles.userInfoText}>User: {selectedUser.email}</Text>
-                        <Text style={styles.userInfoText}>
-                          Current Balance: {selectedUser.virtual_balance.toFixed(2)} coins
-                        </Text>
-                      </>
-                    )}
-
-                    <Text style={styles.inputLabel}>
-                      Amount (positive to grant, negative to revoke)
-                    </Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="e.g., 100 or -50"
-                      placeholderTextColor="#000"
-                      value={amount}
-                      onChangeText={setAmount}
-                      keyboardType="decimal-pad"
-                      returnKeyType="done"
-                      onSubmitEditing={Keyboard.dismiss}
-                    />
-
-                    <Text style={styles.inputLabel}>Description (Optional)</Text>
-                    <TextInput
-                      style={[styles.input, styles.textArea]}
-                      placeholder="Reason for grant/revoke"
-                      placeholderTextColor="#000"
-                      value={description}
-                      onChangeText={setDescription}
-                      multiline
-                      numberOfLines={2}
-                      returnKeyType="done"
-                      onSubmitEditing={Keyboard.dismiss}
-                      blurOnSubmit={true}
-                    />
-
-                    <TouchableOpacity
-                      style={[styles.saveButton, grantCoinsMutation.isPending && styles.buttonDisabled]}
-                      onPress={handleGrantCoins}
-                      disabled={grantCoinsMutation.isPending}
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false}
                     >
-                      <Text style={styles.saveButtonText}>
-                        {grantCoinsMutation.isPending ? 'Processing...' : 'Confirm'}
+                      <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>Grant/Revoke Coins</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            Keyboard.dismiss();
+                            setModalVisible(false);
+                          }}
+                        >
+                          <Ionicons name="close" size={24} color="#000" />
+                        </TouchableOpacity>
+                      </View>
+
+                      {selectedUser && (
+                        <>
+                          <Text style={styles.userInfoText}>User: {selectedUser.email}</Text>
+                          <Text style={styles.userInfoText}>
+                            Current Balance: {Math.round(selectedUser.virtual_balance).toLocaleString('en-US')} coins
+                          </Text>
+                        </>
+                      )}
+
+                      <Text style={styles.inputLabel}>
+                        Amount (positive to grant, negative to revoke)
                       </Text>
-                    </TouchableOpacity>
-                  </ScrollView>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="e.g., 100 or -50"
+                        placeholderTextColor="#000"
+                        value={amount}
+                        onChangeText={setAmount}
+                        keyboardType="decimal-pad"
+                        returnKeyType="done"
+                        onSubmitEditing={Keyboard.dismiss}
+                      />
+
+                      <Text style={styles.inputLabel}>Description (Optional)</Text>
+                      <TextInput
+                        style={[styles.input, styles.textArea]}
+                        placeholder="Reason for grant/revoke"
+                        placeholderTextColor="#000"
+                        value={description}
+                        onChangeText={setDescription}
+                        multiline
+                        numberOfLines={2}
+                        returnKeyType="done"
+                        onSubmitEditing={Keyboard.dismiss}
+                        blurOnSubmit={true}
+                      />
+
+                      <TouchableOpacity
+                        style={[styles.saveButton, grantCoinsMutation.isPending && styles.buttonDisabled]}
+                        onPress={handleGrantCoins}
+                        disabled={grantCoinsMutation.isPending}
+                      >
+                        <Text style={styles.saveButtonText}>
+                          {grantCoinsMutation.isPending ? 'Processing...' : 'Confirm'}
+                        </Text>
+                      </TouchableOpacity>
+                    </ScrollView>
                   </View>
                 </TouchableWithoutFeedback>
               </View>
             </TouchableWithoutFeedback>
           </KeyboardAvoidingView>
         </Modal>
-    </View>
+      </View>
     </SafeAreaView>
   );
 }

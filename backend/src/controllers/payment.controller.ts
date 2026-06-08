@@ -52,6 +52,34 @@ export async function vnpayWebhook(req: Request, res: Response) {
 }
 
 /**
+ * MoMo Webhook (IPN Callback)
+ */
+export async function momoWebhook(req: Request, res: Response) {
+  try {
+    console.log('--- Received MoMo Webhook IPN Callback ---');
+    console.log('Payload:', JSON.stringify(req.body, null, 2));
+    
+    const result = await paymentService.handleWebhook('momo', req.body);
+    
+    // MoMo expects a response to confirm receipt of IPN
+    const responsePayload = {
+      partnerCode: req.body.partnerCode,
+      orderId: req.body.orderId,
+      requestId: req.body.requestId,
+      resultCode: 0, // Acknowledge success processing
+      message: 'Acknowledged and processed',
+      responseTime: new Date().getTime(),
+      extraData: req.body.extraData || '',
+    };
+    
+    res.status(200).json(responsePayload);
+  } catch (error: any) {
+    console.error('MoMo Webhook error:', error);
+    res.status(500).json({ error: error.message || 'Internal webhook error' });
+  }
+}
+
+/**
  * Get available coin packages
  */
 export async function getCoinPackages(req: Request, res: Response) {

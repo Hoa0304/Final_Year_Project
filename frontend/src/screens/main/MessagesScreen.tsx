@@ -15,6 +15,7 @@ import {
   RefreshControl,
   Dimensions,
   Modal,
+  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -48,10 +49,8 @@ export default function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
-  // Get otherUserId from route params if navigating from profile/vendor
   const otherUserId = (route.params as any)?.userId;
 
-  // Fetch conversations list
   const {
     data: conversations,
     isLoading: isLoadingConversations,
@@ -61,7 +60,6 @@ export default function MessagesScreen() {
     queryFn: getConversations,
   });
 
-  // Fetch selected conversation
   const {
     data: conversation,
     isLoading: isLoadingConversation,
@@ -72,7 +70,6 @@ export default function MessagesScreen() {
     enabled: !!selectedConversationId,
   });
 
-  // Fetch messages
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
@@ -81,24 +78,21 @@ export default function MessagesScreen() {
     queryKey: ['messagingMessages', selectedConversationId],
     queryFn: () => getMessages(selectedConversationId!, 1, 100),
     enabled: !!selectedConversationId,
-    refetchInterval: 3000, // Poll every 3 seconds for new messages
+    refetchInterval: 3000,
   });
 
-  // Auto-create conversation if otherUserId is provided
   useEffect(() => {
     if (otherUserId && otherUserId !== user?.id) {
       handleStartConversation(otherUserId);
     }
   }, [otherUserId]);
 
-  // Mark messages as read when viewing conversation
   useEffect(() => {
     if (selectedConversationId && conversation) {
       markAsReadMutation.mutate(selectedConversationId);
     }
   }, [selectedConversationId, conversation]);
 
-  // Scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesData?.messages && messagesData.messages.length > 0) {
       setTimeout(() => {
@@ -107,7 +101,6 @@ export default function MessagesScreen() {
     }
   }, [messagesData?.messages]);
 
-  // Search users/vendors
   const {
     data: searchResults,
     isLoading: isLoadingSearch,
@@ -117,7 +110,6 @@ export default function MessagesScreen() {
     enabled: showSearchModal && searchQuery.length > 0,
   });
 
-  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: (content: string) =>
       sendMessage({
@@ -137,7 +129,6 @@ export default function MessagesScreen() {
     },
   });
 
-  // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: markAsRead,
     onSuccess: () => {
@@ -145,7 +136,6 @@ export default function MessagesScreen() {
     },
   });
 
-  // Create conversation mutation
   const createConversationMutation = useMutation({
     mutationFn: getOrCreateConversation,
     onSuccess: (data) => {
@@ -187,49 +177,25 @@ export default function MessagesScreen() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
     if (diffInSeconds < 60) return 'just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US');
   };
 
   const formatMessageTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
-    
     if (isToday) {
-      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
     }
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const renderConversationItem = ({ item }: { item: Conversation }) => {
     const otherParticipant = item.participants?.find((p) => p.user_id !== user?.id);
-    
-    // Debug logging
-    if (__DEV__) {
-      console.log('Conversation item:', {
-        id: item.id,
-        title: item.title,
-        participants: item.participants?.map(p => ({
-          user_id: p.user_id,
-          user: p.user ? {
-            id: p.user.id,
-            full_name: p.user.full_name,
-            email: p.user.email,
-          } : null,
-        })),
-        otherParticipant: otherParticipant ? {
-          user_id: otherParticipant.user_id,
-          user: otherParticipant.user,
-        } : null,
-      });
-    }
-    
-    // Prefer otherParticipant's user data over title (title might be outdated)
     const displayName = otherParticipant?.user?.full_name || otherParticipant?.user?.email || item.title || 'User';
     const avatarUrl = otherParticipant?.user?.avatar_url;
 
@@ -244,7 +210,7 @@ export default function MessagesScreen() {
             <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={24} color="#666" />
+              <Ionicons name="person" size={22} color="#475569" />
             </View>
           )}
           {item.unread_count !== undefined && item.unread_count !== null && item.unread_count > 0 && (
@@ -292,7 +258,7 @@ export default function MessagesScreen() {
               <Image source={{ uri: item.sender.avatar_url }} style={styles.messageAvatarImage} />
             ) : (
               <View style={styles.messageAvatarPlaceholder}>
-                <Ionicons name="person" size={16} color="#666" />
+                <Ionicons name="person" size={14} color="#475569" />
               </View>
             )}
           </View>
@@ -322,47 +288,30 @@ export default function MessagesScreen() {
 
   if (viewMode === 'chat' && conversation) {
     const otherParticipant = conversation.participants?.find((p) => p.user_id !== user?.id);
-    
-    // Debug logging
-    if (__DEV__) {
-      console.log('Chat conversation:', {
-        id: conversation.id,
-        title: conversation.title,
-        participants: conversation.participants?.map(p => ({
-          user_id: p.user_id,
-          user: p.user ? {
-            id: p.user.id,
-            full_name: p.user.full_name,
-            email: p.user.email,
-          } : null,
-        })),
-        otherParticipant: otherParticipant ? {
-          user_id: otherParticipant.user_id,
-          user: otherParticipant.user,
-        } : null,
-      });
-    }
-    
-    // Prefer otherParticipant's user data over title
     const chatTitle = otherParticipant?.user?.full_name || otherParticipant?.user?.email || conversation.title || 'User';
     const chatAvatar = otherParticipant?.user?.avatar_url;
 
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#020617" />
         <View style={styles.chatHeader}>
-          <TouchableOpacity onPress={handleBackToConversations} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#000" />
+          <TouchableOpacity onPress={handleBackToConversations} style={styles.headerBtn}>
+            <Ionicons name="chevron-back" size={22} color="#94A3B8" />
           </TouchableOpacity>
           <View style={styles.chatHeaderInfo}>
             {chatAvatar ? (
               <Image source={{ uri: chatAvatar }} style={styles.chatHeaderAvatar} />
             ) : (
               <View style={styles.chatHeaderAvatarPlaceholder}>
-                <Ionicons name="person" size={20} color="#666" />
+                <Ionicons name="person" size={18} color="#475569" />
               </View>
             )}
-            <Text style={styles.chatHeaderTitle}>{chatTitle}</Text>
+            <View>
+              <Text style={styles.chatHeaderTitle}>{chatTitle}</Text>
+              <Text style={styles.chatHeaderStatus}>Active now</Text>
+            </View>
           </View>
+          <View style={{ width: 36 }} />
         </View>
 
         <FlatList
@@ -373,10 +322,16 @@ export default function MessagesScreen() {
           contentContainerStyle={styles.messagesList}
           inverted={false}
           refreshControl={
-            <RefreshControl refreshing={isLoadingMessages} onRefresh={refetchMessages} />
+            <RefreshControl
+              refreshing={isLoadingMessages}
+              onRefresh={refetchMessages}
+              tintColor="#0ea5e9"
+              colors={['#0ea5e9']}
+            />
           }
           ListEmptyComponent={
             <View style={styles.emptyMessages}>
+              <Ionicons name="chatbubble-ellipses-outline" size={48} color="#1E293B" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyMessagesText}>No messages yet</Text>
               <Text style={styles.emptyMessagesSubtext}>Start the conversation!</Text>
             </View>
@@ -391,12 +346,11 @@ export default function MessagesScreen() {
             <TextInput
               style={styles.input}
               placeholder="Type a message..."
-              placeholderTextColor="#999"
+              placeholderTextColor="#475569"
               value={messageText}
               onChangeText={setMessageText}
               multiline
               maxLength={1000}
-              color="#000"
             />
             <TouchableOpacity
               style={[styles.sendButton, !messageText.trim() && styles.sendButtonDisabled]}
@@ -406,7 +360,7 @@ export default function MessagesScreen() {
               {sendMessageMutation.isPending ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Ionicons name="send" size={20} color="#fff" />
+                <Ionicons name="send" size={18} color="#fff" />
               )}
             </TouchableOpacity>
           </View>
@@ -417,19 +371,20 @@ export default function MessagesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#020617" />
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={styles.backButton}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.headerBtn}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="chevron-back" size={22} color="#94A3B8" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Messages</Text>
         <TouchableOpacity
           onPress={() => setShowSearchModal(true)}
           style={styles.newMessageButton}
         >
-          <Ionicons name="create-outline" size={24} color="#007AFF" />
+          <Ionicons name="create-outline" size={20} color="#0ea5e9" />
         </TouchableOpacity>
       </View>
 
@@ -439,13 +394,27 @@ export default function MessagesScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.conversationsList}
         refreshControl={
-          <RefreshControl refreshing={isLoadingConversations} onRefresh={refetchConversations} />
+          <RefreshControl
+            refreshing={isLoadingConversations}
+            onRefresh={refetchConversations}
+            tintColor="#0ea5e9"
+            colors={['#0ea5e9']}
+          />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={64} color="#ccc" />
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="chatbubbles-outline" size={40} color="#334155" />
+            </View>
             <Text style={styles.emptyText}>No conversations yet</Text>
-            <Text style={styles.emptySubtext}>Start a conversation with a user or vendor!</Text>
+            <Text style={styles.emptySubtext}>Chat with other users or sellers!</Text>
+            <TouchableOpacity
+              style={styles.emptyCreateBtn}
+              onPress={() => setShowSearchModal(true)}
+            >
+              <Ionicons name="create-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+              <Text style={styles.emptyCreateBtnText}>Create new message</Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -464,25 +433,25 @@ export default function MessagesScreen() {
                   setShowSearchModal(false);
                   setSearchQuery('');
                 }}
+                style={styles.modalCloseBtn}
               >
-                <Ionicons name="close" size={24} color="#000" />
+                <Ionicons name="close" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
             <View style={styles.searchContainer}>
-              <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+              <Ionicons name="search" size={18} color="#475569" style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search users or vendors..."
-                placeholderTextColor="#999"
+                placeholder="Search users or sellers..."
+                placeholderTextColor="#475569"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoFocus
-                color="#000"
               />
             </View>
             {isLoadingSearch ? (
               <View style={styles.searchLoading}>
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color="#0ea5e9" />
               </View>
             ) : searchQuery.length > 0 && searchResults ? (
               <FlatList
@@ -495,7 +464,7 @@ export default function MessagesScreen() {
                     disabled={item.id === user?.id}
                   >
                     <View style={styles.searchResultAvatar}>
-                      <Ionicons name="person" size={24} color="#666" />
+                      <Ionicons name="person" size={22} color="#475569" />
                     </View>
                     <View style={styles.searchResultInfo}>
                       <Text style={styles.searchResultName}>
@@ -521,6 +490,7 @@ export default function MessagesScreen() {
               />
             ) : (
               <View style={styles.searchEmpty}>
+                <Ionicons name="search-outline" size={36} color="#1E293B" style={{ marginBottom: 12 }} />
                 <Text style={styles.searchEmptyText}>Start typing to search...</Text>
               </View>
             )}
@@ -534,7 +504,8 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     flexDirection: 'row',
@@ -543,35 +514,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e6eb',
+    borderBottomColor: '#1E293B',
+    backgroundColor: '#020617',
   },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
+  headerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#000',
+    color: '#F1F5F9',
     flex: 1,
+    marginLeft: 12,
   },
   newMessageButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(14, 165, 233, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(14, 165, 233, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   conversationsList: {
     padding: 12,
+    paddingBottom: 32,
   },
   conversationItem: {
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    padding: 13,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
   },
   conversationAvatar: {
     position: 'relative',
@@ -581,31 +566,35 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   avatarPlaceholder: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#e4e6eb',
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
   },
   unreadBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    backgroundColor: '#FF3B30',
+    top: -3,
+    right: -3,
+    backgroundColor: '#EF4444',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: '#020617',
   },
   unreadBadgeText: {
     color: '#fff',
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
   },
   conversationContent: {
     flex: 1,
@@ -618,19 +607,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   conversationName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#E2E8F0',
     flex: 1,
   },
   conversationTime: {
     fontSize: 12,
-    color: '#65676b',
+    color: '#475569',
     marginLeft: 8,
   },
   conversationPreview: {
-    fontSize: 14,
-    color: '#65676b',
+    fontSize: 13,
+    color: '#64748B',
   },
   emptyContainer: {
     flex: 1,
@@ -639,17 +628,41 @@ const styles = StyleSheet.create({
     padding: 32,
     minHeight: 400,
   },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   emptyText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#65676b',
-    marginTop: 16,
+    fontWeight: '700',
+    color: '#475569',
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#8a8d91',
-    marginTop: 8,
+    color: '#334155',
+    marginTop: 6,
     textAlign: 'center',
+  },
+  emptyCreateBtn: {
+    marginTop: 20,
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emptyCreateBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   chatHeader: {
     flexDirection: 'row',
@@ -657,36 +670,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e6eb',
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
+    borderBottomColor: '#1E293B',
+    backgroundColor: '#020617',
+    justifyContent: 'space-between',
   },
   chatHeaderInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginLeft: 12,
   },
   chatHeaderAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginRight: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   chatHeaderAvatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#e4e6eb',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   chatHeaderTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#E2E8F0',
+  },
+  chatHeaderStatus: {
+    fontSize: 12,
+    color: '#10B981',
+    marginTop: 1,
   },
   messagesList: {
     padding: 16,
@@ -707,41 +726,45 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   messageAvatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   messageAvatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#e4e6eb',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
   },
   messageBubble: {
-    maxWidth: width * 0.7,
+    maxWidth: width * 0.72,
     padding: 12,
     borderRadius: 18,
   },
   myMessageBubble: {
-    backgroundColor: '#007AFF',
-    borderBottomRightRadius: 4,
+    backgroundColor: '#0ea5e9',
+    borderBottomRightRadius: 5,
   },
   otherMessageBubble: {
-    backgroundColor: '#f0f2f5',
-    borderBottomLeftRadius: 4,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    borderBottomLeftRadius: 5,
   },
   messageSenderName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#65676b',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
     marginBottom: 4,
   },
   messageText: {
     fontSize: 15,
-    color: '#000',
-    lineHeight: 20,
+    color: '#CBD5E1',
+    lineHeight: 21,
   },
   myMessageText: {
     color: '#fff',
@@ -754,13 +777,13 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   messageTime: {
-    fontSize: 11,
-    color: '#65676b',
-    marginTop: 4,
+    fontSize: 10,
+    color: '#475569',
+    marginTop: 5,
     alignSelf: 'flex-end',
   },
   myMessageTime: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   emptyMessages: {
     alignItems: 'center',
@@ -770,56 +793,61 @@ const styles = StyleSheet.create({
   },
   emptyMessagesText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#65676b',
-    marginTop: 16,
+    fontWeight: '700',
+    color: '#475569',
   },
   emptyMessagesSubtext: {
-    fontSize: 14,
-    color: '#8a8d91',
-    marginTop: 8,
+    fontSize: 13,
+    color: '#334155',
+    marginTop: 6,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e4e6eb',
-    backgroundColor: '#fff',
+    borderTopColor: '#1E293B',
+    backgroundColor: '#020617',
+    gap: 10,
   },
   input: {
     flex: 1,
-    backgroundColor: '#f0f2f5',
+    backgroundColor: '#0F172A',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#1E293B',
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#000',
+    color: '#E2E8F0',
     maxHeight: 100,
-    marginRight: 8,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0ea5e9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#1E293B',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(2, 6, 23, 0.85)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '90%',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#1E293B',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -827,28 +855,37 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e6eb',
+    borderBottomColor: '#1E293B',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#F1F5F9',
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e6eb',
+    borderBottomColor: '#1E293B',
+    backgroundColor: '#0F172A',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#000',
+    fontSize: 15,
+    color: '#E2E8F0',
   },
   searchLoading: {
     padding: 32,
@@ -857,15 +894,15 @@ const styles = StyleSheet.create({
   searchResultItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e6eb',
+    borderBottomColor: '#1E293B',
   },
   searchResultAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#e4e6eb',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -874,32 +911,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchResultName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#E2E8F0',
+    marginBottom: 3,
   },
   searchResultEmail: {
-    fontSize: 14,
-    color: '#65676b',
+    fontSize: 13,
+    color: '#64748B',
     marginBottom: 2,
   },
   searchResultMeta: {
     fontSize: 12,
-    color: '#8a8d91',
+    color: '#475569',
   },
   selfBadge: {
     fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '500',
+    color: '#0ea5e9',
+    fontWeight: '600',
   },
   searchEmpty: {
-    padding: 32,
+    padding: 40,
     alignItems: 'center',
   },
   searchEmptyText: {
     fontSize: 14,
-    color: '#8a8d91',
+    color: '#475569',
   },
 });
-

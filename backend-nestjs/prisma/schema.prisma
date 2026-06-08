@@ -1,0 +1,184 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  VENDOR
+}
+
+enum CurrencyType {
+  COIN
+  VND
+  REWARD_COIN
+  VOUCHER_CREDIT
+  CASHBACK_CREDIT
+  LOYALTY_POINT
+}
+
+enum TransactionType {
+  EARN
+  SPEND
+  GRANT
+  REVOKE
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  fullName          String?
+  role              UserRole           @default(USER)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  wallet            Wallet?
+  orders            Order[]
+  productViews      ProductView[]
+  favorites         Favorite[]
+  reviews           Review[]
+  budgets           Budget[]
+  aiRecommendations AIRecommendation[]
+}
+
+model Wallet {
+  id        String          @id @default(uuid())
+  userId    String          @unique
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balances  WalletBalance[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model WalletBalance {
+  id           String       @id @default(uuid())
+  walletId     String
+  wallet       Wallet       @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  currencyType CurrencyType
+  balance      Decimal      @default(0.0) @db.Decimal(15, 2)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([walletId, currencyType])
+}
+
+model Product {
+  id                String             @id @default(uuid())
+  name              String
+  description       String?
+  priceCredit       Decimal            @db.Decimal(15, 2)
+  category          String
+  tags              String[]
+  stockQuantity     Int                @default(0)
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  orderItems        OrderItem[]
+  productViews      ProductView[]
+  favorites         Favorite[]
+  reviews           Review[]
+  aiRecommendations AIRecommendation[]
+}
+
+model Order {
+  id                String       @id @default(uuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalAmountCredit Decimal      @db.Decimal(15, 2)
+  status            OrderStatus  @default(PENDING)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  orderItems        OrderItem[]
+  ledgerEntry       LedgerEntry?
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int      @default(1)
+  priceCredit Decimal  @db.Decimal(15, 2)
+}
+
+model ProductView {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Budget {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category          String
+  limitAmountCredit Decimal  @db.Decimal(15, 2)
+  startDate         DateTime
+  endDate           DateTime
+  createdAt         DateTime @default(now())
+}
+
+model LedgerEntry {
+  id            String          @id @default(uuid())
+  orderId       String?         @unique
+  order         Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  userId        String
+  amountCredit  Decimal         @db.Decimal(15, 2)
+  paymentMethod CurrencyType
+  type          TransactionType
+  description   String?
+  createdAt     DateTime        @default(now())
+}
+
+model SystemSettings {
+  id       String  @id @default(uuid())
+  coinRate Decimal @default(100.0) @db.Decimal(10, 2)
+  vndRate  Decimal @default(1.0) @db.Decimal(10, 2)
+}
+
+model AIRecommendation {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  score     Float
+  reason    String
+  createdAt DateTime @default(now())
+}

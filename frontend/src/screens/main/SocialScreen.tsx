@@ -16,6 +16,7 @@ import {
   Platform,
   RefreshControl,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -55,22 +56,18 @@ export default function SocialScreen() {
   const [reportingContent, setReportingContent] = useState<{ type: 'thread' | 'post'; id: string } | null>(null);
   const [page, setPage] = useState(1);
 
-  // Post form state
   const [postTitle, setPostTitle] = useState('');
   const [postContent, setPostContent] = useState('');
   const [postImages, setPostImages] = useState<string[]>([]);
 
-  // Comment form state
   const [commentContent, setCommentContent] = useState('');
   const [commentImages, setCommentImages] = useState<string[]>([]);
   const [replyingToThreadId, setReplyingToThreadId] = useState<string | null>(null);
   const [replyingToPostId, setReplyingToPostId] = useState<string | undefined>();
 
-  // Report form state
   const [reportReason, setReportReason] = useState('');
   const [reportDescription, setReportDescription] = useState('');
 
-  // Fetch threads (feed)
   const {
     data: threadsData,
     isLoading: isLoadingThreads,
@@ -80,7 +77,6 @@ export default function SocialScreen() {
     queryFn: () => getThreads(undefined, page, 20),
   });
 
-  // Fetch thread detail for comments
   const {
     data: threadDetail,
     isLoading: isLoadingThread,
@@ -91,7 +87,6 @@ export default function SocialScreen() {
     enabled: !!selectedThreadId && viewMode === 'thread-detail',
   });
 
-  // Create thread mutation
   const createThreadMutation = useMutation({
     mutationFn: createThread,
     onSuccess: () => {
@@ -100,14 +95,13 @@ export default function SocialScreen() {
       setPostTitle('');
       setPostContent('');
       setPostImages([]);
-      Alert.alert('Success', 'Post created successfully!');
+      Alert.alert('Success', 'Post has been published!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to create post');
+      Alert.alert('Error', error.response?.data?.error || 'Failed to post');
     },
   });
 
-  // Create post/comment mutation
   const createPostMutation = useMutation({
     mutationFn: createPost,
     onSuccess: () => {
@@ -119,30 +113,27 @@ export default function SocialScreen() {
       setReplyingToPostId(undefined);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to post comment');
+      Alert.alert('Error', error.response?.data?.error || 'Failed to submit comment');
     },
   });
 
-  // Delete thread mutation
   const deleteThreadMutation = useMutation({
     mutationFn: deleteThread,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['socialThreads'] });
-      Alert.alert('Success', 'Post deleted successfully');
+      Alert.alert('Success', 'Post deleted');
     },
   });
 
-  // Delete post mutation
   const deletePostMutation = useMutation({
     mutationFn: deletePost,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['socialThread', selectedThreadId] });
       queryClient.invalidateQueries({ queryKey: ['socialThreads'] });
-      Alert.alert('Success', 'Comment deleted successfully');
+      Alert.alert('Success', 'Comment deleted');
     },
   });
 
-  // Toggle reaction mutation
   const toggleReactionMutation = useMutation({
     mutationFn: toggleReaction,
     onSuccess: () => {
@@ -151,7 +142,6 @@ export default function SocialScreen() {
     },
   });
 
-  // Report content mutation
   const reportContentMutation = useMutation({
     mutationFn: ({ contentType, contentId, reason, description }: any) =>
       reportContent(contentType, contentId, reason, description),
@@ -160,13 +150,13 @@ export default function SocialScreen() {
       setReportReason('');
       setReportDescription('');
       setReportingContent(null);
-      Alert.alert('Success', 'Content reported. Thank you for your feedback.');
+      Alert.alert('Success', 'Content has been reported. Thank you!');
     },
   });
 
   const handleCreatePost = () => {
     if (!postContent.trim() && postImages.length === 0) {
-      Alert.alert('Error', 'Please write something or add an image');
+      Alert.alert('Error', 'Please enter content or add an image');
       return;
     }
     createThreadMutation.mutate({
@@ -179,7 +169,6 @@ export default function SocialScreen() {
   const handleOpenComments = (threadId: string) => {
     setSelectedThreadId(threadId);
     setViewMode('thread-detail');
-    // Don't show modal, just switch to detail view
   };
 
   const handleBackToFeed = () => {
@@ -190,7 +179,7 @@ export default function SocialScreen() {
 
   const handlePostComment = () => {
     if (!commentContent.trim() && commentImages.length === 0) {
-      Alert.alert('Error', 'Please write something or add an image');
+      Alert.alert('Error', 'Please enter content or add an image');
       return;
     }
     if (!selectedThreadId) return;
@@ -209,11 +198,10 @@ export default function SocialScreen() {
   };
 
   const handleLike = (contentType: 'thread' | 'post', contentId: string, currentReaction?: string) => {
-    const newReaction = currentReaction === 'like' ? 'like' : 'like';
     toggleReactionMutation.mutate({
       content_type: contentType,
       content_id: contentId,
-      reaction_type: newReaction,
+      reaction_type: 'like',
     });
   };
 
@@ -224,7 +212,7 @@ export default function SocialScreen() {
 
   const handleSubmitReport = () => {
     if (!reportReason.trim()) {
-      Alert.alert('Error', 'Please select a reason');
+      Alert.alert('Error', 'Please select a reason for reporting');
       return;
     }
     if (!reportingContent) return;
@@ -239,11 +227,7 @@ export default function SocialScreen() {
   const handleDeletePost = (threadId: string) => {
     Alert.alert('Delete Post', 'Are you sure you want to delete this post?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => deleteThreadMutation.mutate(threadId),
-      },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteThreadMutation.mutate(threadId) },
     ]);
   };
 
@@ -251,25 +235,23 @@ export default function SocialScreen() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
     if (diffInSeconds < 60) return 'just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US');
   };
 
   const renderPost = (thread: DiscussionThread) => {
     return (
       <View key={thread.id} style={styles.postCard}>
-        {/* Post Header */}
         <View style={styles.postHeader}>
           <View style={styles.postAuthor}>
             {thread.author?.avatar_url ? (
               <Image source={{ uri: thread.author.avatar_url }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={24} color="#666" />
+                <Ionicons name="person" size={20} color="#475569" />
               </View>
             )}
             <View style={styles.authorInfo}>
@@ -279,17 +261,18 @@ export default function SocialScreen() {
               <Text style={styles.postTime}>{formatTimeAgo(thread.created_at)}</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={() => handleReport('thread', thread.id)}>
-            <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
+          <TouchableOpacity
+            onPress={() => handleReport('thread', thread.id)}
+            style={styles.moreBtn}
+          >
+            <Ionicons name="ellipsis-horizontal" size={18} color="#475569" />
           </TouchableOpacity>
         </View>
 
-        {/* Post Content */}
         {thread.content && (
           <Text style={styles.postText}>{thread.content}</Text>
         )}
 
-        {/* Post Images */}
         {thread.image_urls && thread.image_urls.length > 0 && (
           <View style={styles.postImagesContainer}>
             {thread.image_urls.length === 1 ? (
@@ -309,15 +292,13 @@ export default function SocialScreen() {
           </View>
         )}
 
-        {/* Product Tag */}
         {thread.product && (
           <View style={styles.productTag}>
-            <Ionicons name="cube-outline" size={14} color="#007AFF" />
+            <Ionicons name="cube-outline" size={13} color="#0ea5e9" />
             <Text style={styles.productTagText}>{thread.product.name}</Text>
           </View>
         )}
 
-        {/* Post Actions */}
         <View style={styles.postActions}>
           <TouchableOpacity
             style={styles.actionButton}
@@ -325,10 +306,10 @@ export default function SocialScreen() {
           >
             <Ionicons
               name={thread.user_reaction === 'like' ? 'heart' : 'heart-outline'}
-              size={22}
-              color={thread.user_reaction === 'like' ? '#FF3B30' : '#666'}
+              size={20}
+              color={thread.user_reaction === 'like' ? '#EF4444' : '#64748B'}
             />
-            <Text style={[styles.actionText, thread.user_reaction === 'like' && styles.actionTextActive]}>
+            <Text style={[styles.actionText, thread.user_reaction === 'like' && styles.actionTextLiked]}>
               {String(thread.reaction_count || 0)}
             </Text>
           </TouchableOpacity>
@@ -336,16 +317,15 @@ export default function SocialScreen() {
             style={styles.actionButton}
             onPress={() => handleOpenComments(thread.id)}
           >
-            <Ionicons name="chatbubble-outline" size={22} color="#666" />
+            <Ionicons name="chatbubble-outline" size={20} color="#64748B" />
             <Text style={styles.actionText}>{String(thread.post_count || 0)}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="share-outline" size={22} color="#666" />
+            <Ionicons name="share-outline" size={20} color="#64748B" />
             <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
         </View>
 
-        {/* View Comments Button */}
         {thread.post_count && thread.post_count > 0 && (
           <TouchableOpacity
             style={styles.viewCommentsButton}
@@ -367,7 +347,7 @@ export default function SocialScreen() {
           <Image source={{ uri: post.author.avatar_url }} style={styles.commentAvatar} />
         ) : (
           <View style={styles.commentAvatarPlaceholder}>
-            <Ionicons name="person" size={16} color="#666" />
+            <Ionicons name="person" size={14} color="#475569" />
           </View>
         )}
         <View style={styles.commentContent}>
@@ -387,7 +367,7 @@ export default function SocialScreen() {
           <View style={styles.commentActions}>
             <Text style={styles.commentTime}>{formatTimeAgo(post.created_at)}</Text>
             <TouchableOpacity onPress={() => handleLike('post', post.id, post.user_reaction)}>
-              <Text style={[styles.commentAction, post.user_reaction === 'like' && styles.commentActionActive]}>
+              <Text style={[styles.commentAction, post.user_reaction === 'like' && styles.commentActionLiked]}>
                 Like
               </Text>
             </TouchableOpacity>
@@ -415,18 +395,26 @@ export default function SocialScreen() {
   if (viewMode === 'thread-detail' && selectedThreadId && threadDetail) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#020617" />
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBackToFeed} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#000" />
+          <TouchableOpacity onPress={handleBackToFeed} style={styles.headerBtn}>
+            <Ionicons name="chevron-back" size={22} color="#94A3B8" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Comments</Text>
+          <View style={{ width: 36 }} />
         </View>
 
         <ScrollView
           style={styles.content}
-          refreshControl={<RefreshControl refreshing={isLoadingThread} onRefresh={refetchThread} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoadingThread}
+              onRefresh={refetchThread}
+              tintColor="#0ea5e9"
+              colors={['#0ea5e9']}
+            />
+          }
         >
-          {/* Original Post */}
           <View style={styles.originalPost}>
             <View style={styles.postHeader}>
               <View style={styles.postAuthor}>
@@ -434,7 +422,7 @@ export default function SocialScreen() {
                   <Image source={{ uri: threadDetail.thread.author.avatar_url }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <Ionicons name="person" size={24} color="#666" />
+                    <Ionicons name="person" size={20} color="#475569" />
                   </View>
                 )}
                 <View style={styles.authorInfo}>
@@ -457,21 +445,19 @@ export default function SocialScreen() {
             )}
           </View>
 
-          {/* Comments */}
           <View style={styles.commentsSection}>
-            <Text style={styles.commentsTitle}>{String(threadDetail.total || 0)} Comments</Text>
+            <Text style={styles.commentsTitle}>{String(threadDetail.total || 0)} {threadDetail.total === 1 ? 'comment' : 'comments'}</Text>
             {threadDetail.posts.map((post) => renderComment(post))}
           </View>
         </ScrollView>
 
-        {/* Comment Input */}
         {!threadDetail.thread.is_locked && (
           <View style={styles.commentInputContainer}>
-            {user?.avatar_url ? (
-              <Image source={{ uri: user.avatar_url }} style={styles.inputAvatar} />
+            {user?.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} style={styles.inputAvatar} />
             ) : (
               <View style={styles.inputAvatarPlaceholder}>
-                <Ionicons name="person" size={16} color="#666" />
+                <Ionicons name="person" size={14} color="#475569" />
               </View>
             )}
             <TouchableOpacity
@@ -486,7 +472,6 @@ export default function SocialScreen() {
           </View>
         )}
 
-        {/* Comment Modal - Must be inside thread-detail view */}
         <Modal visible={showCommentModal} animationType="slide" transparent>
           <KeyboardAvoidingView
             style={styles.modalOverlay}
@@ -500,20 +485,20 @@ export default function SocialScreen() {
                     setShowCommentModal(false);
                     setReplyingToPostId(undefined);
                   }}
+                  style={styles.modalCloseBtn}
                 >
-                  <Ionicons name="close" size={24} color="#000" />
+                  <Ionicons name="close" size={20} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.modalBody}>
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  placeholder={replyingToPostId ? "Write a reply..." : "Write a comment..."}
-                  placeholderTextColor="#999"
+                  placeholder={replyingToPostId ? 'Write a reply...' : 'Write a comment...'}
+                  placeholderTextColor="#475569"
                   value={commentContent}
                   onChangeText={setCommentContent}
                   multiline
                   numberOfLines={6}
-                  color="#000"
                 />
                 {commentImages.map((url, index) => (
                   <View key={index} style={styles.imagePreview}>
@@ -522,7 +507,7 @@ export default function SocialScreen() {
                       onPress={() => setCommentImages(commentImages.filter((_, i) => i !== index))}
                       style={styles.removeImageButton}
                     >
-                      <Ionicons name="close-circle" size={24} color="#FF3B30" />
+                      <Ionicons name="close-circle" size={24} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -541,7 +526,7 @@ export default function SocialScreen() {
                   {createPostMutation.isPending ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.submitButtonText}>Post</Text>
+                    <Text style={styles.submitButtonText}>Post Comment</Text>
                   )}
                 </TouchableOpacity>
               </ScrollView>
@@ -554,16 +539,20 @@ export default function SocialScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#020617" />
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={styles.backButton}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.headerBtn}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="chevron-back" size={22} color="#94A3B8" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Social Feed</Text>
-        <TouchableOpacity onPress={() => setShowCreatePostModal(true)}>
-          <Ionicons name="create-outline" size={28} color="#007AFF" />
+        <Text style={styles.headerTitle}>Discussion Board</Text>
+        <TouchableOpacity
+          onPress={() => setShowCreatePostModal(true)}
+          style={styles.createPostBtn}
+        >
+          <Ionicons name="create-outline" size={20} color="#0ea5e9" />
         </TouchableOpacity>
       </View>
 
@@ -572,12 +561,27 @@ export default function SocialScreen() {
         renderItem={({ item }) => renderPost(item)}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.feedContent}
-        refreshControl={<RefreshControl refreshing={isLoadingThreads} onRefresh={refetchThreads} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoadingThreads}
+            onRefresh={refetchThreads}
+            tintColor="#0ea5e9"
+            colors={['#0ea5e9']}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="newspaper-outline" size={64} color="#ccc" />
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="newspaper-outline" size={40} color="#334155" />
+            </View>
             <Text style={styles.emptyText}>No posts yet</Text>
             <Text style={styles.emptySubtext}>Be the first to share something!</Text>
+            <TouchableOpacity
+              style={styles.emptyCreateBtn}
+              onPress={() => setShowCreatePostModal(true)}
+            >
+              <Text style={styles.emptyCreateBtnText}>Create Post</Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -591,30 +595,32 @@ export default function SocialScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create Post</Text>
-              <TouchableOpacity onPress={() => setShowCreatePostModal(false)}>
-                <Ionicons name="close" size={24} color="#000" />
+              <TouchableOpacity
+                onPress={() => setShowCreatePostModal(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
               <View style={styles.createPostHeader}>
-                {user?.avatar_url ? (
-                  <Image source={{ uri: user.avatar_url }} style={styles.createPostAvatar} />
+                {user?.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={styles.createPostAvatar} />
                 ) : (
                   <View style={styles.createPostAvatarPlaceholder}>
-                    <Ionicons name="person" size={24} color="#666" />
+                    <Ionicons name="person" size={20} color="#475569" />
                   </View>
                 )}
-                <Text style={styles.createPostAuthorName}>{user?.full_name || user?.email || 'You'}</Text>
+                <Text style={styles.createPostAuthorName}>{user?.fullName || user?.email || 'You'}</Text>
               </View>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="What's on your mind?"
-                placeholderTextColor="#999"
+                placeholderTextColor="#475569"
                 value={postContent}
                 onChangeText={setPostContent}
                 multiline
                 numberOfLines={8}
-                color="#000"
               />
               {postImages.map((url, index) => (
                 <View key={index} style={styles.imagePreview}>
@@ -623,7 +629,7 @@ export default function SocialScreen() {
                     onPress={() => setPostImages(postImages.filter((_, i) => i !== index))}
                     style={styles.removeImageButton}
                   >
-                    <Ionicons name="close-circle" size={24} color="#FF3B30" />
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -664,20 +670,20 @@ export default function SocialScreen() {
                   setShowCommentModal(false);
                   setReplyingToPostId(undefined);
                 }}
+                style={styles.modalCloseBtn}
               >
-                <Ionicons name="close" size={24} color="#000" />
+                <Ionicons name="close" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder={replyingToPostId ? "Write a reply..." : "Write a comment..."}
-                placeholderTextColor="#999"
+                placeholder={replyingToPostId ? 'Write a reply...' : 'Write a comment...'}
+                placeholderTextColor="#475569"
                 value={commentContent}
                 onChangeText={setCommentContent}
                 multiline
                 numberOfLines={6}
-                color="#000"
               />
               {commentImages.map((url, index) => (
                 <View key={index} style={styles.imagePreview}>
@@ -686,7 +692,7 @@ export default function SocialScreen() {
                     onPress={() => setCommentImages(commentImages.filter((_, i) => i !== index))}
                     style={styles.removeImageButton}
                   >
-                    <Ionicons name="close-circle" size={24} color="#FF3B30" />
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -719,30 +725,31 @@ export default function SocialScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Report Content</Text>
-              <TouchableOpacity onPress={() => setShowReportModal(false)}>
-                <Ionicons name="close" size={24} color="#000" />
+              <TouchableOpacity
+                onPress={() => setShowReportModal(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
               <Text style={styles.label}>Reason</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Reason for reporting"
-                placeholderTextColor="#999"
+                placeholder="Reason for report"
+                placeholderTextColor="#475569"
                 value={reportReason}
                 onChangeText={setReportReason}
-                color="#000"
               />
               <Text style={styles.label}>Description (optional)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Additional details..."
-                placeholderTextColor="#999"
+                placeholderTextColor="#475569"
                 value={reportDescription}
                 onChangeText={setReportDescription}
                 multiline
                 numberOfLines={4}
-                color="#000"
               />
               <TouchableOpacity
                 style={[styles.submitButton, reportContentMutation.isPending && styles.submitButtonDisabled]}
@@ -766,7 +773,8 @@ export default function SocialScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f2f5',
+    backgroundColor: '#020617',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     flexDirection: 'row',
@@ -774,19 +782,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e6eb',
+    borderBottomColor: '#1E293B',
   },
-  backButton: {
-    padding: 8,
+  headerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#000',
+    color: '#F1F5F9',
     flex: 1,
     textAlign: 'center',
+  },
+  createPostBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(14, 165, 233, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(14, 165, 233, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
@@ -795,15 +820,12 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   postCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
     marginBottom: 12,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   postHeader: {
     flexDirection: 'row',
@@ -820,34 +842,39 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 12,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   avatarPlaceholder: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#e4e6eb',
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   authorInfo: {
     flex: 1,
   },
   authorName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#E2E8F0',
   },
   postTime: {
-    fontSize: 13,
-    color: '#65676b',
+    fontSize: 12,
+    color: '#475569',
     marginTop: 2,
+  },
+  moreBtn: {
+    padding: 4,
   },
   postText: {
     fontSize: 15,
-    color: '#000',
-    lineHeight: 20,
+    color: '#CBD5E1',
+    lineHeight: 22,
     marginBottom: 12,
   },
   postImagesContainer: {
@@ -856,7 +883,7 @@ const styles = StyleSheet.create({
   singleImage: {
     width: '100%',
     height: width - 64,
-    borderRadius: 8,
+    borderRadius: 12,
     resizeMode: 'cover',
   },
   multipleImages: {
@@ -867,42 +894,44 @@ const styles = StyleSheet.create({
   multiImage: {
     width: (width - 80) / 2,
     height: (width - 80) / 2,
-    borderRadius: 8,
+    borderRadius: 10,
     resizeMode: 'cover',
   },
   moreImagesOverlay: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   moreImagesText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   productTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#e7f3ff',
+    backgroundColor: 'rgba(14, 165, 233, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     alignSelf: 'flex-start',
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(14, 165, 233, 0.2)',
   },
   productTagText: {
     fontSize: 13,
-    color: '#1877f2',
-    fontWeight: '500',
+    color: '#0ea5e9',
+    fontWeight: '600',
   },
   postActions: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e4e6eb',
-    gap: 8,
+    borderTopColor: '#1E293B',
+    gap: 4,
   },
   actionButton: {
     flexDirection: 'row',
@@ -911,67 +940,49 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingVertical: 8,
+    borderRadius: 10,
   },
   actionText: {
-    fontSize: 14,
-    color: '#65676b',
-    fontWeight: '500',
-  },
-  actionTextActive: {
-    color: '#FF3B30',
-  },
-  commentsPreview: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e4e6eb',
-  },
-  commentPreview: {
-    marginBottom: 8,
-  },
-  commentAuthorName: {
     fontSize: 13,
+    color: '#64748B',
     fontWeight: '600',
-    color: '#000',
-    marginBottom: 2,
   },
-  commentPreviewText: {
-    fontSize: 14,
-    color: '#65676b',
-    lineHeight: 18,
-  },
-  viewAllComments: {
-    fontSize: 13,
-    color: '#65676b',
-    marginTop: 4,
+  actionTextLiked: {
+    color: '#EF4444',
   },
   viewCommentsButton: {
     marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
   },
   viewCommentsText: {
     fontSize: 13,
-    color: '#65676b',
+    color: '#64748B',
+    fontWeight: '500',
   },
   originalPost: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     padding: 16,
-    marginBottom: 8,
+    marginBottom: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
   },
   commentsSection: {
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     padding: 16,
   },
   commentsTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#E2E8F0',
     marginBottom: 16,
   },
   commentItem: {
     marginBottom: 16,
   },
   replyItem: {
-    marginLeft: 40,
+    marginLeft: 44,
   },
   commentHeader: {
     flexDirection: 'row',
@@ -982,12 +993,14 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   commentAvatarPlaceholder: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#e4e6eb',
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -996,21 +1009,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   commentBubble: {
-    backgroundColor: '#f0f2f5',
-    borderRadius: 18,
+    backgroundColor: '#0F172A',
+    borderRadius: 14,
     padding: 12,
     marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   commentAuthor: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: '700',
+    color: '#E2E8F0',
     marginBottom: 4,
   },
   commentText: {
     fontSize: 14,
-    color: '#000',
-    lineHeight: 18,
+    color: '#CBD5E1',
+    lineHeight: 20,
   },
   commentImages: {
     marginTop: 8,
@@ -1019,30 +1034,30 @@ const styles = StyleSheet.create({
   commentImage: {
     width: 200,
     height: 200,
-    borderRadius: 8,
+    borderRadius: 10,
     resizeMode: 'cover',
   },
   commentActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     marginTop: 4,
-    paddingLeft: 12,
+    paddingLeft: 4,
   },
   commentTime: {
-    fontSize: 12,
-    color: '#65676b',
+    fontSize: 11,
+    color: '#475569',
   },
   commentAction: {
     fontSize: 12,
-    color: '#65676b',
-    fontWeight: '500',
+    color: '#64748B',
+    fontWeight: '600',
   },
-  commentActionActive: {
-    color: '#FF3B30',
+  commentActionLiked: {
+    color: '#EF4444',
   },
   deleteAction: {
-    color: '#FF3B30',
+    color: '#EF4444',
   },
   repliesContainer: {
     marginTop: 8,
@@ -1052,35 +1067,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     borderTopWidth: 1,
-    borderTopColor: '#e4e6eb',
+    borderTopColor: '#1E293B',
+    gap: 10,
   },
   inputAvatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    marginRight: 8,
   },
   inputAvatarPlaceholder: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#e4e6eb',
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
   },
   commentInputButton: {
     flex: 1,
-    backgroundColor: '#f0f2f5',
+    backgroundColor: '#0F172A',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   commentInputPlaceholder: {
     fontSize: 14,
-    color: '#65676b',
+    color: '#475569',
   },
   emptyContainer: {
     flex: 1,
@@ -1089,28 +1105,55 @@ const styles = StyleSheet.create({
     padding: 32,
     minHeight: 400,
   },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   emptyText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#65676b',
-    marginTop: 16,
+    fontWeight: '700',
+    color: '#475569',
+    marginTop: 4,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#8a8d91',
-    marginTop: 8,
+    color: '#334155',
+    marginTop: 6,
     textAlign: 'center',
+  },
+  emptyCreateBtn: {
+    marginTop: 20,
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  emptyCreateBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(2, 6, 23, 0.85)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '90%',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#1E293B',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1118,12 +1161,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e6eb',
+    borderBottomColor: '#1E293B',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#F1F5F9',
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalBody: {
     padding: 16,
@@ -1132,43 +1183,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    gap: 10,
   },
   createPostAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 12,
   },
   createPostAvatarPlaceholder: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#e4e6eb',
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   createPostAuthorName: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: '700',
+    color: '#E2E8F0',
   },
   input: {
-    backgroundColor: '#f0f2f5',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#000',
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    color: '#E2E8F0',
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   textArea: {
     minHeight: 120,
     textAlignVertical: 'top',
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#000',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   imagePreview: {
@@ -1178,7 +1230,7 @@ const styles = StyleSheet.create({
   previewImage: {
     width: '100%',
     height: 200,
-    borderRadius: 8,
+    borderRadius: 12,
     resizeMode: 'cover',
   },
   removeImageButton: {
@@ -1187,18 +1239,19 @@ const styles = StyleSheet.create({
     right: 8,
   },
   submitButton: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#0ea5e9',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: 'center',
     marginTop: 8,
+    marginBottom: 20,
   },
   submitButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#1E293B',
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

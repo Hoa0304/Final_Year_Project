@@ -23,7 +23,8 @@ export type NotificationType =
   | 'game_reward'
   | 'rating_received'
   | 'cart_reminder'
-  | 'social_reply';
+  | 'social_reply'
+  | 'product_review';
 
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type NotificationChannel = 'in_app' | 'push' | 'email' | 'sms';
@@ -79,6 +80,7 @@ const NOTIFICATION_PRIORITY_MAP: Record<NotificationType, NotificationPriority> 
   rating_received: 'low',
   cart_reminder: 'low',
   social_reply: 'medium',
+  product_review: 'high',
 };
 
 /**
@@ -101,6 +103,7 @@ const DEFAULT_CHANNELS: Record<NotificationType, NotificationChannel[]> = {
   rating_received: ['in_app'],
   cart_reminder: ['in_app'],
   social_reply: ['in_app'],
+  product_review: ['in_app', 'push'],
 };
 
 /**

@@ -42,24 +42,21 @@ export const env = {
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
   GROQ_API_KEY: process.env.GROQ_API_KEY || 'gsk_x7t83BLPIITOkb05Z70IWGdyb3FYLwjJkc8T0tqQg',
-  // Blockchain configuration (optional)
-  BLOCKCHAIN_RPC_URL: process.env.BLOCKCHAIN_RPC_URL || '',
-  BLOCKCHAIN_TOKEN_ADDRESS: process.env.BLOCKCHAIN_TOKEN_ADDRESS || '',
-  BLOCKCHAIN_REGISTRY_ADDRESS: process.env.BLOCKCHAIN_REGISTRY_ADDRESS || '',
-  BLOCKCHAIN_TASK_SYSTEM_ADDRESS: process.env.BLOCKCHAIN_TASK_SYSTEM_ADDRESS || '',
-  BLOCKCHAIN_PRIVATE_KEY: process.env.BLOCKCHAIN_PRIVATE_KEY || '',
+
+  // VNPay configuration
+  VNP_TMN_CODE: process.env.VNP_TMN_CODE || '',
+  VNP_HASH_SECRET: process.env.VNP_HASH_SECRET || '',
+  VNP_URL: process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+  // MoMo configuration
+  MOMO_PARTNER_CODE: process.env.MOMO_PARTNER_CODE || 'MOMOBKUN20180810',
+  MOMO_ACCESS_KEY: process.env.MOMO_ACCESS_KEY || 'klm05Blk5mfgUdPn',
+  MOMO_SECRET_KEY: process.env.MOMO_SECRET_KEY || 'at118clm740NWZo1TB152wD68EPnH40c',
+  MOMO_API_URL: process.env.MOMO_API_URL || 'https://test-payment.momo.vn/v2/gateway/api/create',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+  API_URL: process.env.API_URL || 'http://localhost:3002',
 };
 
-// Blockchain config object
-export const config = {
-  blockchain: {
-    rpcUrl: env.BLOCKCHAIN_RPC_URL,
-    tokenAddress: env.BLOCKCHAIN_TOKEN_ADDRESS,
-    registryAddress: env.BLOCKCHAIN_REGISTRY_ADDRESS,
-    taskSystemAddress: env.BLOCKCHAIN_TASK_SYSTEM_ADDRESS,
-    privateKey: env.BLOCKCHAIN_PRIVATE_KEY,
-  },
-};
+// Blockchain config object is disabled
 
 // Validate required environment variables
 if (!env.SUPABASE_SERVICE_ROLE_KEY) {

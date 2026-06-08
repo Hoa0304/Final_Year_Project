@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { getSpendingRecommendations, getInvestingRecommendations } from './recommendation/engine';
+import { getSpendingRecommendations } from './recommendation/engine';
 import { categorizeTransaction } from './recommendation/categorization';
 import { getItemSuggestions } from './recommendation/suggestions';
 import { getExpenseInsights, predictFutureSpending } from './recommendation/expense-insights';
@@ -95,14 +95,13 @@ app.get('/health', (req, res) => {
 // Spending recommendations endpoint
 app.post('/recommendations/spending', async (req, res) => {
   try {
-    const { userId, balance, recentTransactions, availableProducts, availableGames } = req.body;
+    const { userId, balance, recentTransactions, availableProducts } = req.body;
 
     const recommendations = getSpendingRecommendations({
       userId,
       balance,
       recentTransactions: recentTransactions || [],
-      availableProducts: availableProducts || [],
-      availableGames: availableGames || []
+      availableProducts: availableProducts || []
     });
 
     res.json({
@@ -111,29 +110,6 @@ app.post('/recommendations/spending', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Spending recommendations error:', error);
-    res.status(500).json({ error: 'Failed to generate recommendations' });
-  }
-});
-
-// Investing recommendations endpoint
-app.post('/recommendations/investing', async (req, res) => {
-  try {
-    const { userId, balance, portfolio, availableStocks, transactionHistory } = req.body;
-
-    const recommendations = getInvestingRecommendations({
-      userId,
-      balance,
-      portfolio: portfolio || [],
-      availableStocks: availableStocks || [],
-      transactionHistory: transactionHistory || []
-    });
-
-    res.json({
-      recommendations,
-      source: 'ai-engine'
-    });
-  } catch (error: any) {
-    console.error('Investing recommendations error:', error);
     res.status(500).json({ error: 'Failed to generate recommendations' });
   }
 });

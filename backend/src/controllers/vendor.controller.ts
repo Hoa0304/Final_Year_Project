@@ -49,7 +49,7 @@ import { getVendorLimits, ensureVendorProfile } from '../services/vendor.service
  */
 export async function createProduct(req: AuthRequest, res: Response) {
   try {
-    const { name, description, price, imageUrl, category, stockQuantity, randomVoucherIds } = req.body;
+    const { name, description, price, imageUrl, category, stockQuantity } = req.body;
     const vendorId = req.user!.userId;
 
     if (!name || !price) {
@@ -80,11 +80,6 @@ export async function createProduct(req: AuthRequest, res: Response) {
       });
     }
 
-    // Validate random_voucher_ids if provided
-    if (randomVoucherIds && !Array.isArray(randomVoucherIds)) {
-      return res.status(400).json({ error: 'randomVoucherIds must be an array' });
-    }
-
     const { data: product, error } = await supabase
       .from('products')
       .insert({
@@ -95,7 +90,6 @@ export async function createProduct(req: AuthRequest, res: Response) {
         category: category || null,
         stock_quantity: stockQuantity || 0,
         created_by: vendorId,
-        random_voucher_ids: randomVoucherIds && randomVoucherIds.length > 0 ? randomVoucherIds : null,
         is_active: true,
         status: 'pending_review' // New products must be reviewed
       })
@@ -133,7 +127,7 @@ export async function createProduct(req: AuthRequest, res: Response) {
 export async function updateProduct(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
-    const { name, description, price, imageUrl, category, stockQuantity, isActive, randomVoucherIds } = req.body;
+    const { name, description, price, imageUrl, category, stockQuantity, isActive } = req.body;
     const vendorId = req.user!.userId;
     const isAdmin = req.user!.role === 'admin';
 
@@ -179,15 +173,6 @@ export async function updateProduct(req: AuthRequest, res: Response) {
     // Only admin can change is_active status
     if (isActive !== undefined && isAdmin) {
       updateData.is_active = isActive;
-    }
-    // Handle random voucher IDs
-    if (req.body.randomVoucherIds !== undefined) {
-      if (!Array.isArray(req.body.randomVoucherIds)) {
-        return res.status(400).json({ error: 'randomVoucherIds must be an array' });
-      }
-      updateData.random_voucher_ids = req.body.randomVoucherIds && req.body.randomVoucherIds.length > 0 
-        ? req.body.randomVoucherIds 
-        : null;
     }
 
     const { data: product, error } = await supabase
@@ -333,3 +318,133 @@ export async function setProductDiscount(req: AuthRequest, res: Response) {
   }
 }
 
+/**
+ * Get analytics for the current vendor (vendor dashboard)
+ */
+export async function getVendorAnalytics(req: AuthRequest, res: Response) {
+  try {
+    const vendorId = req.user!.userId;
+    const { period = '30' } = req.query;
+
+    const since = new Date();
+    since.setDate(since.getDate() - parseInt(period as string));
+
+    // Products this week
+    const limits = await getVendorLimits(vendorId);
+
+    // Total products
+    const { count: totalProducts } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('created_by', vendorId)
+      .eq('is_active', true);
+
+    // Orders this period
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('status, price_coins, price_vnd, payment_method, original_price_coins, created_at')
+      .eq('vendor_id', vendorId)
+      .gte('created_at', since.toISOString());
+
+    const allOrders = orders || [];
+    const deliveredOrders = allOrders.filter(o => o.status === 'delivered');
+    const totalRevenueCoins = deliveredOrders
+      .reduce((sum, o) => sum + (o.price_coins || 0), 0); // total coins offset applied by buyers
+    const totalRevenueVnd = deliveredOrders
+      .reduce((sum, o) => sum + (o.original_price_coins || 0), 0); // gross sales value in VND
+
+    // Active subscription
+    const { data: subscription } = await supabase
+      .from('vendor_subscriptions')
+      .select('*, vendor_packages(name, product_limit)')
+      .eq('vendor_id', vendorId)
+      .eq('status', 'active')
+      .single();
+
+    res.json({
+      analytics: {
+        totalProducts: totalProducts || 0,
+        productsThisWeek: limits.currentProducts,
+        productLimit: limits.productLimit,
+        canPostProduct: limits.canPostProduct,
+        totalOrders: allOrders.length,
+        deliveredOrders: deliveredOrders.length,
+        pendingOrders: allOrders.filter(o => ['processing', 'shipped', 'out_for_delivery'].includes(o.status)).length,
+        totalRevenueCoins,
+        totalRevenueVnd,
+        byStatus: allOrders.reduce((acc: Record<string, number>, o) => {
+          acc[o.status] = (acc[o.status] || 0) + 1;
+          return acc;
+        }, {}),
+      },
+      subscription: subscription ? {
+        packageName: subscription.vendor_packages?.name || 'Unknown',
+        productLimit: subscription.vendor_packages?.product_limit,
+        expiresAt: subscription.expires_at,
+        status: subscription.status,
+      } : { packageName: 'Free', productLimit: 1, status: 'free' },
+      period: parseInt(period as string),
+    });
+  } catch (error) {
+    console.error('Get vendor analytics error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * Admin: Get analytics for ALL vendors
+ */
+export async function getAdminVendorStats(req: AuthRequest, res: Response) {
+  try {
+    // Get all vendors
+    const { data: vendors } = await supabase
+      .from('users')
+      .select('id, full_name, email, created_at')
+      .eq('role', 'vendor');
+
+    if (!vendors) return res.json({ vendors: [] });
+
+    // For each vendor, get stats
+    const vendorStats = await Promise.all(
+      vendors.map(async (vendor) => {
+        const { count: totalProducts } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('created_by', vendor.id)
+          .eq('is_active', true);
+
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('status, price_coins, price_vnd, payment_method, original_price_coins')
+          .eq('vendor_id', vendor.id);
+
+        const allOrders = orders || [];
+        const delivered = allOrders.filter(o => o.status === 'delivered');
+        const revenueCoins = delivered.reduce((s, o) => s + (o.price_coins || 0), 0);
+        const revenueVnd = delivered.reduce((s, o) => s + (o.original_price_coins || 0), 0);
+
+        const { data: subscription } = await supabase
+          .from('vendor_subscriptions')
+          .select('vendor_packages(name)')
+          .eq('vendor_id', vendor.id)
+          .eq('status', 'active')
+          .single();
+
+        return {
+          ...vendor,
+          totalProducts: totalProducts || 0,
+          totalOrders: allOrders.length,
+          deliveredOrders: delivered.length,
+          revenueCoins,
+          revenueVnd,
+          subscriptionPlan: (subscription as any)?.vendor_packages?.name || 'Free',
+        };
+      })
+    );
+
+    res.json({ vendors: vendorStats });
+  } catch (error) {
+    console.error('Get admin vendor stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}

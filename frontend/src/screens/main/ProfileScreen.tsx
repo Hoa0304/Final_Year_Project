@@ -11,16 +11,16 @@ import {
   StatusBar,
   TextInput,
   Image,
-  Modal,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { getBalance, getProfile, updateProfile, UserProfile } from '../../services/user.service';
+import { getBalance, getProfile, updateProfile } from '../../services/user.service';
 import { useAuth } from '../../context/AuthContext';
 import ImageUploadPicker from '../../components/ImageUploadPicker';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -92,7 +92,7 @@ export default function ProfileScreen() {
   }, [profile, isEditing]);
 
   async function handleLogout() {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Logout', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
@@ -131,7 +131,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#6366F1" />
         </View>
       </SafeAreaView>
     );
@@ -139,8 +139,9 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
-        {/* Profile Header */}
+      <StatusBar barStyle="light-content" backgroundColor="#020617" />
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        {/* Profile Card Header */}
         <View style={styles.header}>
           <View style={styles.headerActions}>
             {!isEditing && (
@@ -148,7 +149,7 @@ export default function ProfileScreen() {
                 style={styles.editButton}
                 onPress={() => setIsEditing(true)}
               >
-                <Ionicons name="create-outline" size={24} color="#007AFF" />
+                <Ionicons name="create-outline" size={20} color="#818CF8" />
                 <Text style={styles.editButtonText}>Edit</Text>
               </TouchableOpacity>
             )}
@@ -191,9 +192,9 @@ export default function ProfileScreen() {
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     {user?.role === 'vendor' ? (
-                      <Ionicons name="storefront" size={50} color="#FF9500" />
+                      <Ionicons name="storefront-outline" size={50} color="#F59E0B" />
                     ) : (
-                      <Ionicons name="person" size={50} color="#007AFF" />
+                      <Ionicons name="person-outline" size={50} color="#6366F1" />
                     )}
                   </View>
                 )}
@@ -207,38 +208,58 @@ export default function ProfileScreen() {
               value={formData.fullName}
               onChangeText={(text) => setFormData({ ...formData, fullName: text })}
               placeholder="Full Name"
-              placeholderTextColor="#999"
+              placeholderTextColor="#475569"
             />
           ) : (
             <Text style={styles.name}>{displayName}</Text>
           )}
 
           <Text style={styles.email}>{user?.email}</Text>
+
           {user?.role && (
             <View style={[styles.roleBadge, user.role === 'vendor' && styles.vendorBadge]}>
-              <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+              <Text style={[styles.roleText, user.role === 'vendor' && styles.vendorRoleText]}>
+                {user.role === 'vendor' ? 'VENDOR' : user.role.toUpperCase()}
+              </Text>
             </View>
           )}
+
           <View style={styles.balanceContainer}>
-            <Text style={styles.balanceLabel}>Balance</Text>
-            <Text style={styles.balanceAmount}>{balance?.toFixed(2) || '0.00'} coins</Text>
+            <Text style={styles.balanceLabel}>Shopee Coins Balance</Text>
+            <Text style={styles.balanceAmount}>{Math.round(balance || 0).toLocaleString('en-US')} coins</Text>
+            {!isEditing && (
+              <TouchableOpacity
+                style={styles.topUpButton}
+                onPress={() => (navigation as any).navigate('TopUp')}
+              >
+                <LinearGradient
+                  colors={['#6366F1', '#4F46E5']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.topUpButtonGradient}
+                >
+                  <Ionicons name="wallet-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.topUpButtonText}>Top Up Coins</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
         {/* Profile Details */}
         <View style={styles.detailsSection}>
-          <Text style={styles.sectionTitle}>Profile Information</Text>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
 
           {/* Phone */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Phone</Text>
+            <Text style={styles.fieldLabel}>Phone Number</Text>
             {isEditing ? (
               <TextInput
                 style={styles.fieldInput}
                 value={formData.phone}
                 onChangeText={(text) => setFormData({ ...formData, phone: text })}
                 placeholder="Enter phone number"
-                placeholderTextColor="#999"
+                placeholderTextColor="#475569"
                 keyboardType="phone-pad"
               />
             ) : (
@@ -262,7 +283,7 @@ export default function ProfileScreen() {
                       day: '2-digit',
                     })}
                   </Text>
-                  <Ionicons name="calendar-outline" size={20} color="#007AFF" />
+                  <Ionicons name="calendar-outline" size={20} color="#818CF8" />
                 </TouchableOpacity>
                 {showDatePicker && (
                   <View style={styles.datePickerContainer}>
@@ -280,8 +301,8 @@ export default function ProfileScreen() {
                         }
                       }}
                       maximumDate={new Date()}
-                      textColor="#000000"
-                      themeVariant="light"
+                      textColor="#ffffff"
+                      themeVariant="dark"
                       style={Platform.OS === 'ios' ? styles.datePickerIOS : undefined}
                     />
                   </View>
@@ -291,10 +312,10 @@ export default function ProfileScreen() {
               <Text style={styles.fieldValue}>
                 {profile?.dateOfBirth
                   ? new Date(profile.dateOfBirth).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
                   : 'Not set'}
               </Text>
             )}
@@ -308,8 +329,8 @@ export default function ProfileScreen() {
                 style={[styles.fieldInput, styles.textArea]}
                 value={formData.address}
                 onChangeText={(text) => setFormData({ ...formData, address: text })}
-                placeholder="Enter address"
-                placeholderTextColor="#999"
+                placeholder="Enter your address"
+                placeholderTextColor="#475569"
                 multiline
                 numberOfLines={3}
               />
@@ -326,8 +347,8 @@ export default function ProfileScreen() {
                 style={[styles.fieldInput, styles.textArea]}
                 value={formData.bio}
                 onChangeText={(text) => setFormData({ ...formData, bio: text })}
-                placeholder="Tell us about yourself"
-                placeholderTextColor="#999"
+                placeholder="Introduce yourself..."
+                placeholderTextColor="#475569"
                 multiline
                 numberOfLines={4}
               />
@@ -344,76 +365,70 @@ export default function ProfileScreen() {
               style={styles.menuItem}
               onPress={() => (navigation as any).navigate('Transactions')}
             >
-              <Ionicons name="receipt-outline" size={24} color="#007AFF" />
+              <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
+                <Ionicons name="receipt-outline" size={20} color="#818CF8" />
+              </View>
               <Text style={styles.menuText}>Transaction History</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => (navigation as any).navigate('Blockchain')}
-            >
-              <Ionicons name="lock-closed-outline" size={24} color="#34C759" />
-              <Text style={styles.menuText}>Blockchain</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => (navigation as any).navigate('Portfolio')}
-            >
-              <Ionicons name="pie-chart-outline" size={24} color="#007AFF" />
-              <Text style={styles.menuText}>My Portfolio</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => (navigation as any).navigate('PurchaseHistory')}
             >
-              <Ionicons name="bag-outline" size={24} color="#007AFF" />
+              <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
+                <Ionicons name="bag-outline" size={20} color="#818CF8" />
+              </View>
               <Text style={styles.menuText}>Purchase History</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => (navigation as any).navigate('ShoppingCart')}
             >
-              <Ionicons name="cart-outline" size={24} color="#007AFF" />
-              <Text style={styles.menuText}>Shopping Cart</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
+                <Ionicons name="cart-outline" size={20} color="#818CF8" />
+              </View>
+              <Text style={styles.menuText}>My Cart</Text>
+              <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => (navigation as any).navigate('Notifications')}
             >
-              <Ionicons name="notifications-outline" size={24} color="#007AFF" />
-              <Text style={styles.menuText}>Notifications</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                <Ionicons name="notifications-outline" size={20} color="#F59E0B" />
+              </View>
+              <Text style={styles.menuText}>System Notifications</Text>
+              <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => (navigation as any).navigate('NotificationPreferences')}
             >
-              <Ionicons name="settings-outline" size={24} color="#007AFF" />
+              <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(148, 163, 184, 0.15)' }]}>
+                <Ionicons name="settings-outline" size={20} color="#94A3B8" />
+              </View>
               <Text style={styles.menuText}>Notification Settings</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <Ionicons name="help-circle-outline" size={24} color="#007AFF" />
+            <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]}>
+              <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(148, 163, 184, 0.15)' }]}>
+                <Ionicons name="help-circle-outline" size={20} color="#94A3B8" />
+              </View>
               <Text style={styles.menuText}>Help & Support</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
           </View>
         )}
 
         {/* Logout Button */}
         {!isEditing && (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         )}
@@ -425,12 +440,15 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: Platform.OS === 'ios' ? 80 : StatusBar.currentHeight || 0,
+    backgroundColor: '#020617',
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -438,11 +456,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    backgroundColor: '#fff',
-    padding: 30,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    padding: 24,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   headerActions: {
     width: '100%',
@@ -453,12 +474,14 @@ const styles = StyleSheet.create({
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
   },
   editButtonText: {
     marginLeft: 6,
-    color: '#007AFF',
-    fontSize: 16,
+    color: '#818CF8',
+    fontSize: 14,
     fontWeight: '600',
   },
   editActions: {
@@ -466,48 +489,50 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cancelButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
+    color: '#94A3B8',
+    fontSize: 14,
     fontWeight: '600',
   },
   saveButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#007AFF',
-    minWidth: 80,
+    backgroundColor: '#6366F1',
+    minWidth: 70,
     alignItems: 'center',
   },
   saveButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#f5f5f5',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
     overflow: 'hidden',
   },
   avatarImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
   },
   avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -515,93 +540,114 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   name: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 5,
+    color: '#F8FAFC',
+    marginBottom: 6,
   },
   nameInput: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 5,
+    color: '#F8FAFC',
+    marginBottom: 6,
     textAlign: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#007AFF',
+    borderBottomColor: '#6366F1',
     paddingVertical: 4,
     width: '100%',
   },
   email: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 10,
+    fontSize: 14,
+    color: '#94A3B8',
+    marginBottom: 12,
   },
   roleBadge: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 10,
+    marginTop: 4,
+    marginBottom: 14,
   },
   vendorBadge: {
-    backgroundColor: '#FFE5CC',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
   },
   roleText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: '#FF9500',
+    color: '#818CF8',
+  },
+  vendorRoleText: {
+    color: '#F59E0B',
   },
   balanceContainer: {
     alignItems: 'center',
     marginTop: 10,
+    width: '100%',
   },
   balanceLabel: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    color: '#94A3B8',
+    marginBottom: 4,
   },
   balanceAmount: {
     fontSize: 28,
+    fontWeight: '900',
+    color: '#F59E0B',
+  },
+  topUpButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginTop: 14,
+  },
+  topUpButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  topUpButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
-    color: '#007AFF',
+    fontSize: 14,
   },
   detailsSection: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    marginHorizontal: 16,
     marginTop: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#1E293B',
     padding: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 20,
   },
   fieldContainer: {
     marginBottom: 20,
   },
   fieldLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   fieldValue: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: 15,
+    color: '#E2E8F0',
     paddingVertical: 8,
   },
   fieldInput: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: 15,
+    color: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
+    borderColor: '#334155',
+    borderRadius: 10,
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(2, 6, 23, 0.5)',
   },
   textArea: {
     minHeight: 80,
@@ -612,56 +658,71 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
+    borderColor: '#334155',
+    borderRadius: 10,
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(2, 6, 23, 0.5)',
   },
   datePickerText: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: 15,
+    color: '#F8FAFC',
   },
   datePickerContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: '#0F172A',
+    borderRadius: 10,
     marginTop: 8,
     overflow: 'hidden',
   },
   datePickerIOS: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     width: '100%',
     height: 200,
   },
   menuSection: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    marginHorizontal: 16,
     marginTop: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
+    borderBottomColor: '#1E293B',
+  },
+  menuIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuText: {
     flex: 1,
-    fontSize: 16,
-    color: '#000',
+    fontSize: 15,
+    color: '#E2E8F0',
     marginLeft: 15,
+    fontWeight: '500',
   },
   logoutButton: {
-    backgroundColor: '#FF3B30',
-    margin: 20,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    marginHorizontal: 16,
+    marginTop: 24,
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: 'center',
   },
   logoutText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#EF4444',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });
+

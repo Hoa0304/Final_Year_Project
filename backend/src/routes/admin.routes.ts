@@ -13,32 +13,40 @@ import {
   getUserStats,
   getTaskCompletions,
   getAllTransactions,
-  syncBalancesToBlockchainController
+  approveProduct
 } from '../controllers/admin.controller';
+import { getPendingProducts, reviewProduct } from '../controllers/moderation.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
 router.use(authenticate); // All routes require authentication
-router.use(requireAdmin); // All routes require admin role
 
-router.post('/users/:id/coins', grantCoins);
-router.get('/users', getAllUsers);
-router.get('/users/stats', getUserStats);
-router.get('/transactions', getAllTransactions);
-router.post('/blockchain/sync-balances', syncBalancesToBlockchainController);
+// User Management
+router.post('/users/:id/coins', requireAdmin, grantCoins);
+router.get('/users', requireAdmin, getAllUsers);
+router.get('/users/stats', requireAdmin, getUserStats);
+router.get('/transactions', requireAdmin, getAllTransactions);
 
-router.get('/products', getProducts);
-router.post('/products', createProduct);
-router.put('/products/:id', updateProduct);
-router.delete('/products/:id', deleteProduct);
+// Product Management
+router.get('/products', requireAdmin, getProducts);
+router.post('/products', requireAdmin, createProduct);
+router.put('/products/:id', requireAdmin, updateProduct);
+router.delete('/products/:id', requireAdmin, deleteProduct);
+router.patch('/products/:id/approve', requireAdmin, approveProduct);
 
-router.get('/tasks', getTasks);
-router.get('/tasks/:taskId/completions', getTaskCompletions);
-router.post('/tasks', createTask);
-router.put('/tasks/:id', updateTask);
-router.delete('/tasks/:id', deleteTask);
+// Product Moderation
+router.get('/moderation/pending', requireAdmin, getPendingProducts);
+router.post('/moderation/review/:id', requireAdmin, reviewProduct);
+
+// Task Management
+router.get('/tasks', requireAdmin, getTasks);
+router.get('/tasks/:taskId/completions', requireAdmin, getTaskCompletions);
+router.post('/tasks', requireAdmin, createTask);
+router.put('/tasks/:id', requireAdmin, updateTask);
+router.delete('/tasks/:id', requireAdmin, deleteTask);
 
 export default router;
+
 
 

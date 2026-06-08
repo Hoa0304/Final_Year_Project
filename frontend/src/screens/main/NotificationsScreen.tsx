@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +25,7 @@ import {
 import NotificationItem from '../../components/NotificationItem';
 
 export default function NotificationsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [refreshing, setRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
@@ -85,8 +86,6 @@ export default function NotificationsScreen() {
         navigation.navigate('ProductDetail', { productId: notification.data.productId });
       } else if (notification.data.taskId) {
         navigation.navigate('Tasks');
-      } else if (notification.data.stockId) {
-        navigation.navigate('StockDetail', { stockId: notification.data.stockId });
       }
     }
   };
@@ -135,13 +134,13 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
         {unreadCount > 0 && (
@@ -157,13 +156,14 @@ export default function NotificationsScreen() {
 
       {isLoading && notifications.length === 0 ? (
         <View style={styles.centerContainer}>
-          <Text style={styles.emptyText}>Loading notifications...</Text>
+          <ActivityIndicator size="large" color="#F59E0B" />
+          <Text style={[styles.emptyText, { color: '#94A3B8', marginTop: 12 }]}>Loading notifications...</Text>
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.centerContainer}>
-          <Ionicons name="notifications-outline" size={64} color="#C7C7CC" />
+          <Ionicons name="notifications-outline" size={64} color="#334155" />
           <Text style={styles.emptyText}>No notifications</Text>
-          <Text style={styles.emptySubtext}>You're all caught up!</Text>
+          <Text style={styles.emptySubtext}>You have read all notifications!</Text>
         </View>
       ) : (
         <FlatList
@@ -172,7 +172,12 @@ export default function NotificationsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#F59E0B"
+              colors={['#F59E0B']}
+            />
           }
         />
       )}
@@ -183,38 +188,42 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#1E293B',
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: 6,
+    marginRight: 10,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#F8FAFC',
     flex: 1,
   },
   markAllButton: {
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 12,
+    backgroundColor: '#F59E0B20',
+    borderRadius: 8,
   },
   markAllText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+    fontSize: 13,
+    color: '#F59E0B',
+    fontWeight: '700',
   },
   listContent: {
-    padding: 15,
+    padding: 16,
+    paddingBottom: 40,
   },
   centerContainer: {
     flex: 1,
@@ -223,15 +232,15 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    fontSize: 18,
-    color: '#8E8E93',
+    fontSize: 16,
+    color: '#F8FAFC',
     marginTop: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#C7C7CC',
-    marginTop: 8,
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 6,
   },
 });
 

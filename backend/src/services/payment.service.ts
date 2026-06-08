@@ -1,6 +1,6 @@
-import { env } from '../../config/env';
+import { env } from '../config/env';
 import crypto from 'crypto';
-import { supabase } from '../../utils/supabase';
+import { supabase } from '../utils/supabase';
 
 /**
  * Payment Provider Interface
@@ -114,6 +114,114 @@ export class VNPayProvider implements PaymentProvider {
 }
 
 /**
+ * MoMo Sandbox Strategy Implementation
+ */
+export class MomoProvider implements PaymentProvider {
+  name = 'momo';
+
+  async createPaymentUrl(params: any): Promise<string> {
+    const { amount, orderId, orderInfo, returnUrl, ipAddr } = params;
+
+    const partnerCode = env.MOMO_PARTNER_CODE;
+    const accessKey = env.MOMO_ACCESS_KEY;
+    const secretKey = env.MOMO_SECRET_KEY;
+    const apiEndpoint = env.MOMO_API_URL || 'https://test-payment.momo.vn/v2/gateway/api/create';
+
+    const requestId = orderId;
+    const extraData = '';
+    const requestType = 'captureWallet';
+    // User redirection after payment
+    const redirectUrl = returnUrl.replace('momo-webhook', 'momo-callback');
+    const ipnUrl = returnUrl; // Webhook callback URL
+
+    // Create raw signature string
+    const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+
+    const signature = crypto
+      .createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
+
+    const requestBody = {
+      partnerCode,
+      partnerName: 'HMall Store',
+      storeId: 'HMall',
+      requestId,
+      amount,
+      orderId,
+      orderInfo,
+      redirectUrl,
+      ipnUrl,
+      lang: 'vi',
+      extraData,
+      requestType,
+      signature,
+    };
+
+    try {
+      const axios = (await import('axios')).default;
+      console.log('--- Initiating MoMo Sandbox payment ---');
+      console.log('Payload:', JSON.stringify(requestBody, null, 2));
+      
+      const response = await axios.post(apiEndpoint, requestBody, {
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      });
+
+      if (response.data && response.data.payUrl) {
+        return response.data.payUrl;
+      } else {
+        throw new Error(response.data.message || 'Failed to generate MoMo payment URL');
+      }
+    } catch (error: any) {
+      console.error('MoMo Create Payment Error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Error connecting to MoMo Sandbox Gateway');
+    }
+  }
+
+  async verifyCallback(params: any): Promise<any> {
+    const {
+      partnerCode,
+      orderId,
+      requestId,
+      amount,
+      orderInfo,
+      orderType,
+      transId,
+      resultCode,
+      message,
+      payType,
+      responseTime,
+      extraData,
+      signature,
+    } = params;
+
+    const secretKey = env.MOMO_SECRET_KEY;
+    const accessKey = env.MOMO_ACCESS_KEY;
+
+    // Verify signature
+    const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+
+    const computedSignature = crypto
+      .createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
+
+    const isSignatureValid = computedSignature === signature;
+    const isSuccess = isSignatureValid && Number(resultCode) === 0;
+
+    return {
+      success: isSuccess,
+      orderId,
+      amount: Number(amount),
+      transactionId: transId || '',
+      rawResponse: params,
+    };
+  }
+}
+
+/**
  * Payment Service Context
  */
 export class PaymentService {
@@ -121,7 +229,7 @@ export class PaymentService {
 
   constructor() {
     this.providers.set('vnpay', new VNPayProvider());
-    // Add more providers here
+    this.providers.set('momo', new MomoProvider());
   }
 
   async initiatePayment(userId: string, amount: number, method: string, referenceId: string, referenceType: string, ipAddr: string) {
@@ -150,7 +258,7 @@ export class PaymentService {
       amount,
       orderId: payment.id,
       orderInfo: `HMall Payment for ${referenceType}`,
-      returnUrl: `${env.FRONTEND_URL}/payment/callback`,
+      returnUrl: `${env.API_URL || 'http://localhost:3002'}/api/payment/${method}-webhook`,
       ipAddr
     });
 
@@ -201,7 +309,7 @@ export class PaymentService {
     if (payment.reference_type === 'coin_package') {
       const { data: pkg } = await supabase.from('coin_packages').select('coins').eq('id', payment.reference_id).single();
       if (pkg) {
-        const { createTransaction } = await import('../transaction.service');
+        const { createTransaction } = await import('./transaction.service');
         await createTransaction({
           userId: payment.user_id,
           type: 'earn',

@@ -39,6 +39,11 @@ export async function getProductRatings(req: Request, res: Response) {
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
 
+    if (ratingsError) {
+      console.error('Get ratings error:', ratingsError);
+      return res.status(500).json({ error: 'Failed to fetch ratings' });
+    }
+
     // Fetch user information for each rating
     if (ratings && ratings.length > 0) {
       const userIds = [...new Set(ratings.map((r) => r.user_id))];
@@ -56,11 +61,6 @@ export async function getProductRatings(req: Request, res: Response) {
       }));
 
       ratings.splice(0, ratings.length, ...ratingsWithUsers);
-    }
-
-    if (ratingsError) {
-      console.error('Get ratings error:', ratingsError);
-      return res.status(500).json({ error: 'Failed to fetch ratings' });
     }
 
     // Calculate average rating and total count

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -28,28 +28,45 @@ import {
   deleteRating,
   ProductRatingsResponse,
   ProductRating,
+  getProducts,
+  Product,
 } from '../../services/product.service';
-import { getVoucherByCode, getUserIssuedVouchers, Voucher } from '../../services/voucher.service';
 import { addToCart } from '../../services/shopping-cart.service';
 import { calculateDiscountedPrice, calculateDiscountAmount } from '../../utils/price.utils';
 import StarRating from '../../components/StarRating';
 
 export default function ProductDetailScreen() {
   const route = useRoute();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
   const { productId } = route.params as { productId: string };
   const [quantity, setQuantity] = useState(1);
-  const [voucherCode, setVoucherCode] = useState('');
-  const [showVoucherInput, setShowVoucherInput] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingValue, setRatingValue] = useState(5);
   const [reviewText, setReviewText] = useState('');
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: 'Product Details',
+    });
+  }, [navigation]);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', productId],
     queryFn: () => getProductById(productId),
   });
+
+  // Fetch similar products
+  const { data: similarProducts } = useQuery({
+    queryKey: ['similarProducts', product?.category, productId],
+    queryFn: () => getProducts({ category: product?.category, limit: 10 }),
+    enabled: !!product?.category,
+  });
+
+  const filteredSimilarProducts = React.useMemo(() => {
+    if (!similarProducts) return [];
+    return similarProducts.filter((p: any) => p.id !== productId);
+  }, [similarProducts, productId]);
 
   // Fetch ratings
   const { data: ratingsData, isLoading: isLoadingRatings } = useQuery({
@@ -66,42 +83,28 @@ export default function ProductDetailScreen() {
   const userRating = userRatingData?.rating;
   const hasPurchased = userRatingData?.hasPurchased || false;
 
-  // Fetch user's issued vouchers
-  const { data: issuedVouchers = [] } = useQuery({
-    queryKey: ['userIssuedVouchers'],
-    queryFn: getUserIssuedVouchers,
-  });
-
   const purchaseMutation = useMutation({
-    mutationFn: (params: { productId: string; quantity?: number; voucherCode?: string; voucherId?: string }) => {
+    mutationFn: (params: { productId: string; quantity?: number }) => {
       return purchaseProduct(params);
     },
     onSuccess: async (data: any) => {
       // Invalidate and refetch notifications immediately
       await queryClient.invalidateQueries({ queryKey: ['notifications'] });
       await queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
-      
+
       // Wait a bit for backend to create notification, then refetch
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: ['notifications'] });
       }, 500);
-      
-      let message = data.message || 'Product purchased successfully';
-      if (data.order?.randomVoucher) {
-        message += `\n\n🎁 You received a voucher: ${data.order.randomVoucher.code}!`;
-      }
-      if (data.order?.voucher) {
-        message += `\n\n✅ Voucher "${data.order.voucher.code}" applied! Saved ${data.order.discountApplied?.toFixed(2)} coins.`;
-      }
-      
+
+      let message = 'Product purchased successfully!';
+
       Alert.alert('Success', message, [
         {
           text: 'OK',
           onPress: () => {
             queryClient.invalidateQueries({ queryKey: ['balance'] });
             queryClient.invalidateQueries({ queryKey: ['products'] });
-            queryClient.invalidateQueries({ queryKey: ['userIssuedVouchers'] });
-            setVoucherCode('');
             refetchUserRating(); // Refresh user rating check after purchase
             navigation.goBack();
           },
@@ -117,10 +120,10 @@ export default function ProductDetailScreen() {
     mutationFn: () => addToCart(productId, quantity),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      Alert.alert('Success', 'Item added to cart');
+      Alert.alert('Success', 'Product added to cart!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to add to cart');
+      Alert.alert('Error', error.response?.data?.error || 'Failed to add product to cart');
     },
   });
 
@@ -133,10 +136,10 @@ export default function ProductDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['products'] }); // Update average rating in product list
       setShowRatingModal(false);
       setReviewText('');
-      Alert.alert('Success', 'Rating submitted successfully');
+      Alert.alert('Success', 'Review submitted successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to submit rating');
+      Alert.alert('Error', error.response?.data?.error || 'Failed to submit review');
     },
   });
 
@@ -148,47 +151,32 @@ export default function ProductDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       setShowRatingModal(false);
       setReviewText('');
-      Alert.alert('Success', 'Rating updated successfully');
+      Alert.alert('Success', 'Review updated successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update rating');
+      Alert.alert('Error', error.response?.data?.error || 'Failed to update review');
     },
   });
 
   const deleteRatingMutation = useMutation({
-    mutationFn: deleteRating,
+    mutationFn: (variables: { productId: string; ratingId: string }) =>
+      deleteRating(variables.productId, variables.ratingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productRatings', productId] });
       queryClient.invalidateQueries({ queryKey: ['userRating', productId] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      Alert.alert('Success', 'Rating deleted successfully');
+      Alert.alert('Success', 'Review deleted successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to delete rating');
+      Alert.alert('Error', error.response?.data?.error || 'Failed to delete review');
     },
   });
 
-  // Calculate total price with discount and voucher
+  // Calculate total price with discount
   const calculateTotalPrice = () => {
     if (!product) return 0;
     const discountedPrice = product.discountedPrice || product.price;
-    let total = discountedPrice * quantity;
-    
-    // Apply voucher discount if voucher code is provided
-    if (voucherCode && issuedVouchers.length > 0) {
-      const selectedVoucher = issuedVouchers.find((item: any) => item.vouchers?.code === voucherCode);
-      if (selectedVoucher?.vouchers) {
-        const voucher = selectedVoucher.vouchers;
-        if (voucher.discount_type === 'percentage') {
-          total = total * (1 - voucher.discount_value / 100);
-        } else if (voucher.discount_type === 'fixed_amount') {
-          total = Math.max(0, total - voucher.discount_value);
-        }
-        // coin_bonus doesn't reduce the order amount
-      }
-    }
-    
-    return total;
+    return discountedPrice * quantity;
   };
 
   function handlePurchase() {
@@ -202,27 +190,7 @@ export default function ProductDetailScreen() {
       return;
     }
 
-    const totalPrice = calculateTotalPrice();
-    const originalPrice = (product.discountedPrice || product.price) * quantity;
-    const discountInfo = voucherCode ? `\n\nVoucher applied: ${voucherCode}\nTotal: ${totalPrice.toFixed(2)} coins (was ${originalPrice.toFixed(2)})` : '';
-
-    Alert.alert(
-      'Confirm Purchase',
-      `Purchase ${quantity}x ${product.name} for ${totalPrice.toFixed(2)} coins?${discountInfo}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Purchase',
-          onPress: () => {
-            purchaseMutation.mutate({
-              productId,
-              quantity,
-              ...(voucherCode && { voucherCode }),
-            });
-          },
-        },
-      ]
-    );
+    navigation.navigate('Checkout' as any, { product, quantity } as any);
   }
 
   function handleOpenRatingModal() {
@@ -230,7 +198,7 @@ export default function ProductDetailScreen() {
     if (!hasPurchased) {
       Alert.alert(
         'Purchase Required',
-        'You must purchase this product before you can rate it.',
+        'You must purchase this product before you can rate and review it.',
         [{ text: 'OK' }]
       );
       return;
@@ -248,7 +216,7 @@ export default function ProductDetailScreen() {
 
   function handleSubmitRating() {
     if (ratingValue < 1 || ratingValue > 5) {
-      Alert.alert('Error', 'Please select a rating');
+      Alert.alert('Error', 'Please select a star rating');
       return;
     }
 
@@ -274,8 +242,8 @@ export default function ProductDetailScreen() {
     if (!userRating) return;
 
     Alert.alert(
-      'Delete Rating',
-      'Are you sure you want to delete your rating?',
+      'Delete Review',
+      'Are you sure you want to delete your review?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -290,13 +258,15 @@ export default function ProductDetailScreen() {
   if (isLoading || !product) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#0ea5e9" />
+        <Text style={{ color: '#94A3B8', marginTop: 12, fontSize: 16 }}>Loading product details...</Text>
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -304,357 +274,318 @@ export default function ProductDetailScreen() {
       >
         <ScrollView style={styles.container}>
 
-      {product.image_url ? (
-        <Image source={{ uri: product.image_url }} style={styles.image} />
-      ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>No Image</Text>
-        </View>
-      )}
-
-      <View style={styles.content}>
-        <Text style={styles.name}>{product.name}</Text>
-        {product.category && (
-          <Text style={styles.category}>{product.category}</Text>
-        )}
-        <View style={styles.priceContainer}>
-          {product.hasDiscount && product.discountedPrice ? (
-            <>
-              <View style={styles.priceRow}>
-                <Text style={styles.priceOriginal}>{product.price.toFixed(2)} coins</Text>
-                <View style={styles.discountBadge}>
-                  <Text style={styles.discountBadgeText}>
-                    -{product.discount_percentage}% OFF
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.price}>{product.discountedPrice.toFixed(2)} coins</Text>
-              <Text style={styles.savingsText}>
-                You save {calculateDiscountAmount(product.price, product.discount_percentage).toFixed(2)} coins!
-              </Text>
-            </>
+          {product.image_url ? (
+            <Image source={{ uri: product.image_url }} style={styles.image} />
           ) : (
-            <Text style={styles.price}>{product.price.toFixed(2)} coins</Text>
-          )}
-        </View>
-
-        {product.description && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>{product.description}</Text>
-          </View>
-        )}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Stock Information</Text>
-          <Text style={styles.stockText}>
-            {product.stock_quantity > 0
-              ? `${product.stock_quantity} available`
-              : 'Out of stock'}
-          </Text>
-        </View>
-
-        <View style={styles.quantitySection}>
-          <Text style={styles.quantityLabel}>Quantity:</Text>
-          <View style={styles.quantityControls}>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() => setQuantity(Math.max(1, quantity - 1))}
-            >
-              <Text style={styles.quantityButtonText}>-</Text>
-            </TouchableOpacity>
-            <Text style={styles.quantityValue}>{quantity}</Text>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
-            >
-              <Text style={styles.quantityButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Voucher Section */}
-        <View style={styles.voucherSection}>
-          <TouchableOpacity
-            style={styles.voucherToggle}
-            onPress={() => setShowVoucherInput(!showVoucherInput)}
-          >
-            <Ionicons name="ticket-outline" size={20} color="#007AFF" />
-            <Text style={styles.voucherToggleText}>
-              {showVoucherInput ? 'Hide Voucher' : 'Apply Voucher'}
-            </Text>
-            <Ionicons
-              name={showVoucherInput ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color="#666"
-            />
-          </TouchableOpacity>
-
-          {showVoucherInput && (
-            <View style={styles.voucherInputContainer}>
-              <TextInput
-                style={styles.voucherInput}
-                placeholder="Enter voucher code"
-                placeholderTextColor="#999"
-                value={voucherCode}
-                onChangeText={setVoucherCode}
-                autoCapitalize="characters"
-              />
-              {voucherCode && (
-                <TouchableOpacity
-                  style={styles.voucherClearButton}
-                  onPress={() => setVoucherCode('')}
-                >
-                  <Ionicons name="close-circle" size={20} color="#999" />
-                </TouchableOpacity>
-              )}
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="image-outline" size={48} color="#475569" />
+              <Text style={styles.imagePlaceholderText}>No image available</Text>
             </View>
           )}
 
-          {/* Show user's issued vouchers */}
-          {issuedVouchers.length > 0 && (
-            <View style={styles.issuedVouchersContainer}>
-              <Text style={styles.issuedVouchersTitle}>Your Vouchers:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.issuedVouchersList}>
-                {issuedVouchers.map((item: any) => {
-                  const voucher = item.vouchers;
-                  if (!voucher) return null;
-                  const isExpired = new Date(voucher.expires_at) < new Date();
-                  const isOutOfStock = voucher.total_usage_limit && voucher.current_usage_count >= voucher.total_usage_limit;
-                  
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.issuedVoucherChip,
-                        (isExpired || isOutOfStock) && styles.issuedVoucherChipDisabled,
-                        voucherCode === voucher.code && styles.issuedVoucherChipActive,
-                      ]}
-                      onPress={() => {
-                        if (!isExpired && !isOutOfStock) {
-                          setVoucherCode(voucher.code);
-                        }
-                      }}
-                      disabled={isExpired || isOutOfStock}
-                    >
-                      <Text style={styles.issuedVoucherCode}>{voucher.code}</Text>
-                      <Text style={styles.issuedVoucherDiscount}>
-                        {voucher.discount_value}
-                        {voucher.discount_type === 'percentage' ? '%' : ''}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.totalPrice}>
-          Total: {calculateTotalPrice().toFixed(2)} coins
-          {voucherCode && (
-            <Text style={styles.voucherAppliedText}>
-              {' '}(with voucher)
-            </Text>
-          )}
-        </Text>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[
-              styles.addToCartButton,
-              (product.stock_quantity === 0 || addToCartMutation.isLoading) &&
-                styles.buttonDisabled,
-            ]}
-            onPress={() => addToCartMutation.mutate()}
-            disabled={product.stock_quantity === 0 || addToCartMutation.isLoading}
-          >
-            {addToCartMutation.isLoading ? (
-              <ActivityIndicator color="#007AFF" />
-            ) : (
-              <>
-                <Ionicons name="cart-outline" size={20} color="#007AFF" />
-                <Text style={styles.addToCartButtonText}>Add to Cart</Text>
-              </>
+          <View style={styles.content}>
+            <Text style={styles.name}>{product.name}</Text>
+            {product.category && (
+              <Text style={styles.category}>{product.category}</Text>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.purchaseButton,
-              (product.stock_quantity === 0 || purchaseMutation.isLoading) &&
-                styles.purchaseButtonDisabled,
-            ]}
-            onPress={handlePurchase}
-            disabled={product.stock_quantity === 0 || purchaseMutation.isLoading}
-          >
-            {purchaseMutation.isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.purchaseButtonText}>
-                {product.stock_quantity === 0 ? 'Out of Stock' : 'Purchase'}
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Ratings Section */}
-        <View style={styles.ratingsSection}>
-          <View style={styles.ratingsHeader}>
-            <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
-            {ratingsData && (
-              <View style={styles.ratingSummary}>
-                <StarRating
-                  rating={ratingsData.averageRating}
-                  readonly
-                  size={24}
-                  showRating
-                />
-                <Text style={styles.ratingCount}>
-                  ({ratingsData.totalRatings} {ratingsData.totalRatings === 1 ? 'rating' : 'ratings'})
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {userRating ? (
-            <View style={styles.userRatingCard}>
-              <View style={styles.userRatingHeader}>
-                <Text style={styles.userRatingTitle}>Your Rating</Text>
-                <View style={styles.userRatingActions}>
-                  <TouchableOpacity
-                    onPress={handleOpenRatingModal}
-                    style={styles.editButton}
-                  >
-                    <Ionicons name="create-outline" size={18} color="#007AFF" />
-                    <Text style={styles.editButtonText}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleDeleteRating}
-                    style={styles.deleteButton}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-                    <Text style={styles.deleteButtonText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <StarRating rating={userRating.rating} readonly size={20} />
-              {userRating.review_text && (
-                <Text style={styles.userReviewText}>{userRating.review_text}</Text>
-              )}
-            </View>
-          ) : hasPurchased ? (
-            <TouchableOpacity
-              style={styles.rateButton}
-              onPress={handleOpenRatingModal}
-            >
-              <Ionicons name="star-outline" size={20} color="#007AFF" />
-              <Text style={styles.rateButtonText}>Rate this product</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.rateButtonDisabled}>
-              <Ionicons name="star-outline" size={20} color="#ccc" />
-              <Text style={styles.rateButtonTextDisabled}>
-                Purchase this product to rate it
-              </Text>
-            </View>
-          )}
-
-          {/* Reviews List */}
-          {ratingsData && ratingsData.ratings.length > 0 && (
-            <View style={styles.reviewsList}>
-              <Text style={styles.reviewsTitle}>Recent Reviews</Text>
-              {ratingsData.ratings.slice(0, 5).map((rating) => (
-                <View key={rating.id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <View>
-                      <Text style={styles.reviewerName}>
-                        {rating.users?.full_name || rating.users?.email || 'Anonymous'}
-                      </Text>
-                      <Text style={styles.reviewDate}>
-                        {new Date(rating.created_at).toLocaleDateString()}
+            <View style={styles.priceContainer}>
+              {product.hasDiscount && product.discountedPrice ? (
+                <>
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceOriginal}>{Math.round(product.price).toLocaleString('en-US')} VND</Text>
+                    <View style={styles.discountBadge}>
+                      <Text style={styles.discountBadgeText}>
+                        {product.discount_percentage}% OFF
                       </Text>
                     </View>
-                    <StarRating rating={rating.rating} readonly size={16} />
                   </View>
-                  {rating.review_text && (
-                    <Text style={styles.reviewText}>{rating.review_text}</Text>
-                  )}
-                </View>
-              ))}
+                  <Text style={styles.price}>{Math.round(product.discountedPrice).toLocaleString('en-US')} VND</Text>
+                  <Text style={styles.savingsText}>
+                    You save {Math.round(calculateDiscountAmount(product.price, product.discount_percentage)).toLocaleString('en-US')} VND!
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.price}>{Math.round(product.price).toLocaleString('en-US')} VND</Text>
+              )}
             </View>
-          )}
-        </View>
-      </View>
 
-      {/* Rating Modal */}
-      <Modal
-        visible={showRatingModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowRatingModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {userRating ? 'Edit Your Rating' : 'Rate this Product'}
+            {product.description && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Product Description</Text>
+                <Text style={styles.description}>{product.description}</Text>
+              </View>
+            )}
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Inventory Info</Text>
+              <Text style={styles.stockText}>
+                {product.stock_quantity > 0
+                  ? `${product.stock_quantity} items remaining`
+                  : 'Out of stock'}
               </Text>
-              <TouchableOpacity onPress={() => setShowRatingModal(false)}>
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <View style={styles.ratingInputSection}>
-                <Text style={styles.ratingLabel}>Rating</Text>
-                <StarRating
-                  rating={ratingValue}
-                  onRatingChange={setRatingValue}
-                  size={32}
-                />
+            <View style={styles.quantitySection}>
+              <Text style={styles.quantityLabel}>Quantity:</Text>
+              <View style={styles.quantityControls}>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                >
+                  <Text style={styles.quantityButtonText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.quantityValue}>{quantity}</Text>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                >
+                  <Text style={styles.quantityButtonText}>+</Text>
+                </TouchableOpacity>
               </View>
+            </View>
 
-              <View style={styles.reviewInputSection}>
-                <Text style={styles.ratingLabel}>Review (Optional)</Text>
-                <TextInput
-                  style={styles.reviewInput}
-                  placeholder="Share your experience with this product..."
-                  placeholderTextColor="#000"
-                  multiline
-                  numberOfLines={4}
-                  value={reviewText}
-                  onChangeText={setReviewText}
-                  textAlignVertical="top"
-                />
-              </View>
-            </ScrollView>
+            <Text style={styles.totalPrice}>
+              Total: {Math.round(calculateTotalPrice()).toLocaleString('en-US')} VND
+            </Text>
 
-            <View style={styles.modalFooter}>
+            <View style={styles.actionButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonSecondary]}
-                onPress={() => setShowRatingModal(false)}
+                style={[
+                  styles.addToCartButton,
+                  (product.stock_quantity === 0 || addToCartMutation.isPending) &&
+                  styles.buttonDisabled,
+                ]}
+                onPress={() => addToCartMutation.mutate()}
+                disabled={product.stock_quantity === 0 || addToCartMutation.isPending}
               >
-                <Text style={styles.modalButtonTextSecondary}>Cancel</Text>
+                {addToCartMutation.isPending ? (
+                  <ActivityIndicator color="#0ea5e9" />
+                ) : (
+                  <>
+                    <Ionicons name="cart-outline" size={20} color="#0ea5e9" />
+                    <Text style={styles.addToCartButtonText}>Add to Cart</Text>
+                  </>
+                )}
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={handleSubmitRating}
-                disabled={submitRatingMutation.isLoading || updateRatingMutation.isLoading}
+                style={[
+                  styles.purchaseButton,
+                  (product.stock_quantity === 0 || purchaseMutation.isPending) &&
+                  styles.purchaseButtonDisabled,
+                ]}
+                onPress={handlePurchase}
+                disabled={product.stock_quantity === 0 || purchaseMutation.isPending}
               >
-                {submitRatingMutation.isLoading || updateRatingMutation.isLoading ? (
+                {purchaseMutation.isPending ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.modalButtonTextPrimary}>
-                    {userRating ? 'Update' : 'Submit'}
+                  <Text style={styles.purchaseButtonText}>
+                    {product.stock_quantity === 0 ? 'Out of stock' : 'Buy Now'}
                   </Text>
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Similar Products Section */}
+            {filteredSimilarProducts.length > 0 && (
+              <View style={styles.similarProductsSection}>
+                <Text style={styles.sectionTitle}>Similar Products</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.similarProductsContent}
+                >
+                  {filteredSimilarProducts.map((p: any) => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={styles.similarProductCard}
+                      onPress={() => {
+                        if (navigation.push) {
+                          navigation.push('ProductDetail', { productId: p.id });
+                        } else {
+                          navigation.navigate('ProductDetail', { productId: p.id });
+                        }
+                      }}
+                    >
+                      <View style={styles.similarProductImageContainer}>
+                        {p.image_url ? (
+                          <Image source={{ uri: p.image_url }} style={styles.similarProductImage} resizeMode="cover" />
+                        ) : (
+                          <View style={styles.similarProductImagePlaceholder}>
+                            <Ionicons name="cube-outline" size={24} color="#6366F1" />
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.similarProductName} numberOfLines={1}>
+                        {p.name}
+                      </Text>
+                      <Text style={styles.similarProductPrice}>
+                        {Math.round(p.price).toLocaleString('en-US')} VND
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Ratings Section */}
+            <View style={styles.ratingsSection}>
+              <View style={styles.ratingsHeader}>
+                <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
+                {ratingsData && (
+                  <View style={styles.ratingSummary}>
+                    <StarRating
+                      rating={ratingsData.averageRating}
+                      readonly
+                      size={24}
+                      showRating
+                    />
+                    <Text style={styles.ratingCount}>
+                      ({ratingsData.totalRatings} ratings)
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {userRating ? (
+                <View style={styles.userRatingCard}>
+                  <View style={styles.userRatingHeader}>
+                    <Text style={styles.userRatingTitle}>Your Rating</Text>
+                    <View style={styles.userRatingActions}>
+                      <TouchableOpacity
+                        onPress={handleOpenRatingModal}
+                        style={styles.editButton}
+                      >
+                        <Ionicons name="create-outline" size={18} color="#0ea5e9" />
+                        <Text style={styles.editButtonText}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={handleDeleteRating}
+                        style={styles.deleteButton}
+                      >
+                        <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                        <Text style={styles.deleteButtonText}>Delete</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <StarRating rating={userRating.rating} readonly size={20} />
+                  {userRating.review_text && (
+                    <Text style={styles.userReviewText}>{userRating.review_text}</Text>
+                  )}
+                </View>
+              ) : hasPurchased ? (
+                <TouchableOpacity
+                  style={styles.rateButton}
+                  onPress={handleOpenRatingModal}
+                >
+                  <Ionicons name="star-outline" size={20} color="#0ea5e9" />
+                  <Text style={styles.rateButtonText}>Rate this product</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.rateButtonDisabled}>
+                  <Ionicons name="star-outline" size={20} color="#64748B" />
+                  <Text style={styles.rateButtonTextDisabled}>
+                    Purchase this product to write a review
+                  </Text>
+                </View>
+              )}
+
+              {/* Reviews List */}
+              {ratingsData && ratingsData.ratings.length > 0 && (
+                <View style={styles.reviewsList}>
+                  <Text style={styles.reviewsTitle}>Recent Reviews</Text>
+                  {ratingsData.ratings.slice(0, 5).map((rating) => (
+                    <View key={rating.id} style={styles.reviewCard}>
+                      <View style={styles.reviewHeader}>
+                        <View>
+                          <Text style={styles.reviewerName}>
+                            {rating.users?.full_name || rating.users?.email || 'Anonymous'}
+                          </Text>
+                          <Text style={styles.reviewDate}>
+                            {new Date(rating.created_at).toLocaleDateString('en-US')}
+                          </Text>
+                        </View>
+                        <StarRating rating={rating.rating} readonly size={16} />
+                      </View>
+                      {rating.review_text && (
+                        <Text style={styles.reviewText}>{rating.review_text}</Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </Modal>
-      </ScrollView>
+
+          {/* Rating Modal */}
+          <Modal
+            visible={showRatingModal}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setShowRatingModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>
+                    {userRating ? 'Edit Review' : 'Rate Product'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowRatingModal(false)}>
+                    <Ionicons name="close" size={24} color="#94A3B8" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView style={styles.modalBody}>
+                  <View style={styles.ratingInputSection}>
+                    <Text style={styles.ratingLabel}>Star Rating</Text>
+                    <StarRating
+                      rating={ratingValue}
+                      onRatingChange={setRatingValue}
+                      size={32}
+                    />
+                  </View>
+
+                  <View style={styles.reviewInputSection}>
+                    <Text style={styles.ratingLabel}>Review (Optional)</Text>
+                    <TextInput
+                      style={styles.reviewInput}
+                      placeholder="Share your experience about this product..."
+                      placeholderTextColor="#64748B"
+                      multiline
+                      numberOfLines={4}
+                      value={reviewText}
+                      onChangeText={setReviewText}
+                      textAlignVertical="top"
+                    />
+                  </View>
+                </ScrollView>
+
+                <View style={styles.modalFooter}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonSecondary]}
+                    onPress={() => setShowRatingModal(false)}
+                  >
+                    <Text style={styles.modalButtonTextSecondary}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonPrimary]}
+                    onPress={handleSubmitRating}
+                    disabled={submitRatingMutation.isPending || updateRatingMutation.isPending}
+                  >
+                    {submitRatingMutation.isPending || updateRatingMutation.isPending ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.modalButtonTextPrimary}>
+                        {userRating ? 'Update' : 'Submit'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -663,33 +594,35 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     paddingTop: Platform.OS === 'ios' ? 80 : StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#020617',
   },
   image: {
     width: '100%',
     height: 300,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0F172A',
   },
   imagePlaceholder: {
     width: '100%',
     height: 300,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0F172A',
     justifyContent: 'center',
     alignItems: 'center',
   },
   imagePlaceholderText: {
-    color: '#999',
+    color: '#94A3B8',
     fontSize: 16,
+    marginTop: 8,
   },
   content: {
     padding: 20,
@@ -698,11 +631,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#000',
+    color: '#F8FAFC',
   },
   category: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 10,
   },
   priceContainer: {
@@ -711,7 +644,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#F59E0B',
     marginBottom: 5,
   },
   priceRow: {
@@ -721,12 +654,12 @@ const styles = StyleSheet.create({
   },
   priceOriginal: {
     fontSize: 20,
-    color: '#999',
+    color: '#64748B',
     textDecorationLine: 'line-through',
     marginRight: 10,
   },
   discountBadge: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#EF4444',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
@@ -738,7 +671,7 @@ const styles = StyleSheet.create({
   },
   savingsText: {
     fontSize: 14,
-    color: '#34C759',
+    color: '#10B981',
     fontWeight: '600',
     marginTop: 5,
   },
@@ -749,16 +682,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#000',
+    color: '#F8FAFC',
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
     lineHeight: 24,
   },
   stockText: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
   },
   quantitySection: {
     flexDirection: 'row',
@@ -768,12 +701,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#1E293B',
   },
   quantityLabel: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
   },
   quantityControls: {
     flexDirection: 'row',
@@ -783,12 +716,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
   },
   quantityButtonText: {
-    color: '#fff',
+    color: '#0ea5e9',
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -796,7 +729,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginHorizontal: 20,
-    color: '#000',
+    color: '#F8FAFC',
   },
   voucherSection: {
     marginBottom: 16,
@@ -805,29 +738,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0F172A',
     borderRadius: 8,
     marginBottom: 8,
   },
   voucherToggleText: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: '#F8FAFC',
     marginLeft: 8,
   },
   voucherInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#1E293B',
     borderRadius: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
   },
   voucherInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: '#F8FAFC',
     paddingVertical: 12,
   },
   voucherClearButton: {
@@ -839,7 +772,7 @@ const styles = StyleSheet.create({
   issuedVouchersTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   issuedVouchersList: {
@@ -848,17 +781,17 @@ const styles = StyleSheet.create({
   issuedVoucherChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0ea5e9',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
   },
   issuedVoucherChipActive: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#10B981',
   },
   issuedVoucherChipDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#1E293B',
     opacity: 0.6,
   },
   issuedVoucherCode: {
@@ -875,14 +808,14 @@ const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 20,
     textAlign: 'center',
   },
   voucherAppliedText: {
     fontSize: 14,
     fontWeight: 'normal',
-    color: '#34C759',
+    color: '#10B981',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -891,9 +824,9 @@ const styles = StyleSheet.create({
   },
   addToCartButton: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#007AFF',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#0ea5e9',
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
@@ -902,19 +835,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addToCartButtonText: {
-    color: '#007AFF',
+    color: '#0ea5e9',
     fontSize: 16,
     fontWeight: 'bold',
   },
   purchaseButton: {
     flex: 1,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0284c7',
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   purchaseButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#1E293B',
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -924,12 +858,61 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  // Similar Products Section Styles
+  similarProductsSection: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+  },
+  similarProductsContent: {
+    paddingVertical: 10,
+    gap: 12,
+  },
+  similarProductCard: {
+    width: 140,
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    marginRight: 12,
+  },
+  similarProductImageContainer: {
+    width: '100%',
+    height: 100,
+    backgroundColor: '#1E293B',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  similarProductImage: {
+    width: '100%',
+    height: '100%',
+  },
+  similarProductImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  similarProductName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#F8FAFC',
+    marginBottom: 4,
+  },
+  similarProductPrice: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0ea5e9',
+  },
   // Ratings Section Styles
   ratingsSection: {
     marginTop: 30,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#1E293B',
   },
   ratingsHeader: {
     marginBottom: 20,
@@ -942,10 +925,12 @@ const styles = StyleSheet.create({
   },
   ratingCount: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
   },
   userRatingCard: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     padding: 15,
     borderRadius: 12,
     marginBottom: 20,
@@ -959,7 +944,7 @@ const styles = StyleSheet.create({
   userRatingTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#F8FAFC',
   },
   userRatingActions: {
     flexDirection: 'row',
@@ -972,7 +957,7 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     fontSize: 14,
-    color: '#007AFF',
+    color: '#0ea5e9',
   },
   deleteButton: {
     flexDirection: 'row',
@@ -985,7 +970,7 @@ const styles = StyleSheet.create({
   },
   userReviewText: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginTop: 10,
     lineHeight: 20,
   },
@@ -994,7 +979,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 15,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     borderRadius: 12,
     marginBottom: 20,
     gap: 8,
@@ -1004,20 +991,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 15,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     borderRadius: 12,
     marginBottom: 20,
     gap: 8,
-    opacity: 0.6,
+    opacity: 0.4,
   },
   rateButtonText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#0ea5e9',
     fontWeight: '600',
   },
   rateButtonTextDisabled: {
     fontSize: 16,
-    color: '#999',
+    color: '#64748B',
     fontWeight: '500',
   },
   reviewsList: {
@@ -1027,15 +1016,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
-    color: '#000',
+    color: '#F8FAFC',
   },
   reviewCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     padding: 15,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#1E293B',
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -1046,29 +1035,31 @@ const styles = StyleSheet.create({
   reviewerName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   reviewDate: {
     fontSize: 12,
-    color: '#999',
+    color: '#64748B',
   },
   reviewText: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     lineHeight: 20,
     marginTop: 8,
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: '#1E293B',
     maxHeight: '80%',
   },
   modalHeader: {
@@ -1077,12 +1068,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#F8FAFC',
   },
   modalBody: {
     padding: 20,
@@ -1091,7 +1082,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#1E293B',
     gap: 12,
   },
   modalButton: {
@@ -1101,10 +1092,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonPrimary: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0284c7',
   },
   modalButtonSecondary: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1E293B',
   },
   modalButtonTextPrimary: {
     color: '#fff',
@@ -1112,7 +1103,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   modalButtonTextSecondary: {
-    color: '#666',
+    color: '#94A3B8',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1123,7 +1114,7 @@ const styles = StyleSheet.create({
   ratingLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#F8FAFC',
     marginBottom: 12,
   },
   reviewInputSection: {

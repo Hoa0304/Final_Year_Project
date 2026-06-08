@@ -1,11 +1,5 @@
 import { supabase } from '../utils/supabase';
-import {
-  isBlockchainEnabled,
-  generateUserAddress,
-  registerTransaction as registerBlockchainTransaction,
-  mintTokens,
-  burnTokens,
-} from './blockchain.service';
+
 
 export type TransactionType = 'earn' | 'spend' | 'grant' | 'revoke' | 'task_reward' | 'stock_profit' | 'stock_loss';
 
@@ -77,65 +71,7 @@ export async function createTransaction(params: CreateTransactionParams) {
 
   console.log(`✅ Transaction created in database: ${data}`);
 
-  // Register transaction on blockchain if enabled
-  if (isBlockchainEnabled()) {
-    console.log(`🔗 Blockchain enabled, registering transaction on blockchain...`);
-    try {
-      const userAddress = generateUserAddress(userId);
-      const createdByAddress = createdBy ? generateUserAddress(createdBy) : undefined;
 
-      console.log(`   User address: ${userAddress}`);
-      console.log(`   Transaction type: ${type}, Amount: ${amount}`);
-
-      // Register transaction on blockchain
-      console.log(`   📝 Registering transaction on blockchain...`);
-      const blockchainTxId = await registerBlockchainTransaction({
-        userAddress,
-        transactionType: type,
-        amount,
-        balanceBefore,
-        balanceAfter,
-        description: description || '',
-        referenceId: referenceId || undefined,
-        referenceType: referenceType || undefined,
-        createdByAddress,
-      });
-
-      console.log(`   ✅ Transaction registered on blockchain with ID: ${blockchainTxId}`);
-
-      // Update token balance on blockchain
-      // Mint tokens for earning transactions
-      if (type === 'earn' || type === 'grant' || type === 'task_reward' || type === 'stock_profit') {
-        console.log(`   🪙 Minting ${amount} tokens to ${userAddress}...`);
-        const mintTxHash = await mintTokens(userAddress, amount);
-        console.log(`   ✅ Tokens minted successfully. TX Hash: ${mintTxHash}`);
-      }
-      // Burn tokens for spending transactions
-      else if (type === 'spend' || type === 'revoke' || type === 'stock_loss') {
-        console.log(`   🔥 Burning ${amount} tokens from ${userAddress}...`);
-        const burnTxHash = await burnTokens(userAddress, amount);
-        console.log(`   ✅ Tokens burned successfully. TX Hash: ${burnTxHash}`);
-      }
-
-      console.log(`✅ Transaction ${data} fully registered on blockchain with ID: ${blockchainTxId}`);
-    } catch (blockchainError: any) {
-      // Log blockchain error but don't fail the transaction
-      // Database transaction is already committed
-      console.error('❌ Blockchain registration error (transaction still saved to database):');
-      console.error('   Error message:', blockchainError.message);
-      console.error('   Error code:', blockchainError.code);
-      console.error('   Full error:', blockchainError);
-      
-      // Check if it's a contract not found error
-      if (blockchainError.message?.includes('does not exist') || blockchainError.code === 'BAD_DATA') {
-        console.error('   ⚠️  Contract may not be deployed or address is incorrect');
-        console.error('   💡 Solution: Deploy contracts and update .env with correct addresses');
-      }
-    }
-  } else {
-    console.warn('⚠️  Blockchain is not enabled. Transaction saved to database only.');
-    console.warn('   To enable blockchain, configure BLOCKCHAIN_* variables in .env');
-  }
 
   return data;
 }

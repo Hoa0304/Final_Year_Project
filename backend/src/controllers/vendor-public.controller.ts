@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
 import { calculateDiscountedPrice } from '../utils/price.utils';
-import { getVendorVouchers } from '../services/voucher.service';
 
 /**
  * Get vendor information and products (public)
@@ -68,36 +67,6 @@ export async function getVendorInfo(req: Request, res: Response) {
   }
 }
 
-/**
- * Get vendor's vouchers (public)
- * Used for vendor page to show available vouchers
- */
-export async function getVendorVouchersHandler(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const offset = parseInt(req.query.offset as string) || 0;
-
-    // Verify vendor exists
-    const { data: vendor } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', id)
-      .eq('role', 'vendor')
-      .single();
-
-    if (!vendor) {
-      return res.status(404).json({ error: 'Vendor not found' });
-    }
-
-    const vouchers = await getVendorVouchers(id, limit, offset);
-
-    res.json({ vouchers });
-  } catch (error) {
-    console.error('Get vendor vouchers error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-}
 
 /**
  * Get vendors by IDs (public)

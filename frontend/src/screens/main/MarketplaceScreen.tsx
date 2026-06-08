@@ -24,8 +24,10 @@ import { getCart } from '../../services/shopping-cart.service';
 import { getUnreadCount } from '../../services/notification.service';
 import { searchVendors, getVendorsByIds, Vendor } from '../../services/vendor.service';
 import { getMLRecommendations, MLRecommendation } from '../../services/recommendation.service';
+import { getEthRate } from '../../services/order.service';
 import { useAuth } from '../../context/AuthContext';
 import StarRating from '../../components/StarRating';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type SortOption = 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 type ViewMode = 'grid' | 'list';
@@ -52,7 +54,7 @@ export default function MarketplaceScreen() {
       sortBy,
       inStock: inStockOnly || undefined,
     };
-    
+
     if (minPrice) {
       const min = parseFloat(minPrice);
       if (!isNaN(min)) filterObj.minPrice = min;
@@ -61,9 +63,19 @@ export default function MarketplaceScreen() {
       const max = parseFloat(maxPrice);
       if (!isNaN(max)) filterObj.maxPrice = max;
     }
-    
+
     return filterObj;
   }, [selectedCategory, searchQuery, sortBy, minPrice, maxPrice, inStockOnly]);
+
+  // Fetch ETH Rate
+  const { data: ethRateData } = useQuery({
+    queryKey: ['ethRate'],
+    queryFn: getEthRate,
+    staleTime: 5 * 60 * 1000, // 5 min
+  });
+  const ethRate = ethRateData?.rate || 85000000;
+  // Exchange rate: 1 coin = 1000 VND (fixed)
+  const COIN_TO_VND = 1000;
 
   // Fetch products - when on vendors tab, fetch all products to group by vendor
   const { data: products, isLoading, refetch } = useQuery({
@@ -71,10 +83,18 @@ export default function MarketplaceScreen() {
     queryFn: () => getProducts(activeTab === 'vendors' ? {} : filters),
   });
 
+  // Fetch vendors for "By Vendor" tab - fetch all vendors to match with products
+  // Use a large limit to get all vendors
+  const { data: vendors = [], isLoading: isLoadingVendors } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: () => searchVendors(undefined, 1000), // Fetch up to 1000 vendors
+    enabled: activeTab === 'vendors',
+  });
+
   // Group products by vendor when on vendors tab - only show top 4 rated products per vendor
   const productsByVendor = useMemo(() => {
     if (activeTab !== 'vendors' || !products) return {};
-    
+
     const grouped: Record<string, Product[]> = {};
     products.forEach((product) => {
       const vendorId = product.created_by || 'unknown';
@@ -83,7 +103,7 @@ export default function MarketplaceScreen() {
       }
       grouped[vendorId].push(product);
     });
-    
+
     // Sort and limit to top 4 rated products per vendor
     Object.keys(grouped).forEach((vendorId) => {
       const vendorProducts = grouped[vendorId];
@@ -93,21 +113,21 @@ export default function MarketplaceScreen() {
         const ratingB = b.averageRating || 0;
         const totalA = a.totalRatings || 0;
         const totalB = b.totalRatings || 0;
-        
+
         // First sort by rating, then by number of ratings
         if (ratingA !== ratingB) {
           return ratingB - ratingA;
         }
         return totalB - totalA;
       });
-      
+
       // Keep only top 4
       grouped[vendorId] = vendorProducts.slice(0, 4);
     });
-    
+
     return grouped;
   }, [products, activeTab]);
-  
+
   // Filter vendors by search query
   const filteredVendors = useMemo(() => {
     if (activeTab !== 'vendors' || !vendors || vendors.length === 0) return [];
@@ -119,19 +139,19 @@ export default function MarketplaceScreen() {
       return name.includes(query) || email.includes(query);
     });
   }, [vendors, searchQuery, activeTab]);
-  
+
   // Get unique vendor IDs from products that are not in the vendors list
   const missingVendorIds = useMemo(() => {
     if (activeTab !== 'vendors' || !products) return [];
     const uniqueVendorIds = new Set<string>();
-    
+
     // Get unique vendor IDs from products
     products.forEach((product) => {
       if (product.created_by) {
         uniqueVendorIds.add(product.created_by);
       }
     });
-    
+
     // Find vendor IDs that are not in the vendors list
     const vendorIdsInList = new Set((vendors || []).map(v => v.id));
     return Array.from(uniqueVendorIds).filter(id => !vendorIdsInList.has(id));
@@ -149,28 +169,28 @@ export default function MarketplaceScreen() {
     if (activeTab !== 'vendors' || !products) return new Map<string, Vendor>();
     const map = new Map<string, Vendor>();
     const uniqueVendorIds = new Set<string>();
-    
+
     // Get unique vendor IDs from products
     products.forEach((product) => {
       if (product.created_by) {
         uniqueVendorIds.add(product.created_by);
       }
     });
-    
+
     // Add vendors from vendors list
     (vendors || []).forEach((vendor) => {
       if (uniqueVendorIds.has(vendor.id)) {
         map.set(vendor.id, vendor);
       }
     });
-    
+
     // Add missing vendors that were fetched
     (missingVendors || []).forEach((vendor) => {
       if (uniqueVendorIds.has(vendor.id)) {
         map.set(vendor.id, vendor);
       }
     });
-    
+
     return map;
   }, [products, vendors, missingVendors, activeTab]);
 
@@ -238,21 +258,15 @@ export default function MarketplaceScreen() {
     if (!mlRecommendations?.recommendations || !products) {
       return [];
     }
-    
+
     const recProductIds = new Set(
       mlRecommendations.recommendations.map((rec: MLRecommendation) => rec.productId)
     );
-    
+
     return products.filter((p) => recProductIds.has(p.id));
   }, [mlRecommendations, products]);
 
-  // Fetch vendors for "By Vendor" tab - fetch all vendors to match with products
-  // Use a large limit to get all vendors
-  const { data: vendors = [], isLoading: isLoadingVendors } = useQuery({
-    queryKey: ['vendors'],
-    queryFn: () => searchVendors(undefined, 1000), // Fetch up to 1000 vendors
-    enabled: activeTab === 'vendors',
-  });
+
 
   const sortOptions: { label: string; value: SortOption }[] = [
     { label: 'Newest First', value: 'newest' },
@@ -279,6 +293,8 @@ export default function MarketplaceScreen() {
   }
 
   function renderProductGrid({ item }: { item: Product }) {
+    const priceVnd = Math.round(item.price);
+
     return (
       <TouchableOpacity
         style={styles.productCardGrid}
@@ -290,7 +306,7 @@ export default function MarketplaceScreen() {
             <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="cover" />
           ) : (
             <View style={styles.productImagePlaceholder}>
-              <Ionicons name="image-outline" size={40} color="#ccc" />
+              <Ionicons name="image-outline" size={40} color="#64748B" />
             </View>
           )}
           {item.stock_quantity === 0 && (
@@ -316,10 +332,14 @@ export default function MarketplaceScreen() {
               )}
             </View>
           )}
-          <Text style={styles.productPriceGrid}>{item.price.toFixed(0)} coins</Text>
+
+          <View style={styles.priceContainerGrid}>
+            <Text style={styles.priceVndGrid}>{priceVnd.toLocaleString('en-US')} VND</Text>
+          </View>
+
           {item.stock_quantity > 0 && (
             <View style={styles.stockBadge}>
-              <Ionicons name="checkmark-circle" size={12} color="#34C759" />
+              <Ionicons name="checkmark-circle" size={12} color="#10B981" />
               <Text style={styles.stockBadgeText}>In Stock</Text>
             </View>
           )}
@@ -336,7 +356,7 @@ export default function MarketplaceScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.vendorIconContainer}>
-          <Ionicons name="storefront" size={40} color="#007AFF" />
+          <Ionicons name="storefront" size={40} color="#6366F1" />
         </View>
         <View style={styles.vendorInfo}>
           <Text style={styles.vendorName}>{item.full_name || item.email}</Text>
@@ -345,12 +365,14 @@ export default function MarketplaceScreen() {
             {item.productCount || 0} products
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        <Ionicons name="chevron-forward" size={20} color="#64748B" />
       </TouchableOpacity>
     );
   }
 
   function renderProductList({ item }: { item: Product }) {
+    const priceVnd = Math.round(item.price);
+
     return (
       <TouchableOpacity
         style={styles.productCardList}
@@ -362,7 +384,7 @@ export default function MarketplaceScreen() {
             <Image source={{ uri: item.image_url }} style={styles.productImageList} resizeMode="cover" />
           ) : (
             <View style={styles.productImagePlaceholderList}>
-              <Ionicons name="image-outline" size={40} color="#ccc" />
+              <Ionicons name="image-outline" size={40} color="#64748B" />
             </View>
           )}
         </View>
@@ -389,10 +411,12 @@ export default function MarketplaceScreen() {
             </Text>
           )}
           <View style={styles.productFooterList}>
-            <Text style={styles.productPriceList}>{item.price.toFixed(0)} coins</Text>
+            <View style={styles.priceContainerList}>
+              <Text style={styles.priceVndList}>{priceVnd.toLocaleString('en-US')} VND</Text>
+            </View>
             {item.stock_quantity > 0 ? (
               <View style={styles.stockBadge}>
-                <Ionicons name="checkmark-circle" size={12} color="#34C759" />
+                <Ionicons name="checkmark-circle" size={12} color="#10B981" />
                 <Text style={styles.stockBadgeText}>In Stock</Text>
               </View>
             ) : (
@@ -408,13 +432,13 @@ export default function MarketplaceScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header with Search */}
-        <View style={styles.header}>
+        <LinearGradient colors={['#0F172A', '#020617']} style={styles.header}>
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+            <Ionicons name="search" size={20} color="#64748B" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search products..."
-              placeholderTextColor="#000"
+              placeholderTextColor="#64748B"
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
@@ -422,11 +446,11 @@ export default function MarketplaceScreen() {
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                <Ionicons name="close-circle" size={20} color="#999" />
+                <Ionicons name="close-circle" size={20} color="#64748B" />
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Tab Selector */}
         <View style={styles.tabContainer}>
@@ -451,11 +475,11 @@ export default function MarketplaceScreen() {
         {/* Search Vendors - Only show for By Vendor tab */}
         {activeTab === 'vendors' && (
           <View style={styles.searchVendorContainer}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchVendorIcon} />
+            <Ionicons name="search" size={20} color="#64748B" style={styles.searchVendorIcon} />
             <TextInput
               style={styles.searchVendorInput}
               placeholder="Search vendors..."
-              placeholderTextColor="#999"
+              placeholderTextColor="#475569"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -464,7 +488,7 @@ export default function MarketplaceScreen() {
                 style={styles.searchVendorClear}
                 onPress={() => setSearchQuery('')}
               >
-                <Ionicons name="close-circle" size={20} color="#999" />
+                <Ionicons name="close-circle" size={20} color="#64748B" />
               </TouchableOpacity>
             )}
           </View>
@@ -472,70 +496,70 @@ export default function MarketplaceScreen() {
 
         {/* Action Bar - Only show for All Products tab */}
         {activeTab === 'all' && (
-        <View style={styles.actionBar}>
-          <View style={styles.actionBarLeft}>
-            <TouchableOpacity
-              style={[styles.actionButton, activeFiltersCount > 0 && styles.actionButtonActive]}
-              onPress={() => setShowFilterModal(true)}
-            >
-              <Ionicons name="filter" size={18} color={activeFiltersCount > 0 ? '#fff' : '#666'} />
-              <Text style={[styles.actionButtonText, activeFiltersCount > 0 && styles.actionButtonTextActive]}>
-                Filter
-                {activeFiltersCount > 0 && ` (${activeFiltersCount})`}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setShowSortModal(true)}
-            >
-              <Ionicons name="swap-vertical" size={18} color="#666" />
-              <Text style={styles.actionButtonText}>Sort</Text>
-            </TouchableOpacity>
+          <View style={styles.actionBar}>
+            <View style={styles.actionBarLeft}>
+              <TouchableOpacity
+                style={[styles.actionButton, activeFiltersCount > 0 && styles.actionButtonActive]}
+                onPress={() => setShowFilterModal(true)}
+              >
+                <Ionicons name="filter" size={18} color={activeFiltersCount > 0 ? '#fff' : '#64748B'} />
+                <Text style={[styles.actionButtonText, activeFiltersCount > 0 && styles.actionButtonTextActive]}>
+                  Filter
+                  {activeFiltersCount > 0 && ` (${activeFiltersCount})`}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => setShowSortModal(true)}
+              >
+                <Ionicons name="swap-vertical" size={18} color="#64748B" />
+                <Text style={styles.actionButtonText}>Sort</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.actionBarRight}>
+              <TouchableOpacity
+                style={styles.viewModeButton}
+                onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              >
+                <Ionicons
+                  name={viewMode === 'grid' ? 'grid' : 'list'}
+                  size={20}
+                  color="#64748B"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.notificationButton}
+                onPress={() => (navigation as any).navigate('Notifications')}
+              >
+                <Ionicons name="notifications-outline" size={20} color="#64748B" />
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cartButton}
+                onPress={() => (navigation as any).navigate('ShoppingCart')}
+              >
+                <Ionicons name="cart-outline" size={20} color="#64748B" />
+                {cartItemCount > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.actionBarRight}>
-            <TouchableOpacity
-              style={styles.viewModeButton}
-              onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-            >
-              <Ionicons
-                name={viewMode === 'grid' ? 'grid' : 'list'}
-                size={20}
-                color="#666"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => (navigation as any).navigate('Notifications')}
-            >
-              <Ionicons name="notifications-outline" size={20} color="#666" />
-              {unreadCount > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.cartButton}
-              onPress={() => (navigation as any).navigate('ShoppingCart')}
-            >
-              <Ionicons name="cart-outline" size={20} color="#666" />
-              {cartItemCount > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
         )}
 
         {/* Products List/Grid */}
         {activeTab === 'vendors' ? (
           isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="#6366F1" />
               <Text style={styles.loadingText}>Loading products...</Text>
             </View>
           ) : (
@@ -544,7 +568,7 @@ export default function MarketplaceScreen() {
             >
               {Object.keys(filteredProductsByVendor).length === 0 ? (
                 <View style={styles.emptyContainer}>
-                  <Ionicons name="storefront-outline" size={64} color="#ccc" />
+                  <Ionicons name="storefront-outline" size={64} color="#64748B" />
                   <Text style={styles.emptyText}>
                     {searchQuery ? 'No vendors found' : 'No products found'}
                   </Text>
@@ -558,10 +582,10 @@ export default function MarketplaceScreen() {
                   const vendor = (filteredVendors || []).find((v) => v.id === vendorId) || vendorMapFromProducts.get(vendorId);
                   // Get total product count for this vendor (not just the 4 displayed)
                   const totalProductCount = (products || []).filter((p) => p.created_by === vendorId).length || 0;
-                  
+
                   // Skip if no products to display
                   if (!vendorProducts || vendorProducts.length === 0) return null;
-                  
+
                   return (
                     <View key={vendorId} style={styles.vendorSection}>
                       <TouchableOpacity
@@ -570,7 +594,7 @@ export default function MarketplaceScreen() {
                       >
                         <View style={styles.vendorSectionHeaderLeft}>
                           <View style={styles.vendorSectionIcon}>
-                            <Ionicons name="storefront" size={24} color="#007AFF" />
+                            <Ionicons name="storefront" size={24} color="#6366F1" />
                           </View>
                           <View>
                             <Text style={styles.vendorSectionName}>
@@ -582,7 +606,7 @@ export default function MarketplaceScreen() {
                             </Text>
                           </View>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#999" />
+                        <Ionicons name="chevron-forward" size={20} color="#64748B" />
                       </TouchableOpacity>
                       <View style={[styles.vendorProductsContainer, viewMode === 'grid' && styles.vendorProductsGrid]}>
                         {vendorProducts.map((product) => (
@@ -603,7 +627,7 @@ export default function MarketplaceScreen() {
                           <Text style={styles.viewAllButtonText}>
                             View All {totalProductCount} Products
                           </Text>
-                          <Ionicons name="arrow-forward" size={16} color="#007AFF" />
+                          <Ionicons name="arrow-forward" size={16} color="#6366F1" />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -615,7 +639,7 @@ export default function MarketplaceScreen() {
         ) : (
           isLoading && !products ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="#6366F1" />
               <Text style={styles.loadingText}>Loading products...</Text>
             </View>
           ) : (
@@ -632,59 +656,59 @@ export default function MarketplaceScreen() {
               refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={refetch} />}
               ListHeaderComponent={
                 <>
-        {/* Category Chips */}
-        <View style={styles.categoryContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryContent}
+                  {/* Category Chips */}
+                  <View style={styles.categoryContainer}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.categoryContent}
                       nestedScrollEnabled={true}
-          >
-          <TouchableOpacity
-            style={[
-              styles.categoryChip,
-              !selectedCategory ? styles.categoryChipActive : null,
-            ]}
-            onPress={() => setSelectedCategory(undefined)}
-          >
-            <Text
-              style={
-                !selectedCategory
-                  ? [styles.categoryChipText, styles.categoryChipTextActive]
-                  : styles.categoryChipText
-              }
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              All
-            </Text>
-          </TouchableOpacity>
-          {categories.map((category) => {
-            const isActive = selectedCategory === category;
-            return (
-              <TouchableOpacity
-                key={category}
-                style={[
-                  styles.categoryChip,
-                  isActive ? styles.categoryChipActive : null,
-                ]}
-                onPress={() => setSelectedCategory(category)}
-              >
-                <Text
-                  style={
-                    isActive
-                      ? [styles.categoryChipText, styles.categoryChipTextActive]
-                      : styles.categoryChipText
-                  }
-                  numberOfLines={1}
-                >
-                  {category}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-          </ScrollView>
-        </View>
+                    >
+                      <TouchableOpacity
+                        style={[
+                          styles.categoryChip,
+                          !selectedCategory ? styles.categoryChipActive : null,
+                        ]}
+                        onPress={() => setSelectedCategory(undefined)}
+                      >
+                        <Text
+                          style={
+                            !selectedCategory
+                              ? [styles.categoryChipText, styles.categoryChipTextActive]
+                              : styles.categoryChipText
+                          }
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          All
+                        </Text>
+                      </TouchableOpacity>
+                      {categories.map((category) => {
+                        const isActive = selectedCategory === category;
+                        return (
+                          <TouchableOpacity
+                            key={category}
+                            style={[
+                              styles.categoryChip,
+                              isActive ? styles.categoryChipActive : null,
+                            ]}
+                            onPress={() => setSelectedCategory(category)}
+                          >
+                            <Text
+                              style={
+                                isActive
+                                  ? [styles.categoryChipText, styles.categoryChipTextActive]
+                                  : styles.categoryChipText
+                              }
+                              numberOfLines={1}
+                            >
+                              {category}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
 
                   {/* ML Recommendations Section */}
                   {(recommendedProducts.length > 0 || isLoadingML) && (
@@ -706,7 +730,7 @@ export default function MarketplaceScreen() {
                       >
                         {isLoadingML ? (
                           <View style={styles.recommendationsLoading}>
-                            <ActivityIndicator size="small" color="#007AFF" />
+                            <ActivityIndicator size="small" color="#6366F1" />
                             <Text style={styles.recommendationsLoadingText}>Loading recommendations...</Text>
                           </View>
                         ) : recommendedProducts.length === 0 ? (
@@ -714,8 +738,8 @@ export default function MarketplaceScreen() {
                             <Text style={styles.recommendationsEmptyText}>
                               {mlError ? 'Unable to load recommendations' : 'No recommendations available'}
                             </Text>
-          </View>
-        ) : (
+                          </View>
+                        ) : (
                           recommendedProducts.map((product) => {
                             const rec = mlRecommendations?.recommendations?.find(
                               (r: MLRecommendation) => r.productId === product.id
@@ -730,14 +754,11 @@ export default function MarketplaceScreen() {
                                   <Image source={{ uri: product.image_url }} style={styles.recommendedProductImage} />
                                 ) : (
                                   <View style={styles.recommendedProductImagePlaceholder}>
-                                    <Ionicons name="image-outline" size={30} color="#ccc" />
+                                    <Ionicons name="image-outline" size={30} color="#64748B" />
                                   </View>
                                 )}
                                 <View style={styles.recommendedProductInfo}>
-                                  <Text style={styles.recommendedProductName} numberOfLines={2}>
-                                    {product.name}
-                                  </Text>
-                                  <Text style={styles.recommendedProductPrice}>{product.price.toFixed(0)} coins</Text>
+                                  <Text style={styles.recommendedProductPrice}>{product.price.toLocaleString('en-US')} VND</Text>
                                   {rec && (
                                     <View style={styles.recommendedProductScore}>
                                       <Ionicons name="star" size={12} color="#FF9500" />
@@ -756,14 +777,14 @@ export default function MarketplaceScreen() {
                   )}
                 </>
               }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="search-outline" size={64} color="#ccc" />
-                <Text style={styles.emptyText}>No products found</Text>
-                <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
-              </View>
-            }
-          />
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="search-outline" size={64} color="#64748B" />
+                  <Text style={styles.emptyText}>No products found</Text>
+                  <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+                </View>
+              }
+            />
           )
         )}
 
@@ -779,7 +800,7 @@ export default function MarketplaceScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Filter Products</Text>
                 <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                  <Ionicons name="close" size={24} color="#333" />
+                  <Ionicons name="close" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
               </View>
 
@@ -793,7 +814,7 @@ export default function MarketplaceScreen() {
                       <TextInput
                         style={styles.priceInputField}
                         placeholder="0"
-                        placeholderTextColor="#000"
+                        placeholderTextColor="#475569"
                         value={minPrice}
                         onChangeText={setMinPrice}
                         keyboardType="numeric"
@@ -805,7 +826,7 @@ export default function MarketplaceScreen() {
                       <TextInput
                         style={styles.priceInputField}
                         placeholder="No limit"
-                        placeholderTextColor="#000"
+                        placeholderTextColor="#475569"
                         value={maxPrice}
                         onChangeText={setMaxPrice}
                         keyboardType="numeric"
@@ -859,7 +880,7 @@ export default function MarketplaceScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Sort By</Text>
                 <TouchableOpacity onPress={() => setShowSortModal(false)}>
-                  <Ionicons name="close" size={24} color="#333" />
+                  <Ionicons name="close" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
               </View>
 
@@ -885,7 +906,7 @@ export default function MarketplaceScreen() {
                       {option.label}
                     </Text>
                     {sortBy === option.value && (
-                      <Ionicons name="checkmark" size={20} color="#007AFF" />
+                      <Ionicons name="checkmark" size={20} color="#6366F1" />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -901,26 +922,28 @@ export default function MarketplaceScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
   },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     borderRadius: 10,
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   searchIcon: {
     marginRight: 8,
@@ -928,7 +951,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: '#F8FAFC',
     paddingVertical: 10,
   },
   clearButton: {
@@ -938,11 +961,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
   actionBarLeft: {
     flexDirection: 'row',
@@ -953,16 +976,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     gap: 6,
   },
   actionButtonActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
   },
   actionButtonText: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     fontWeight: '500',
   },
   actionButtonTextActive: {
@@ -984,7 +1010,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#EF4444',
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -992,7 +1018,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#020617',
   },
   notificationBadgeText: {
     color: '#fff',
@@ -1007,7 +1033,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#EF4444',
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -1021,9 +1047,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   categoryContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
     paddingVertical: 12,
   },
   categoryContent: {
@@ -1038,7 +1064,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     marginRight: 8,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     flexShrink: 0,
     minWidth: 60,
     minHeight: 36,
@@ -1046,11 +1074,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryChipActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
   },
   categoryChipText: {
     fontSize: 14,
-    color: '#666666',
+    color: '#94A3B8',
     fontWeight: '500',
     includeFontPadding: false,
     textAlignVertical: 'center',
@@ -1068,7 +1097,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
   },
   listContent: {
     padding: 15,
@@ -1079,15 +1108,12 @@ const styles = StyleSheet.create({
   // Grid View Styles
   productCardGrid: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 16,
     margin: 5,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   productImageContainer: {
     width: '100%',
@@ -1101,7 +1127,7 @@ const styles = StyleSheet.create({
   productImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1111,17 +1137,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   productInfoGrid: {
-    padding: 10,
+    padding: 12,
   },
   productNameGrid: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: 'bold',
+    color: '#F8FAFC',
     marginBottom: 6,
     minHeight: 36,
   },
@@ -1133,13 +1159,35 @@ const styles = StyleSheet.create({
   },
   ratingCountGrid: {
     fontSize: 11,
-    color: '#666',
+    color: '#94A3B8',
   },
-  productPriceGrid: {
-    fontSize: 16,
+  priceContainerGrid: {
+    marginTop: 4,
+  },
+  priceVndGrid: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  priceCoinRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  priceCoinGrid: {
+    fontSize: 13,
     fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
+    color: '#F59E0B',
+  },
+  discountBadgeTextGrid: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#10B981',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   stockBadge: {
     flexDirection: 'row',
@@ -1148,21 +1196,18 @@ const styles = StyleSheet.create({
   },
   stockBadgeText: {
     fontSize: 11,
-    color: '#34C759',
+    color: '#10B981',
     fontWeight: '500',
   },
   // List View Styles
   productCardList: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   productImageContainerList: {
     width: 120,
@@ -1175,7 +1220,7 @@ const styles = StyleSheet.create({
   productImagePlaceholderList: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1186,8 +1231,8 @@ const styles = StyleSheet.create({
   },
   productNameList: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: 'bold',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   ratingContainerList: {
@@ -1198,11 +1243,11 @@ const styles = StyleSheet.create({
   },
   ratingCountList: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   productDescriptionList: {
     fontSize: 13,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   productFooterList: {
@@ -1211,13 +1256,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   productPriceList: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#F59E0B',
+  },
+  priceContainerList: {
+    marginTop: 0,
+  },
+  priceVndList: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  priceCoinList: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#F59E0B',
+  },
+  discountBadgeTextList: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#10B981',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   outOfStockTextList: {
     fontSize: 12,
-    color: '#FF3B30',
+    color: '#EF4444',
     fontWeight: '500',
   },
   outOfStockText: {
@@ -1234,20 +1301,20 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
+    color: '#94A3B8',
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: '#64748B',
     marginTop: 8,
   },
   // Tab Styles
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
     paddingHorizontal: 16,
   },
   tab: {
@@ -1258,37 +1325,34 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: '#007AFF',
+    borderBottomColor: '#6366F1',
   },
   tabText: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
     fontWeight: '500',
   },
   tabTextActive: {
-    color: '#007AFF',
+    color: '#6366F1',
     fontWeight: '600',
   },
   // Vendor Card Styles
   vendorCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     padding: 16,
     marginBottom: 8,
     marginHorizontal: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   vendorIconContainer: {
     width: 60,
     height: 60,
-    borderRadius: 30,
-    backgroundColor: '#f0f0f0',
+    borderRadius: 16,
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1298,30 +1362,34 @@ const styles = StyleSheet.create({
   },
   vendorName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: 'bold',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   vendorEmail: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   vendorProductCount: {
     fontSize: 12,
-    color: '#999',
+    color: '#64748B',
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#1E293B',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1329,12 +1397,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#F8FAFC',
   },
   modalBody: {
     padding: 20,
@@ -1343,7 +1411,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#1E293B',
     gap: 12,
   },
   modalButton: {
@@ -1353,10 +1421,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonPrimary: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366F1',
   },
   modalButtonSecondary: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   modalButtonTextPrimary: {
     color: '#fff',
@@ -1364,7 +1434,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   modalButtonTextSecondary: {
-    color: '#666',
+    color: '#94A3B8',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1374,7 +1444,7 @@ const styles = StyleSheet.create({
   filterSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#F8FAFC',
     marginBottom: 12,
   },
   priceInputContainer: {
@@ -1387,19 +1457,21 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   priceInputField: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#333',
+    color: '#F8FAFC',
   },
   priceSeparator: {
     fontSize: 18,
-    color: '#666',
+    color: '#94A3B8',
     marginTop: 20,
   },
   checkboxContainer: {
@@ -1412,17 +1484,17 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: '#334155',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
   },
   checkboxLabel: {
     fontSize: 16,
-    color: '#333',
+    color: '#E2E8F0',
   },
   sortOption: {
     flexDirection: 'row',
@@ -1430,39 +1502,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
   sortOptionActive: {
-    backgroundColor: '#f0f7ff',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
   },
   sortOptionText: {
     fontSize: 16,
-    color: '#333',
+    color: '#E2E8F0',
   },
   sortOptionTextActive: {
-    color: '#007AFF',
+    color: '#818CF8',
     fontWeight: '600',
   },
   // Vendor Section Styles
   vendorSection: {
     marginBottom: 24,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   vendorSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(30, 41, 59, 0.3)',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
   },
   vendorSectionHeaderLeft: {
     flexDirection: 'row',
@@ -1473,20 +1542,20 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#e3f2fd',
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   vendorSectionName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: 'bold',
+    color: '#F8FAFC',
     marginBottom: 4,
   },
   vendorSectionProductCount: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   vendorProductsContainer: {
     padding: 8,
@@ -1503,7 +1572,7 @@ const styles = StyleSheet.create({
   searchVendorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 8,
@@ -1511,7 +1580,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#1E293B',
   },
   searchVendorIcon: {
     marginRight: 8,
@@ -1519,7 +1588,7 @@ const styles = StyleSheet.create({
   searchVendorInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: '#F8FAFC',
     paddingVertical: 0,
   },
   searchVendorClear: {
@@ -1531,21 +1600,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
     marginTop: 8,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
     borderRadius: 8,
   },
   viewAllButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#818CF8',
     marginRight: 4,
   },
   // ML Recommendations Styles
   recommendationsSection: {
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
   },
   recommendationsHeader: {
     flexDirection: 'row',
@@ -1557,18 +1626,18 @@ const styles = StyleSheet.create({
   recommendationsTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     flex: 1,
   },
   modelBadge: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   modelBadgeText: {
     fontSize: 10,
-    color: '#666',
+    color: '#94A3B8',
     fontWeight: '500',
     textTransform: 'uppercase',
   },
@@ -1578,24 +1647,21 @@ const styles = StyleSheet.create({
   },
   recommendedProductCard: {
     width: 160,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#1E293B',
     overflow: 'hidden',
   },
   recommendedProductImage: {
     width: '100%',
     height: 120,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1E293B',
   },
   recommendedProductImagePlaceholder: {
     width: '100%',
     height: 120,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1605,14 +1671,14 @@ const styles = StyleSheet.create({
   recommendedProductName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: '#F8FAFC',
     marginBottom: 4,
     minHeight: 36,
   },
   recommendedProductPrice: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#007AFF',
+    color: '#F59E0B',
     marginBottom: 4,
   },
   recommendedProductScore: {
@@ -1635,7 +1701,7 @@ const styles = StyleSheet.create({
   },
   recommendationsLoadingText: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
   },
   recommendationsEmpty: {
     padding: 20,
@@ -1643,7 +1709,7 @@ const styles = StyleSheet.create({
   },
   recommendationsEmptyText: {
     fontSize: 14,
-    color: '#999',
+    color: '#64748B',
     fontStyle: 'italic',
   },
 });

@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   StatusBar,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -138,8 +139,8 @@ export default function NotificationPreferencesScreen() {
           <Switch
             value={enabled}
             onValueChange={() => handleToggleEnabled(type)}
-            trackColor={{ false: '#E5E5EA', true: '#34C759' }}
-            thumbColor="#fff"
+            trackColor={{ false: '#1E293B', true: '#10B981' }}
+            thumbColor={enabled ? '#F8FAFC' : '#64748B'}
           />
         </View>
 
@@ -157,6 +158,7 @@ export default function NotificationPreferencesScreen() {
                       const value = parseInt(text) || 0;
                       handleUpdatePreference(type, { maxPerDay: value });
                     }}
+                    placeholderTextColor="#64748B"
                   />
                 </View>
                 <View style={styles.detailRow}>
@@ -169,6 +171,7 @@ export default function NotificationPreferencesScreen() {
                       const value = parseInt(text) || 0;
                       handleUpdatePreference(type, { cooldownMinutes: value });
                     }}
+                    placeholderTextColor="#64748B"
                   />
                 </View>
                 <TouchableOpacity
@@ -181,13 +184,13 @@ export default function NotificationPreferencesScreen() {
             ) : (
               <View style={styles.detailsContainer}>
                 <Text style={styles.detailText}>
-                  Max: {pref?.maxPerDay ?? 10}/day | Cooldown: {pref?.cooldownMinutes ?? 0}min
+                  Max: {pref?.maxPerDay ?? 10}/day | Cooldown: {pref?.cooldownMinutes ?? 0} min
                 </Text>
                 <TouchableOpacity
                   style={styles.editButton}
                   onPress={() => setEditingType(type)}
                 >
-                  <Ionicons name="settings-outline" size={18} color="#007AFF" />
+                  <Ionicons name="settings-outline" size={18} color="#10B981" />
                 </TouchableOpacity>
               </View>
             )}
@@ -201,7 +204,8 @@ export default function NotificationPreferencesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
-          <Text>Loading preferences...</Text>
+          <ActivityIndicator size="large" color="#10B981" />
+          <Text style={{ color: '#94A3B8', marginTop: 12 }}>Loading preferences...</Text>
         </View>
       </SafeAreaView>
     );
@@ -209,12 +213,12 @@ export default function NotificationPreferencesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notification Preferences</Text>
+        <Text style={styles.headerTitle}>Notification Settings</Text>
       </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>Notification Types</Text>
+        <Text style={styles.sectionTitle}>System Notification Types</Text>
         {NOTIFICATION_TYPES.map(renderPreferenceRow)}
       </ScrollView>
     </SafeAreaView>
@@ -224,41 +228,42 @@ export default function NotificationPreferencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#020617',
   },
   header: {
-    padding: 15,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#1E293B',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#F8FAFC',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 15,
+    padding: 16,
+    paddingBottom: 40,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 15,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#94A3B8',
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   preferenceRow: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   preferenceHeader: {
     flexDirection: 'row',
@@ -271,20 +276,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   preferenceTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#F8FAFC',
   },
   disabledLabel: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 12,
+    color: '#64748B',
     marginLeft: 8,
+    fontWeight: '600',
   },
   preferenceDetails: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
+    borderTopColor: '#1E293B',
   },
   detailsContainer: {
     flexDirection: 'row',
@@ -292,14 +298,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailText: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 13,
+    color: '#94A3B8',
   },
   editButton: {
-    padding: 5,
+    padding: 6,
+    backgroundColor: '#1E293B',
+    borderRadius: 8,
   },
   editingContainer: {
-    marginTop: 8,
+    marginTop: 4,
   },
   detailRow: {
     flexDirection: 'row',
@@ -308,31 +316,34 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   detailLabel: {
-    fontSize: 14,
-    color: '#000',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#F8FAFC',
+    fontWeight: '600',
   },
   detailInput: {
+    backgroundColor: '#1E293B',
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: '#334155',
     borderRadius: 8,
-    padding: 8,
-    width: 100,
-    fontSize: 14,
-    textAlign: 'right',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    width: 80,
+    fontSize: 13,
+    color: '#F8FAFC',
+    textAlign: 'center',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#10B981',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignSelf: 'flex-end',
-    marginTop: 8,
+    marginTop: 4,
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#020617',
+    fontSize: 13,
+    fontWeight: '700',
   },
   centerContainer: {
     flex: 1,

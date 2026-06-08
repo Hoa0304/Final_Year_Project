@@ -283,13 +283,14 @@ export async function getTransactionCategories(req: AuthRequest, res: Response) 
   try {
     const userId = req.user!.userId;
 
-    const { data: labels, error } = await supabase
-      .from('transaction_labels')
+    const { data: transactions, error } = await supabase
+      .from('transactions')
       .select(`
-        label,
-        transactions (
-          amount,
-          type
+        id,
+        amount,
+        type,
+        transaction_labels (
+          label
         )
       `)
       .eq('user_id', userId);
@@ -302,17 +303,16 @@ export async function getTransactionCategories(req: AuthRequest, res: Response) 
     // Group by category
     const categorySummary: { [key: string]: { count: number; totalAmount: number } } = {};
     
-    labels?.forEach((l: any) => {
-      if (!l.label) return;
-      const transaction = l.transactions;
-      if (!categorySummary[l.label]) {
-        categorySummary[l.label] = { count: 0, totalAmount: 0 };
+    transactions?.forEach((t: any) => {
+      const label = t.transaction_labels?.[0]?.label || 'Uncategorized';
+      if (!categorySummary[label]) {
+        categorySummary[label] = { count: 0, totalAmount: 0 };
       }
-      categorySummary[l.label].count++;
-      if (transaction && transaction.type === 'spend') {
-        categorySummary[l.label].totalAmount += parseFloat(transaction.amount.toString());
-      } else if (transaction && transaction.type !== 'spend') {
-        categorySummary[l.label].totalAmount -= parseFloat(transaction.amount.toString());
+      categorySummary[label].count++;
+      if (t.type === 'spend') {
+        categorySummary[label].totalAmount += parseFloat(t.amount.toString());
+      } else {
+        categorySummary[label].totalAmount -= parseFloat(t.amount.toString());
       }
     });
 

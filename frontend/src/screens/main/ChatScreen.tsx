@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  TouchableWithoutFeedback,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +23,6 @@ import {
   sendMessage,
   createConversation,
   deleteConversation,
-  updateConversationTitle,
   ChatMessage,
   ChatConversation,
 } from '../../services/chat.service';
@@ -39,67 +38,50 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [showConversations, setShowConversations] = useState(false);
 
-  // Fetch conversations
   const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['chatConversations'],
     queryFn: getConversations,
   });
 
-  // Fetch current conversation messages
   const { data: conversationData, refetch: refetchConversation } = useQuery({
     queryKey: ['chatConversation', currentConversationId],
     queryFn: () => getConversation(currentConversationId!),
     enabled: !!currentConversationId,
   });
 
-  // Optimistic greeting message for new conversations
   const [optimisticGreeting, setOptimisticGreeting] = React.useState<ChatMessage | null>(null);
 
   const messages = React.useMemo(() => {
     const dbMessages = conversationData?.messages || [];
-    // If we have optimistic greeting and no messages yet, show it
     if (optimisticGreeting && dbMessages.length === 0) {
       return [optimisticGreeting];
     }
-    // Once we have real messages, clear optimistic and use real ones
     if (dbMessages.length > 0 && optimisticGreeting) {
       setOptimisticGreeting(null);
     }
     return dbMessages;
   }, [conversationData?.messages, optimisticGreeting]);
 
-  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: (message: string) => sendMessage(currentConversationId, message),
     onSuccess: (data) => {
       setMessageText('');
       setIsSending(false);
-      
-      // Update conversation ID if new conversation was created
       if (data.conversationId !== currentConversationId) {
         setCurrentConversationId(data.conversationId);
       }
-      
-      // Refetch conversations and current conversation
       refetchConversations();
       refetchConversation();
-      
-      // Scroll to bottom
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     },
     onError: (error: any) => {
       setIsSending(false);
-      Alert.alert(
-        'Error',
-        error.response?.data?.error || 'Failed to send message. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', error.response?.data?.error || 'Failed to send message. Please try again.', [{ text: 'OK' }]);
     },
   });
 
-  // Delete conversation mutation
   const deleteConversationMutation = useMutation({
     mutationFn: deleteConversation,
     onSuccess: () => {
@@ -110,16 +92,13 @@ export default function ChatScreen() {
     },
   });
 
-  // Handle send message
   const handleSend = () => {
     if (!messageText.trim() || isSending) return;
-
     setIsSending(true);
     Keyboard.dismiss();
     sendMessageMutation.mutate(messageText.trim());
   };
 
-  // Create conversation mutation
   const createConversationMutation = useMutation({
     mutationFn: createConversation,
     onSuccess: (conversation) => {
@@ -127,51 +106,32 @@ export default function ChatScreen() {
       setMessageText('');
       setShowConversations(false);
       refetchConversations();
-      
-      // Show greeting message immediately (optimistic update)
       const greetingMessage: ChatMessage = {
         id: 'temp-greeting',
         conversation_id: conversation.id,
         role: 'assistant',
-        content: `Hello! I'm the AI Assistant for HMall. I can help you with:
-      
-• Expense management and budgeting
-• Product and voucher advice
-• App features and usage guidance
-• Financial and investment advice
-• And much more!
-
-How can I assist you today? 😊`,
+        content: `Hello! I am the HMall AI Assistant. I can help you with:\n\n• Expense & budget management\n• Product & voucher consultation\n• App usage guidelines\n• Financial & investment advice\n• And much more!\n\nHow can I help you today? 😊`,
         created_at: new Date().toISOString(),
       };
       setOptimisticGreeting(greetingMessage);
-      
-      // Refetch in background to get real greeting from backend
       setTimeout(() => {
         refetchConversation();
       }, 1000);
     },
     onError: (error: any) => {
-      Alert.alert(
-        'Error',
-        error.response?.data?.error || 'Failed to create conversation. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', error.response?.data?.error || 'Failed to create conversation.', [{ text: 'OK' }]);
     },
   });
 
-  // Handle new conversation
   const handleNewConversation = () => {
     createConversationMutation.mutate('New Conversation');
   };
 
-  // Handle select conversation
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversationId(conversationId);
     setShowConversations(false);
   };
 
-  // Handle delete conversation
   const handleDeleteConversation = (conversationId: string) => {
     Alert.alert(
       'Delete Conversation',
@@ -192,7 +152,6 @@ How can I assist you today? 😊`,
     );
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => {
@@ -203,16 +162,20 @@ How can I assist you today? 😊`,
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
-    
     return (
       <View style={[styles.messageContainer, isUser ? styles.userMessage : styles.assistantMessage]}>
+        {!isUser && (
+          <View style={styles.assistantAvatar}>
+            <Ionicons name="sparkles" size={14} color="#0ea5e9" />
+          </View>
+        )}
         <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.assistantBubble]}>
           <Text style={[styles.messageText, isUser ? styles.userMessageText : styles.assistantMessageText]}>
             {item.content}
           </Text>
         </View>
-        <Text style={styles.messageTime}>
-          {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <Text style={[styles.messageTime, isUser && styles.messageTimeRight]}>
+          {new Date(item.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
         </Text>
       </View>
     );
@@ -220,35 +183,38 @@ How can I assist you today? 😊`,
 
   const renderConversationItem = ({ item }: { item: ChatConversation }) => (
     <TouchableOpacity
-      style={[
-        styles.conversationItem,
-        currentConversationId === item.id && styles.conversationItemActive,
-      ]}
+      style={[styles.convItem, currentConversationId === item.id && styles.convItemActive]}
       onPress={() => handleSelectConversation(item.id)}
       onLongPress={() => handleDeleteConversation(item.id)}
     >
-      <View style={styles.conversationItemContent}>
-        <Ionicons name="chatbubbles" size={20} color="#007AFF" />
-        <View style={styles.conversationItemText}>
-          <Text style={styles.conversationItemTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={styles.conversationItemDate}>
-            {new Date(item.updated_at).toLocaleDateString()}
+      <View style={styles.convItemLeft}>
+        <View style={[styles.convItemIcon, currentConversationId === item.id && styles.convItemIconActive]}>
+          <Ionicons name="chatbubbles" size={16} color={currentConversationId === item.id ? '#0ea5e9' : '#64748B'} />
+        </View>
+        <View style={styles.convItemText}>
+          <Text style={styles.convItemTitle} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.convItemDate}>
+            {new Date(item.updated_at).toLocaleDateString('en-US')}
           </Text>
         </View>
       </View>
-      <TouchableOpacity
-        onPress={() => handleDeleteConversation(item.id)}
-        style={styles.deleteButton}
-      >
-        <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+      <TouchableOpacity onPress={() => handleDeleteConversation(item.id)} style={styles.convDeleteBtn}>
+        <Ionicons name="trash-outline" size={16} color="#475569" />
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
+  const quickQuestions = [
+    'How to track expenses?',
+    'How to set a budget?',
+    'What is a voucher and how to use it?',
+    'Tips for saving money effectively?',
+    'How to manage tasks?',
+  ];
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#020617" />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -256,32 +222,31 @@ How can I assist you today? 😊`,
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+            <Ionicons name="chevron-back" size={22} color="#94A3B8" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>AI Chat Assistant</Text>
+          <View style={styles.headerCenter}>
+            <View style={styles.aiBadge}>
+              <Ionicons name="sparkles" size={14} color="#0ea5e9" />
+            </View>
+            <Text style={styles.headerTitle}>AI Chat Assistant</Text>
+          </View>
           <TouchableOpacity
             onPress={() => setShowConversations(!showConversations)}
-            style={styles.menuButton}
+            style={styles.headerBtn}
           >
-            <Ionicons name={showConversations ? 'close' : 'menu'} size={24} color="#000" />
+            <Ionicons name={showConversations ? 'close' : 'menu'} size={22} color="#94A3B8" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.contentContainer}>
           {/* Conversations Sidebar */}
           {showConversations && (
-            <View style={styles.conversationsSidebar}>
-              <View style={styles.conversationsHeader}>
-                <Text style={styles.conversationsTitle}>Conversations</Text>
-                <TouchableOpacity
-                  onPress={handleNewConversation}
-                  style={styles.newConversationButton}
-                >
-                  <Ionicons name="add" size={24} color="#007AFF" />
+            <View style={styles.sidebar}>
+              <View style={styles.sidebarHeader}>
+                <Text style={styles.sidebarTitle}>History</Text>
+                <TouchableOpacity onPress={handleNewConversation} style={styles.newConvBtn}>
+                  <Ionicons name="add" size={20} color="#0ea5e9" />
                 </TouchableOpacity>
               </View>
               <FlatList
@@ -289,10 +254,9 @@ How can I assist you today? 😊`,
                 renderItem={renderConversationItem}
                 keyExtractor={(item) => item.id}
                 ListEmptyComponent={
-                  <View style={styles.emptyConversations}>
-                    <Ionicons name="chatbubbles-outline" size={48} color="#ccc" />
-                    <Text style={styles.emptyText}>No conversations yet</Text>
-                    <Text style={styles.emptySubtext}>Start a new conversation to begin</Text>
+                  <View style={styles.sidebarEmpty}>
+                    <Ionicons name="chatbubbles-outline" size={36} color="#1E293B" />
+                    <Text style={styles.sidebarEmptyText}>No conversations yet</Text>
                   </View>
                 }
               />
@@ -300,104 +264,93 @@ How can I assist you today? 😊`,
           )}
 
           {/* Chat Area */}
-          <View style={[styles.chatArea, showConversations && styles.chatAreaWithSidebar]}>
-          {!currentConversationId ? (
-            <View style={styles.welcomeContainer}>
-              <Ionicons name="chatbubbles" size={64} color="#007AFF" />
-              <Text style={styles.welcomeTitle}>Welcome to AI Chat Assistant</Text>
-              <Text style={styles.welcomeText}>
-                Ask me anything about HMall and I'll help you!
-              </Text>
-              <TouchableOpacity
-                style={[styles.startButton, createConversationMutation.isPending && styles.startButtonDisabled]}
-                onPress={handleNewConversation}
-                disabled={createConversationMutation.isPending}
-              >
-                {createConversationMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.startButtonText}>Start New Conversation</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : messages.length === 0 ? (
-            <View style={styles.welcomeContainer}>
-              <ActivityIndicator size="small" color="#007AFF" />
-              <Text style={styles.welcomeText}>Starting conversation...</Text>
-            </View>
-          ) : (
-            <>
-              <FlatList
-                ref={flatListRef}
-                data={messages}
-                renderItem={renderMessage}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.messagesList}
-                onContentSizeChange={() => {
-                  flatListRef.current?.scrollToEnd({ animated: true });
-                }}
-                ListEmptyComponent={
-                  <View style={styles.emptyMessages}>
-                    <ActivityIndicator size="small" color="#007AFF" />
-                    <Text style={styles.emptyText}>Loading conversation...</Text>
-                  </View>
-                }
-                ListHeaderComponent={
-                  messages.length === 1 && messages[0]?.role === 'assistant' ? (
-                    <View style={styles.quickQuestionsContainer}>
-                      <Text style={styles.quickQuestionsTitle}>Quick Questions:</Text>
-                      {[
-                        'How do I track my expenses?',
-                        'How to set a budget?',
-                        'What are vouchers and how to use them?',
-                        'How does the stock market work?',
-                        'Tell me about savings goals',
-                        'How to manage my tasks?',
-                      ].map((question, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={styles.quickQuestionButton}
-                          onPress={() => {
-                            setMessageText(question);
-                            setTimeout(() => handleSend(), 100);
-                          }}
-                        >
-                          <Text style={styles.quickQuestionText}>{question}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  ) : null
-                }
-              />
-
-              {/* Input Area */}
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Type your message..."
-                  placeholderTextColor="#999"
-                  value={messageText}
-                  onChangeText={setMessageText}
-                  multiline
-                  maxLength={2000}
-                  editable={!isSending}
-                  onSubmitEditing={handleSend}
-                  returnKeyType="send"
-                />
+          <View style={styles.chatArea}>
+            {!currentConversationId ? (
+              <View style={styles.welcomeContainer}>
+                <View style={styles.welcomeIconCircle}>
+                  <Ionicons name="sparkles" size={40} color="#0ea5e9" />
+                </View>
+                <Text style={styles.welcomeTitle}>Welcome to AI Chat</Text>
+                <Text style={styles.welcomeText}>
+                  Ask me anything about HMall, finance, or life!
+                </Text>
                 <TouchableOpacity
-                  style={[styles.sendButton, (!messageText.trim() || isSending) && styles.sendButtonDisabled]}
-                  onPress={handleSend}
-                  disabled={!messageText.trim() || isSending}
+                  style={[styles.startBtn, createConversationMutation.isPending && styles.startBtnDisabled]}
+                  onPress={handleNewConversation}
+                  disabled={createConversationMutation.isPending}
                 >
-                  {isSending ? (
+                  {createConversationMutation.isPending ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Ionicons name="send" size={20} color="#fff" />
+                    <>
+                      <Ionicons name="add-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
+                      <Text style={styles.startBtnText}>Start Conversation</Text>
+                    </>
                   )}
                 </TouchableOpacity>
+
+                {/* Quick questions */}
+                <View style={styles.quickSection}>
+                  <Text style={styles.quickTitle}>Suggested Questions</Text>
+                  {quickQuestions.map((q, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={styles.quickBtn}
+                      onPress={() => {
+                        handleNewConversation();
+                        setMessageText(q);
+                      }}
+                    >
+                      <Ionicons name="chatbubble-outline" size={14} color="#0ea5e9" style={{ marginRight: 8 }} />
+                      <Text style={styles.quickBtnText}>{q}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </>
-          )}
+            ) : messages.length === 0 ? (
+              <View style={styles.welcomeContainer}>
+                <ActivityIndicator size="large" color="#0ea5e9" />
+                <Text style={styles.loadingText}>Initializing conversation...</Text>
+              </View>
+            ) : (
+              <>
+                <FlatList
+                  ref={flatListRef}
+                  data={messages}
+                  renderItem={renderMessage}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={styles.messagesList}
+                  onContentSizeChange={() => {
+                    flatListRef.current?.scrollToEnd({ animated: true });
+                  }}
+                />
+                {/* Input Area */}
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Type a message..."
+                    placeholderTextColor="#475569"
+                    value={messageText}
+                    onChangeText={setMessageText}
+                    multiline
+                    maxLength={2000}
+                    editable={!isSending}
+                    returnKeyType="send"
+                  />
+                  <TouchableOpacity
+                    style={[styles.sendBtn, (!messageText.trim() || isSending) && styles.sendBtnDisabled]}
+                    onPress={handleSend}
+                    disabled={!messageText.trim() || isSending}
+                  >
+                    {isSending ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Ionicons name="send" size={18} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -408,10 +361,12 @@ How can I assist you today? 😊`,
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,
+    backgroundColor: '#020617',
   },
   contentContainer: {
     flex: 1,
@@ -424,122 +379,214 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    borderBottomColor: '#1E293B',
+    backgroundColor: '#020617',
   },
-  backButton: {
-    padding: 8,
+  headerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  aiBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(14, 165, 233, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-    flex: 1,
-    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#F1F5F9',
   },
-  menuButton: {
-    padding: 8,
-  },
-  conversationsSidebar: {
-    width: 280,
-    backgroundColor: '#f5f5f5',
+  sidebar: {
+    width: 260,
+    backgroundColor: '#0A111D',
     borderRightWidth: 1,
-    borderRightColor: '#e0e0e0',
+    borderRightColor: '#1E293B',
   },
-  conversationsHeader: {
+  sidebarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#1E293B',
   },
-  conversationsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+  sidebarTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#E2E8F0',
   },
-  newConversationButton: {
-    padding: 4,
+  newConvBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: 'rgba(14, 165, 233, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  conversationItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
-  },
-  conversationItemActive: {
-    backgroundColor: '#e3f2fd',
-  },
-  conversationItemContent: {
+  convItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
   },
-  conversationItemText: {
+  convItemActive: {
+    backgroundColor: 'rgba(14, 165, 233, 0.08)',
+  },
+  convItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  conversationItemTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000',
-    marginBottom: 4,
+  convItemIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
-  conversationItemDate: {
-    fontSize: 12,
-    color: '#666',
+  convItemIconActive: {
+    backgroundColor: 'rgba(14, 165, 233, 0.15)',
   },
-  deleteButton: {
-    padding: 8,
+  convItemText: {
+    flex: 1,
+  },
+  convItemTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#CBD5E1',
+    marginBottom: 2,
+  },
+  convItemDate: {
+    fontSize: 11,
+    color: '#475569',
+  },
+  convDeleteBtn: {
+    padding: 4,
+  },
+  sidebarEmpty: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  sidebarEmptyText: {
+    fontSize: 13,
+    color: '#475569',
+    marginTop: 12,
   },
   chatArea: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  chatAreaWithSidebar: {
-    // Chat area takes remaining space when sidebar is visible
+    backgroundColor: '#020617',
   },
   welcomeContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    paddingHorizontal: 28,
+    paddingBottom: 40,
   },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#000',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  startButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 200,
+  welcomeIconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    backgroundColor: 'rgba(14, 165, 233, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(14, 165, 233, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 20,
   },
-  startButtonDisabled: {
-    backgroundColor: '#ccc',
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#F1F5F9',
+    textAlign: 'center',
+    marginBottom: 10,
+    letterSpacing: -0.3,
   },
-  startButtonText: {
+  welcomeText: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 28,
+  },
+  startBtn: {
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 200,
+    justifyContent: 'center',
+  },
+  startBtnDisabled: {
+    backgroundColor: '#1E293B',
+  },
+  startBtnText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  quickSection: {
+    width: '100%',
+    marginTop: 32,
+  },
+  quickTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    letterSpacing: 0.8,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+  },
+  quickBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  quickBtnText: {
+    fontSize: 13,
+    color: '#94A3B8',
+    flex: 1,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 16,
   },
   messagesList: {
     padding: 16,
+    paddingBottom: 8,
   },
   messageContainer: {
-    marginBottom: 12,
+    marginBottom: 14,
     alignItems: 'flex-start',
   },
   userMessage: {
@@ -548,107 +595,80 @@ const styles = StyleSheet.create({
   assistantMessage: {
     alignItems: 'flex-start',
   },
+  assistantAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    backgroundColor: 'rgba(14, 165, 233, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   messageBubble: {
     maxWidth: '80%',
-    padding: 12,
-    borderRadius: 16,
+    padding: 13,
+    borderRadius: 18,
   },
   userBubble: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0ea5e9',
+    borderBottomRightRadius: 5,
   },
   assistantBubble: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    borderBottomLeftRadius: 5,
   },
   messageText: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   userMessageText: {
     color: '#fff',
   },
   assistantMessageText: {
-    color: '#000',
+    color: '#CBD5E1',
   },
   messageTime: {
     fontSize: 11,
-    color: '#999',
+    color: '#475569',
     marginTop: 4,
-    marginHorizontal: 8,
+  },
+  messageTimeRight: {
+    alignSelf: 'flex-end',
+    marginRight: 4,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    borderTopColor: '#1E293B',
+    backgroundColor: '#020617',
+    gap: 10,
   },
   input: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#000',
-    maxHeight: 100,
-    marginRight: 8,
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  emptyConversations: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyMessages: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  quickQuestionsContainer: {
-    padding: 16,
-    marginBottom: 16,
-  },
-  quickQuestionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 12,
-  },
-  quickQuestionButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#1E293B',
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: '#E2E8F0',
+    maxHeight: 110,
   },
-  quickQuestionText: {
-    fontSize: 14,
-    color: '#007AFF',
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#0ea5e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtnDisabled: {
+    backgroundColor: '#1E293B',
   },
 });
-

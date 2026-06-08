@@ -16,12 +16,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../config/api';
-import { getVouchers, Voucher } from '../../services/voucher.service';
 import ImageUploadPicker from '../../components/ImageUploadPicker';
+import { useRoute } from '@react-navigation/native';
 
 interface Product {
   id: string;
@@ -32,14 +33,14 @@ interface Product {
   category?: string;
   stock_quantity: number;
   is_active: boolean;
+  status?: string;
   created_at: string;
 }
 
-export default function AdminProductsScreen() {
+export default function AdminProductsScreen({ route }: any) {
+  const isModeration = route?.name === 'Moderation';
   const [modalVisible, setModalVisible] = useState(false);
-  const [voucherModalVisible, setVoucherModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [selectedVoucherIds, setSelectedVoucherIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -59,12 +60,7 @@ export default function AdminProductsScreen() {
     },
   });
 
-  // Fetch all vouchers for admin (can select from any vendor)
-  const { data: vouchers = [] } = useQuery({
-    queryKey: ['allVouchers'],
-    queryFn: () => getVouchers(),
-    enabled: voucherModalVisible || modalVisible,
-  });
+
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -112,6 +108,20 @@ export default function AdminProductsScreen() {
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
+      const res = await api.patch(`/admin/products/${id}/approve`, { status, reason });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      Alert.alert('Success', 'Product status updated');
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.response?.data?.error || 'Failed to update status');
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -122,7 +132,6 @@ export default function AdminProductsScreen() {
       stockQuantity: '',
     });
     setEditingProduct(null);
-    setSelectedVoucherIds([]);
   };
 
   const openCreateModal = () => {
@@ -140,8 +149,6 @@ export default function AdminProductsScreen() {
       category: product.category || '',
       stockQuantity: product.stock_quantity.toString(),
     });
-    // Load random_voucher_ids if exists
-    setSelectedVoucherIds((product as any).random_voucher_ids || []);
     setModalVisible(true);
   };
 
@@ -161,7 +168,6 @@ export default function AdminProductsScreen() {
       imageUrl: formData.imageUrl || undefined,
       category: formData.category || undefined,
       stockQuantity: parseInt(formData.stockQuantity) || 0,
-      randomVoucherIds: selectedVoucherIds.length > 0 ? selectedVoucherIds : undefined,
     };
 
     if (editingProduct) {
@@ -186,67 +192,132 @@ export default function AdminProductsScreen() {
     );
   };
 
-  const renderProduct = ({ item }: { item: Product }) => (
-    <View style={styles.productCard}>
-      <View style={styles.productImageContainer}>
-        {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="cover" />
-        ) : (
-          <View style={styles.productImagePlaceholder}>
-            <Ionicons name="image-outline" size={40} color="#ccc" />
+  const renderProduct = ({ item }: { item: Product }) => {
+    const isActive = item.is_active;
+    const statusText =
+      item.status === 'pending_review' ? 'Pending' :
+        item.status === 'approved' ? 'Approved' :
+          item.status === 'rejected' ? 'Rejected' : (item.status || 'Active');
+
+    return (
+      <View style={styles.productCard}>
+        <View style={styles.productImageContainer}>
+          {item.image_url ? (
+            <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="cover" />
+          ) : (
+            <View style={styles.productImagePlaceholder}>
+              <Ionicons name="cube-outline" size={36} color="#475569" />
+            </View>
+          )}
+        </View>
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.productPrice}>{Math.round(item.price).toLocaleString('en-US')} VND</Text>
+          <Text style={styles.productStock}>Stock: <Text style={styles.stockValue}>{item.stock_quantity}</Text></Text>
+
+          <View style={styles.badgeRow}>
+            {item.category && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>{item.category}</Text>
+              </View>
+            )}
+            <View style={[
+              styles.statusBadge,
+              item.status === 'pending_review' && styles.statusPending,
+              item.status === 'rejected' && styles.statusRejected,
+              !isActive && styles.statusInactive
+            ]}>
+              <Text style={[
+                styles.statusText,
+                item.status === 'pending_review' && styles.statusTextPending,
+                item.status === 'rejected' && styles.statusTextRejected,
+                !isActive && styles.statusTextInactive
+              ]}>
+                {!isActive ? 'Hidden' : statusText}
+              </Text>
+            </View>
           </View>
-        )}
+        </View>
+        <View style={styles.productActions}>
+          {item.status === 'pending_review' ? (
+            <>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.approveButton]}
+                onPress={() => {
+                  Alert.alert('Approve Product', `Approve product "${item.name}"?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Approve', onPress: () => approveMutation.mutate({ id: item.id, status: 'approved' }) }
+                  ]);
+                }}
+              >
+                <Ionicons name="checkmark" size={18} color="#10B981" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.rejectButton]}
+                onPress={() => {
+                  Alert.alert('Reject Product', `Reject product "${item.name}"?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Reject', style: 'destructive', onPress: () => approveMutation.mutate({ id: item.id, status: 'rejected' }) }
+                  ]);
+                }}
+              >
+                <Ionicons name="close" size={18} color="#EF4444" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.editButton]}
+                onPress={() => openEditModal(item)}
+              >
+                <Ionicons name="pencil" size={18} color="#3B82F6" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deleteButton]}
+                onPress={() => handleDelete(item)}
+              >
+                <Ionicons name="trash" size={18} color="#EF4444" />
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
       </View>
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productPrice}>{item.price} coins</Text>
-        <Text style={styles.productStock}>Stock: {item.stock_quantity}</Text>
-        {item.category && <Text style={styles.productCategory}>{item.category}</Text>}
-        <Text style={[styles.productStatus, !item.is_active && styles.inactive]}>
-          {item.is_active ? 'Active' : 'Inactive'}
-        </Text>
-      </View>
-      <View style={styles.productActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => openEditModal(item)}
-        >
-          <Ionicons name="pencil" size={20} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDelete(item)}
-        >
-          <Ionicons name="trash" size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
+    );
+  };
+
+  const displayedProducts = (response?.products || []).filter((p: Product) =>
+    isModeration ? p.status === 'pending_review' : p.status !== 'pending_review'
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Products Management</Text>
-          <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
-            <Ionicons name="add" size={24} color="#fff" />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{isModeration ? 'Approve Products' : 'Manage Products'}</Text>
+          {!isModeration && (
+            <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
+              <Ionicons name="add" size={24} color="#020617" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {isLoading ? (
           <View style={styles.centerContainer}>
-            <Text>Loading...</Text>
+            <ActivityIndicator size="large" color="#6366F1" />
+            <Text style={{ color: '#94A3B8', marginTop: 12 }}>Loading list...</Text>
           </View>
         ) : (
-      <FlatList
-        data={response?.products || []}
-        keyExtractor={(item) => item.id}
+          <FlatList
+            data={displayedProducts}
+            keyExtractor={(item) => item.id}
             renderItem={renderProduct}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.centerContainer}>
+                <Ionicons name="cube-outline" size={64} color="#334155" />
                 <Text style={styles.emptyText}>No products found</Text>
-          </View>
+              </View>
             }
           />
         )}
@@ -267,236 +338,124 @@ export default function AdminProductsScreen() {
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={() => {}}>
+                <TouchableWithoutFeedback onPress={() => { }}>
                   <View style={styles.modalContent}>
-                  <ScrollView
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <View style={styles.modalHeader}>
-                      <Text style={styles.modalTitle}>
-                        {editingProduct ? 'Edit Product' : 'Create Product'}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => {
-                          Keyboard.dismiss();
-                          setModalVisible(false);
-                        }}
-                      >
-                        <Ionicons name="close" size={24} color="#000" />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Product Name *</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Product Name *"
-                        placeholderTextColor="#000"
-                        value={formData.name}
-                        onChangeText={(text) => setFormData({ ...formData, name: text })}
-                        returnKeyType="next"
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Description</Text>
-                      <TextInput
-                        style={[styles.input, styles.textArea]}
-                        placeholder="Description"
-                        placeholderTextColor="#000"
-                        value={formData.description}
-                        onChangeText={(text) => setFormData({ ...formData, description: text })}
-                        multiline
-                        numberOfLines={3}
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
-                        blurOnSubmit={true}
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Price *</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Price *"
-                        placeholderTextColor="#000"
-                        value={formData.price}
-                        onChangeText={(text) => setFormData({ ...formData, price: text })}
-                        keyboardType="decimal-pad"
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Stock Quantity</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Stock Quantity"
-                        placeholderTextColor="#000"
-                        value={formData.stockQuantity}
-                        onChangeText={(text) => setFormData({ ...formData, stockQuantity: text })}
-                        keyboardType="number-pad"
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Category</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Category"
-                        placeholderTextColor="#000"
-                        value={formData.category}
-                        onChangeText={(text) => setFormData({ ...formData, category: text })}
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
-                      />
-                    </View>
-
-                    <ImageUploadPicker
-                      label="Image"
-                      placeholder="Image URL or upload from device"
-                      value={formData.imageUrl}
-                      onChange={(url) => setFormData({ ...formData, imageUrl: url })}
-                      folder="products"
-                    />
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Random Vouchers After Purchase</Text>
-                      <Text style={styles.hint}>
-                        Select vouchers that can be randomly issued to users after purchasing this product. Leave empty to use all claimable vouchers from the product's vendor.
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.voucherSelectButton}
-                        onPress={() => setVoucherModalVisible(true)}
-                      >
-                        <Text style={styles.voucherSelectButtonText}>
-                          {selectedVoucherIds.length > 0
-                            ? `${selectedVoucherIds.length} voucher(s) selected`
-                            : 'Select Vouchers (Optional)'}
-                        </Text>
-                        <Ionicons name="chevron-forward" size={20} color="#007AFF" />
-                      </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity
-                      style={[styles.saveButton, (createMutation.isPending || updateMutation.isPending) && styles.buttonDisabled]}
-                      onPress={handleSave}
-                      disabled={createMutation.isPending || updateMutation.isPending}
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false}
                     >
-                      <Text style={styles.saveButtonText}>
-                        {createMutation.isPending || updateMutation.isPending
-                          ? 'Saving...'
-                          : editingProduct
-                          ? 'Update'
-                          : 'Create'}
-                      </Text>
-                    </TouchableOpacity>
-                  </ScrollView>
+                      <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>
+                          {editingProduct ? 'Edit Product' : 'Create Product'}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            Keyboard.dismiss();
+                            setModalVisible(false);
+                          }}
+                        >
+                          <Ionicons name="close" size={24} color="#94A3B8" />
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Product Name *</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter product name"
+                          placeholderTextColor="#64748B"
+                          value={formData.name}
+                          onChangeText={(text) => setFormData({ ...formData, name: text })}
+                          returnKeyType="next"
+                        />
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Description</Text>
+                        <TextInput
+                          style={[styles.input, styles.textArea]}
+                          placeholder="Product description"
+                          placeholderTextColor="#64748B"
+                          value={formData.description}
+                          onChangeText={(text) => setFormData({ ...formData, description: text })}
+                          multiline
+                          numberOfLines={3}
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                          blurOnSubmit={true}
+                        />
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Price (VND) *</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter price"
+                          placeholderTextColor="#64748B"
+                          value={formData.price}
+                          onChangeText={(text) => setFormData({ ...formData, price: text })}
+                          keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                        />
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Stock Quantity</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter quantity"
+                          placeholderTextColor="#64748B"
+                          value={formData.stockQuantity}
+                          onChangeText={(text) => setFormData({ ...formData, stockQuantity: text })}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                        />
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Category</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="e.g. Electronics, Fashion..."
+                          placeholderTextColor="#64748B"
+                          value={formData.category}
+                          onChangeText={(text) => setFormData({ ...formData, category: text })}
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                        />
+                      </View>
+
+                      <ImageUploadPicker
+                        label="Image"
+                        placeholder="Enter URL or upload from device"
+                        value={formData.imageUrl}
+                        onChange={(url) => setFormData({ ...formData, imageUrl: url })}
+                        folder="products"
+                      />
+
+                      <TouchableOpacity
+                        style={[styles.saveButton, (createMutation.isPending || updateMutation.isPending) && styles.buttonDisabled]}
+                        onPress={handleSave}
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                      >
+                        <Text style={styles.saveButtonText}>
+                          {createMutation.isPending || updateMutation.isPending
+                            ? 'Saving...'
+                            : editingProduct
+                              ? 'Update'
+                              : 'Save Product'}
+                        </Text>
+                      </TouchableOpacity>
+                    </ScrollView>
                   </View>
                 </TouchableWithoutFeedback>
               </View>
             </TouchableWithoutFeedback>
           </KeyboardAvoidingView>
         </Modal>
-
-        {/* Voucher Selection Modal */}
-        <Modal
-          visible={voucherModalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setVoucherModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Vouchers</Text>
-                <TouchableOpacity onPress={() => setVoucherModalVisible(false)}>
-                  <Ionicons name="close" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView style={styles.voucherListContainer}>
-                {vouchers.length === 0 ? (
-                  <View style={styles.emptyVoucherContainer}>
-                    <Ionicons name="ticket-outline" size={64} color="#ccc" />
-                    <Text style={styles.emptyVoucherText}>No vouchers available</Text>
-                    <Text style={styles.emptyVoucherSubtext}>Create vouchers first to select them</Text>
-                  </View>
-                ) : (
-                  vouchers.map((voucher) => {
-                    const isSelected = selectedVoucherIds.includes(voucher.id);
-                    const isExpired = new Date(voucher.expires_at) < new Date();
-                    const isOutOfStock = voucher.total_usage_limit && voucher.current_usage_count >= voucher.total_usage_limit;
-                    const isDisabled = isExpired || isOutOfStock;
-
-                    return (
-                      <TouchableOpacity
-                        key={voucher.id}
-                        style={[
-                          styles.voucherItem,
-                          isSelected && styles.voucherItemSelected,
-                          isDisabled && styles.voucherItemDisabled,
-                        ]}
-                        onPress={() => {
-                          if (isDisabled) return;
-                          if (isSelected) {
-                            setSelectedVoucherIds(selectedVoucherIds.filter((id) => id !== voucher.id));
-                          } else {
-                            setSelectedVoucherIds([...selectedVoucherIds, voucher.id]);
-                          }
-                        }}
-                        disabled={isDisabled}
-                      >
-                        <View style={styles.voucherItemContent}>
-                          <View style={styles.voucherItemLeft}>
-                            <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-                              {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
-                            </View>
-                            <View style={styles.voucherItemInfo}>
-                              <Text style={styles.voucherItemCode}>{voucher.code}</Text>
-                              <Text style={styles.voucherItemTitle}>{voucher.title}</Text>
-                              <Text style={styles.voucherItemDiscount}>
-                                {voucher.discount_value}
-                                {voucher.discount_type === 'percentage' ? '%' : ' coins'}
-                              </Text>
-                            </View>
-                          </View>
-                          {isDisabled && (
-                            <View style={styles.voucherItemBadge}>
-                              <Text style={styles.voucherItemBadgeText}>
-                                {isExpired ? 'Expired' : 'Out of Stock'}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })
-                )}
-              </ScrollView>
-
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonSecondary]}
-                  onPress={() => setVoucherModalVisible(false)}
-                >
-                  <Text style={styles.modalButtonTextSecondary}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonPrimary]}
-                  onPress={() => setVoucherModalVisible(false)}
-                >
-                  <Text style={styles.modalButtonTextPrimary}>Done</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-    </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -504,29 +463,29 @@ export default function AdminProductsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: Platform.OS === 'ios' ? 80 : StatusBar.currentHeight || 0,
+    backgroundColor: '#020617',
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: '800',
+    color: '#F8FAFC',
   },
   addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366F1',
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -534,24 +493,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    padding: 10,
+    padding: 16,
+    paddingBottom: 40,
   },
   productCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8,
+    backgroundColor: '#0F172A',
+    padding: 14,
+    marginBottom: 12,
+    borderRadius: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   productImageContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     overflow: 'hidden',
-    marginRight: 15,
-    backgroundColor: '#f0f0f0',
+    marginRight: 14,
+    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -567,38 +528,85 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     flex: 1,
+    marginRight: 8,
   },
   productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    marginBottom: 4,
   },
   productPrice: {
-    fontSize: 16,
-    color: '#007AFF',
-    marginBottom: 3,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#F59E0B',
+    marginBottom: 4,
+  },
+  currency: {
+    fontSize: 11,
+    fontWeight: 'normal',
+    color: '#94A3B8',
   },
   productStock: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 3,
-  },
-  productCategory: {
     fontSize: 12,
-    color: '#999',
-    marginBottom: 3,
+    color: '#94A3B8',
+    marginBottom: 6,
   },
-  productStatus: {
-    fontSize: 12,
-    color: '#34C759',
+  stockValue: {
+    color: '#F8FAFC',
     fontWeight: '600',
   },
-  inactive: {
-    color: '#FF3B30',
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  categoryBadge: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  categoryText: {
+    fontSize: 10,
+    color: '#E2E8F0',
+    fontWeight: '600',
+  },
+  statusBadge: {
+    backgroundColor: '#10B98120',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 10,
+    color: '#10B981',
+    fontWeight: '700',
+  },
+  statusPending: {
+    backgroundColor: '#F59E0B20',
+  },
+  statusTextPending: {
+    color: '#F59E0B',
+  },
+  statusRejected: {
+    backgroundColor: '#EF444420',
+  },
+  statusTextRejected: {
+    color: '#EF4444',
+  },
+  statusInactive: {
+    backgroundColor: '#334155',
+  },
+  statusTextInactive: {
+    color: '#94A3B8',
   },
   productActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
+    paddingLeft: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: '#1E293B',
   },
   actionButton: {
     width: 36,
@@ -608,10 +616,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F620',
   },
   deleteButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#EF444420',
+  },
+  approveButton: {
+    backgroundColor: '#10B98120',
+  },
+  rejectButton: {
+    backgroundColor: '#EF444420',
   },
   centerContainer: {
     flex: 1,
@@ -620,20 +634,24 @@ const styles = StyleSheet.create({
     paddingTop: 100,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#999',
+    fontSize: 15,
+    color: '#475569',
+    marginTop: 16,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(2, 6, 23, 0.8)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 20,
     maxHeight: '90%',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -642,176 +660,45 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#F8FAFC',
   },
   inputGroup: {
-    marginBottom: 15,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#333',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   input: {
+    backgroundColor: '#1E293B',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#000',
-    backgroundColor: '#fff',
+    borderColor: '#334155',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    color: '#F8FAFC',
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#6366F1',
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 16,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  hint: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  voucherSelectButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#fff',
-  },
-  voucherSelectButtonText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  voucherListContainer: {
-    maxHeight: 400,
-  },
-  emptyVoucherContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyVoucherText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 16,
-  },
-  emptyVoucherSubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
-  },
-  voucherItem: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-    backgroundColor: '#fff',
-  },
-  voucherItemSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#f0f7ff',
-  },
-  voucherItemDisabled: {
-    opacity: 0.5,
-  },
-  voucherItemContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  voucherItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  voucherItemInfo: {
-    flex: 1,
-  },
-  voucherItemCode: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  voucherItemTitle: {
-    fontSize: 14,
-    color: '#000',
-    marginBottom: 4,
-  },
-  voucherItemDiscount: {
-    fontSize: 12,
-    color: '#666',
-  },
-  voucherItemBadge: {
-    backgroundColor: '#FF3B30',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  voucherItemBadgeText: {
-    fontSize: 10,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    marginTop: 20,
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalButtonPrimary: {
-    backgroundColor: '#007AFF',
-  },
-  modalButtonSecondary: {
-    backgroundColor: '#f5f5f5',
-  },
-  modalButtonTextPrimary: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalButtonTextSecondary: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#020617',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

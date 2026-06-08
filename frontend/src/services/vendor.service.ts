@@ -51,3 +51,33 @@ export async function getVendorsByIds(vendorIds: string[]): Promise<Vendor[]> {
   return response.data.vendors || [];
 }
 
+export interface VendorAnalyticsData {
+  analytics: {
+    totalProducts: number;
+    productsThisWeek: number;
+    productLimit: number;
+    canPostProduct: boolean;
+    totalOrders: number;
+    deliveredOrders: number;
+    pendingOrders: number;
+    totalRevenueCoins: number;
+    totalRevenueVnd: number;
+    byStatus: Record<string, number>;
+  };
+  subscription: {
+    packageName: string;
+    productLimit: number;
+    expiresAt?: string;
+    status: string;
+  };
+  period: number;
+}
+
+/**
+ * Get vendor analytics (dashboard)
+ */
+export async function getVendorAnalytics(period: number = 30): Promise<VendorAnalyticsData> {
+  const response = await api.get('/vendor/analytics', { params: { period } });
+  return response.data;
+}
+
