@@ -34,7 +34,7 @@ export default function VendorDashboardScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10B981" />
-          <Text style={styles.loadingText}>Loading analytics data...</Text>
+          <Text style={styles.loadingText}>Đang tải dữ liệu phân tích...</Text>
         </View>
       </SafeAreaView>
     );
@@ -47,12 +47,12 @@ export default function VendorDashboardScreen() {
       {/* Header */}
       <LinearGradient colors={['#0F172A', '#020617']} style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Vendor Dashboard</Text>
-          <Text style={styles.headerSub}>Overview of business activities</Text>
+          <Text style={styles.headerTitle}>Bảng điều khiển Người bán</Text>
+          <Text style={styles.headerSub}>Tổng quan hoạt động kinh doanh</Text>
         </View>
       </LinearGradient>
 
-      <ScrollView
+      <ScrollView keyboardShouldPersistTaps="handled"
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#10B981" />}
@@ -64,20 +64,20 @@ export default function VendorDashboardScreen() {
               <View style={styles.subTitleRow}>
                 <Ionicons name="ribbon" size={20} color="#10B981" />
                 <Text style={styles.subTitle}>
-                  Current Package: <Text style={styles.subPackageName}>{subscription?.packageName}</Text>
+                  Gói hiện tại: <Text style={styles.subPackageName}>{subscription?.packageName}</Text>
                 </Text>
               </View>
               <TouchableOpacity
                 style={styles.upgradeBtn}
                 onPress={() => navigation.navigate('VendorPackages')}
               >
-                <Text style={styles.upgradeBtnText}>Upgrade</Text>
+                <Text style={styles.upgradeBtnText}>Nâng cấp</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.limitBarContainer}>
               <View style={styles.limitHeader}>
-                <Text style={styles.limitLabel}>Products listed this week</Text>
+                <Text style={styles.limitLabel}>Sản phẩm đã đăng trong tuần</Text>
                 <Text style={styles.limitValue}>
                   {analytics?.productsThisWeek} / {analytics?.productLimit === -1 ? '∞' : analytics?.productLimit}
                 </Text>
@@ -97,7 +97,7 @@ export default function VendorDashboardScreen() {
               )}
               {analytics?.productsThisWeek! >= analytics?.productLimit! && analytics?.productLimit !== -1 && (
                 <Text style={styles.limitWarning}>
-                  You have reached your listing limit for this week. Please upgrade your package to list more.
+                  Bạn đã hết lượt đăng sản phẩm tuần này. Vui lòng nâng cấp gói để đăng thêm.
                 </Text>
               )}
             </View>
@@ -113,7 +113,7 @@ export default function VendorDashboardScreen() {
               onPress={() => setPeriod(p)}
             >
               <Text style={[styles.periodBtnText, period === p && styles.periodBtnTextActive]}>
-                Last {p} days
+                {p} ngày gần nhất
               </Text>
             </TouchableOpacity>
           ))}
@@ -127,10 +127,10 @@ export default function VendorDashboardScreen() {
                 <View style={[styles.statIcon, { backgroundColor: '#10B98120' }]}>
                   <Ionicons name="wallet" size={24} color="#10B981" />
                 </View>
-                <Text style={styles.statTitle}>Total revenue (VND)</Text>
+                <Text style={styles.statTitle}>Tổng doanh thu (VNĐ)</Text>
               </View>
               <Text style={styles.statValueVnd}>
-                {(analytics?.totalRevenueVnd || 0).toLocaleString('en-US')} VND
+                {(analytics?.totalRevenueVnd || 0).toLocaleString('en-US')} VNĐ
               </Text>
             </LinearGradient>
           </View>
@@ -140,9 +140,9 @@ export default function VendorDashboardScreen() {
               <View style={[styles.statIcon, { backgroundColor: '#F59E0B20', marginBottom: 8 }]}>
                 <Ionicons name="logo-bitcoin" size={20} color="#F59E0B" />
               </View>
-              <Text style={styles.statTitle}>Buyers use coins</Text>
+              <Text style={styles.statTitle}>Người mua sử dụng xu</Text>
               <Text style={styles.statValueCoins}>
-                {(analytics?.totalRevenueCoins || 0).toLocaleString('en-US')} <Text style={styles.statCurrency}>coins</Text>
+                {(analytics?.totalRevenueCoins || 0).toLocaleString('en-US')} <Text style={styles.statCurrency}>xu</Text>
               </Text>
             </LinearGradient>
           </View>
@@ -152,7 +152,7 @@ export default function VendorDashboardScreen() {
               <View style={[styles.statIcon, { backgroundColor: '#3B82F620', marginBottom: 8 }]}>
                 <Ionicons name="cart" size={20} color="#3B82F6" />
               </View>
-              <Text style={styles.statTitle}>Total Orders</Text>
+              <Text style={styles.statTitle}>Tổng số đơn hàng</Text>
               <Text style={styles.statValueNormal}>
                 {analytics?.totalOrders || 0}
               </Text>
@@ -164,7 +164,7 @@ export default function VendorDashboardScreen() {
               <View style={[styles.statIcon, { backgroundColor: '#8B5CF620', marginBottom: 8 }]}>
                 <Ionicons name="time" size={20} color="#8B5CF6" />
               </View>
-              <Text style={styles.statTitle}>Pending Orders</Text>
+              <Text style={styles.statTitle}>Đơn chờ xử lý</Text>
               <Text style={styles.statValueNormal}>
                 {analytics?.pendingOrders || 0}
               </Text>
@@ -176,7 +176,7 @@ export default function VendorDashboardScreen() {
               <View style={[styles.statIcon, { backgroundColor: '#EC489920', marginBottom: 8 }]}>
                 <Ionicons name="cube" size={20} color="#EC4899" />
               </View>
-              <Text style={styles.statTitle}>Total Products</Text>
+              <Text style={styles.statTitle}>Tổng số sản phẩm</Text>
               <Text style={styles.statValueNormal}>
                 {analytics?.totalProducts || 0}
               </Text>
@@ -186,7 +186,7 @@ export default function VendorDashboardScreen() {
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Access</Text>
+          <Text style={styles.sectionTitle}>Truy cập nhanh</Text>
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.actionBtn}
@@ -195,7 +195,7 @@ export default function VendorDashboardScreen() {
               <View style={[styles.actionIcon, { backgroundColor: '#3B82F620' }]}>
                 <Ionicons name="list" size={24} color="#3B82F6" />
               </View>
-              <Text style={styles.actionText}>Order Management</Text>
+              <Text style={styles.actionText}>Quản lý đơn hàng</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -205,7 +205,7 @@ export default function VendorDashboardScreen() {
               <View style={[styles.actionIcon, { backgroundColor: '#EC489920' }]}>
                 <Ionicons name="pricetags" size={24} color="#EC4899" />
               </View>
-              <Text style={styles.actionText}>My Products</Text>
+              <Text style={styles.actionText}>Sản phẩm của tôi</Text>
             </TouchableOpacity>
           </View>
         </View>

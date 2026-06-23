@@ -18,14 +18,18 @@ function getTaskActionType(taskTitle: string, taskDescription?: string | null): 
   console.log(`[getTaskActionType] Checking: title="${taskTitle}", combined="${combined}"`);
 
   // Check for marketplace/purchase related tasks
-  // Match: "First Purchase", "Buy Product", "Purchase Item", etc.
+  // Match: "First Purchase", "Buy Product", "Purchase Item", "Mua hàng", etc.
   if (
     titleLower.includes('purchase') || 
     titleLower.includes('buy') ||
     titleLower.includes('shop') ||
+    titleLower.includes('mua') ||
+    titleLower.includes('đơn hàng') ||
     combined.includes('purchase') || 
     combined.includes('buy') || 
     combined.includes('shop') ||
+    combined.includes('mua') ||
+    combined.includes('đơn hàng') ||
     combined.includes('marketplace')
   ) {
     console.log(`[getTaskActionType] Matched MARKETPLACE for: "${taskTitle}"`);
@@ -208,14 +212,13 @@ async function validateTaskRequirements(
   const combined = `${titleLower} ${descLower}`;
 
   // Check for "buy" or "purchase" product requirement
-  if (combined.includes('buy') || combined.includes('purchase') || combined.includes('shop')) {
-    // Extract product name/keyword from task (e.g., "buy laptop" -> "laptop", "purchase iPhone" -> "iphone")
-    // Remove common words: buy, purchase, shop, a, an, the, product, item, products, items
-    const productKeywordMatch = combined.match(/(?:buy|purchase|shop)\s+(?:a|an|the)?\s*([a-z]+(?:\s+[a-z]+)*?)(?:\s+(?:product|item|products|items|\d+))?/i);
+  if (combined.includes('buy') || combined.includes('purchase') || combined.includes('shop') || combined.includes('mua') || combined.includes('đơn hàng')) {
+    // Extract product name/keyword from task (e.g., "buy laptop" -> "laptop", "mua iPhone" -> "iphone")
+    const productKeywordMatch = combined.match(/(?:buy|purchase|shop|mua)\s+(?:a|an|the|một)?\s*([a-z0-9]+(?:\s+[a-z0-9]+)*?)(?:\s+(?:product|item|products|items|sản phẩm|\d+))?/i);
     const productKeyword = productKeywordMatch ? productKeywordMatch[1].trim().toLowerCase() : null;
 
-    // Extract number from task (e.g., "Buy 1 product" or "Purchase 3 items")
-    const numberMatch = combined.match(/(?:buy|purchase|shop).*?(\d+)/);
+    // Extract number from task (e.g., "Buy 1 product" or "Mua 3 sản phẩm")
+    const numberMatch = combined.match(/(?:buy|purchase|shop|mua).*?(\d+)/);
     const requiredCount = numberMatch ? parseInt(numberMatch[1]) : 1;
 
     let query = supabase
@@ -241,7 +244,7 @@ async function validateTaskRequirements(
 
     // If product keyword is specified (e.g., "buy laptop"), filter by product name
     let matchingOrders = orders || [];
-    if (productKeyword) {
+    if (productKeyword && productKeyword !== 'sản phẩm' && productKeyword !== 'product') {
       matchingOrders = matchingOrders.filter((order: any) => {
         const product = order.products;
         if (!product) return false;
@@ -252,15 +255,15 @@ async function validateTaskRequirements(
     }
 
     if (matchingOrders.length < requiredCount) {
-      if (productKeyword) {
+      if (productKeyword && productKeyword !== 'sản phẩm' && productKeyword !== 'product') {
         return {
           isValid: false,
-          message: `You need to purchase at least ${requiredCount} product(s) containing "${productKeyword}" to complete this task. You have purchased ${matchingOrders.length} matching product(s) since this task was created.`,
+          message: `Bạn cần mua ít nhất ${requiredCount} sản phẩm có chứa "${productKeyword}" để hoàn thành nhiệm vụ này. Bạn đã mua ${matchingOrders.length} sản phẩm kể từ khi nhiệm vụ được tạo.`,
         };
       } else {
         return {
           isValid: false,
-          message: `You need to purchase at least ${requiredCount} product(s) to complete this task. You have purchased ${matchingOrders.length} product(s) since this task was created.`,
+          message: `Bạn cần mua ít nhất ${requiredCount} sản phẩm để hoàn thành nhiệm vụ này. Bạn đã mua ${matchingOrders.length} sản phẩm kể từ khi nhiệm vụ được tạo.`,
         };
       }
     }

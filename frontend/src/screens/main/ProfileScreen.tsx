@@ -49,10 +49,10 @@ export default function ProfileScreen() {
       });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      Alert.alert('Thành công', 'Profile updated successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update profile');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update profile');
     },
   });
 
@@ -110,7 +110,7 @@ export default function ProfileScreen() {
 
   function handleCancel() {
     setIsEditing(false);
-    // Reset form data
+    // Đặt lại form data
     if (profile) {
       setFormData({
         fullName: profile.fullName || '',
@@ -140,7 +140,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#020617" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Profile Card Header */}
         <View style={styles.header}>
           <View style={styles.headerActions}>
@@ -150,7 +150,7 @@ export default function ProfileScreen() {
                 onPress={() => setIsEditing(true)}
               >
                 <Ionicons name="create-outline" size={20} color="#818CF8" />
-                <Text style={styles.editButtonText}>Edit</Text>
+                <Text style={styles.editButtonText}>Sửa</Text>
               </TouchableOpacity>
             )}
             {isEditing && (
@@ -160,7 +160,7 @@ export default function ProfileScreen() {
                   onPress={handleCancel}
                   disabled={updateProfileMutation.isPending}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>Hủy</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.saveButton}
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
                   {updateProfileMutation.isPending ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text style={styles.saveButtonText}>Save</Text>
+                    <Text style={styles.saveButtonText}>Lưu</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -207,7 +207,7 @@ export default function ProfileScreen() {
               style={styles.nameInput}
               value={formData.fullName}
               onChangeText={(text) => setFormData({ ...formData, fullName: text })}
-              placeholder="Full Name"
+              placeholder="Họ và tên"
               placeholderTextColor="#475569"
             />
           ) : (
@@ -225,40 +225,24 @@ export default function ProfileScreen() {
           )}
 
           <View style={styles.balanceContainer}>
-            <Text style={styles.balanceLabel}>Shopee Coins Balance</Text>
-            <Text style={styles.balanceAmount}>{Math.round(balance || 0).toLocaleString('en-US')} coins</Text>
-            {!isEditing && (
-              <TouchableOpacity
-                style={styles.topUpButton}
-                onPress={() => (navigation as any).navigate('TopUp')}
-              >
-                <LinearGradient
-                  colors={['#6366F1', '#4F46E5']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.topUpButtonGradient}
-                >
-                  <Ionicons name="wallet-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                  <Text style={styles.topUpButtonText}>Top Up Coins</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
+            <Text style={styles.balanceLabel}>Số dư Xu</Text>
+            <Text style={styles.balanceAmount}>{Math.round(balance || 0).toLocaleString('en-US')} xu</Text>
           </View>
         </View>
 
         {/* Profile Details */}
         <View style={styles.detailsSection}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
 
           {/* Phone */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Phone Number</Text>
+            <Text style={styles.fieldLabel}>Số điện thoại</Text>
             {isEditing ? (
               <TextInput
                 style={styles.fieldInput}
                 value={formData.phone}
                 onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                placeholder="Enter phone number"
+                placeholder="Nhập phone number"
                 placeholderTextColor="#475569"
                 keyboardType="phone-pad"
               />
@@ -267,9 +251,9 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          {/* Date of Birth */}
+          {/* Ngày sinh */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Date of Birth</Text>
+            <Text style={styles.fieldLabel}>Ngày sinh</Text>
             {isEditing ? (
               <>
                 <TouchableOpacity
@@ -321,15 +305,15 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          {/* Address */}
+          {/* Địa chỉ */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Address</Text>
+            <Text style={styles.fieldLabel}>Địa chỉ</Text>
             {isEditing ? (
               <TextInput
                 style={[styles.fieldInput, styles.textArea]}
                 value={formData.address}
                 onChangeText={(text) => setFormData({ ...formData, address: text })}
-                placeholder="Enter your address"
+                placeholder="Nhập địa chỉ"
                 placeholderTextColor="#475569"
                 multiline
                 numberOfLines={3}
@@ -339,15 +323,15 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          {/* Bio */}
+          {/* Tiểu sử */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Bio</Text>
+            <Text style={styles.fieldLabel}>Tiểu sử</Text>
             {isEditing ? (
               <TextInput
                 style={[styles.fieldInput, styles.textArea]}
                 value={formData.bio}
                 onChangeText={(text) => setFormData({ ...formData, bio: text })}
-                placeholder="Introduce yourself..."
+                placeholder="Giới thiệu bản thân..."
                 placeholderTextColor="#475569"
                 multiline
                 numberOfLines={4}
@@ -363,12 +347,12 @@ export default function ProfileScreen() {
           <View style={styles.menuSection}>
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => (navigation as any).navigate('Transactions')}
+              onPress={() => (navigation as any).navigate('Giao dịch')}
             >
               <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
                 <Ionicons name="receipt-outline" size={20} color="#818CF8" />
               </View>
-              <Text style={styles.menuText}>Transaction History</Text>
+              <Text style={styles.menuText}>Lịch sử giao dịch</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
@@ -379,7 +363,7 @@ export default function ProfileScreen() {
               <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
                 <Ionicons name="bag-outline" size={20} color="#818CF8" />
               </View>
-              <Text style={styles.menuText}>Purchase History</Text>
+              <Text style={styles.menuText}>Lịch sử mua hàng</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
@@ -390,18 +374,18 @@ export default function ProfileScreen() {
               <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
                 <Ionicons name="cart-outline" size={20} color="#818CF8" />
               </View>
-              <Text style={styles.menuText}>My Cart</Text>
+              <Text style={styles.menuText}>Giỏ hàng của tôi</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => (navigation as any).navigate('Notifications')}
+              onPress={() => (navigation as any).navigate('Thông báo')}
             >
               <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
                 <Ionicons name="notifications-outline" size={20} color="#F59E0B" />
               </View>
-              <Text style={styles.menuText}>System Notifications</Text>
+              <Text style={styles.menuText}>Hệ thống Thông báo</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
@@ -412,7 +396,7 @@ export default function ProfileScreen() {
               <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(148, 163, 184, 0.15)' }]}>
                 <Ionicons name="settings-outline" size={20} color="#94A3B8" />
               </View>
-              <Text style={styles.menuText}>Notification Settings</Text>
+              <Text style={styles.menuText}>Cài đặt thông báo</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
 
@@ -420,7 +404,7 @@ export default function ProfileScreen() {
               <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(148, 163, 184, 0.15)' }]}>
                 <Ionicons name="help-circle-outline" size={20} color="#94A3B8" />
               </View>
-              <Text style={styles.menuText}>Help & Support</Text>
+              <Text style={styles.menuText}>Trợ giúp & Hỗ trợ</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
           </View>
@@ -429,7 +413,7 @@ export default function ProfileScreen() {
         {/* Logout Button */}
         {!isEditing && (
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -594,22 +578,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
     color: '#F59E0B',
-  },
-  topUpButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginTop: 14,
-  },
-  topUpButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  topUpButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
   detailsSection: {
     backgroundColor: 'rgba(15, 23, 42, 0.6)',

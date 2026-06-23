@@ -60,7 +60,7 @@ export default function ImageUploadPicker({
       onChange(uploadedUrl);
       setPreviewUri(uploadedUrl);
       setShowOptions(false);
-      Alert.alert('Success', 'Image uploaded successfully!');
+      Alert.alert('Thành công', 'Image uploaded successfully!');
     },
     onError: (error: any) => {
       Alert.alert(
@@ -108,7 +108,7 @@ export default function ImageUploadPicker({
         uploadMutation.mutate(uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to open camera');
+      Alert.alert('Lỗi', 'Failed to open camera');
     }
   }
 
@@ -133,7 +133,7 @@ export default function ImageUploadPicker({
         uploadMutation.mutate(uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to open gallery');
+      Alert.alert('Lỗi', 'Failed to open gallery');
     }
   }
 
@@ -206,7 +206,7 @@ export default function ImageUploadPicker({
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Upload Image</Text>
+              <Text style={styles.modalTitle}>Tải ảnh lên</Text>
               <TouchableOpacity onPress={() => setShowOptions(false)}>
                 <Ionicons name="close" size={24} color="#000" />
               </TouchableOpacity>
@@ -218,7 +218,7 @@ export default function ImageUploadPicker({
               disabled={uploadMutation.isPending}
             >
               <Ionicons name="images-outline" size={24} color="#007AFF" />
-              <Text style={styles.optionButtonText}>Choose from Gallery</Text>
+              <Text style={styles.optionButtonText}>Chọn từ thư viện</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -227,14 +227,14 @@ export default function ImageUploadPicker({
               disabled={uploadMutation.isPending}
             >
               <Ionicons name="camera-outline" size={24} color="#007AFF" />
-              <Text style={styles.optionButtonText}>Take Photo</Text>
+              <Text style={styles.optionButtonText}>Chụp ảnh</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.optionButton, styles.cancelButton]}
               onPress={() => setShowOptions(false)}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>Hủy</Text>
             </TouchableOpacity>
           </View>
         </View>

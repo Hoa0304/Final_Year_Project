@@ -27,6 +27,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'user' | 'vendor'>('user');
   const [loading, setLoading] = useState(false);
   const [isNameFocused, setIsNameFocused] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
@@ -38,22 +39,22 @@ export default function RegisterScreen() {
   async function handleRegister() {
     Keyboard.dismiss();
     if (!email || !password) {
-      Alert.alert('Error', 'Email and password are required');
+      Alert.alert('Lỗi', 'Email and password are required');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      Alert.alert('Lỗi', 'Mật khẩu must be at least 6 characters long');
       return;
     }
 
     setLoading(true);
     try {
       console.log('🚀 Starting registration...');
-      const response = await register(email, password, fullName || undefined);
+      const response = await register(email, password, fullName || undefined, role);
       console.log('✅ Registration successful, setting user...');
       setUser(response.user);
-      Alert.alert('Success', 'Account registered successfully!');
+      Alert.alert('Thành công', 'Account registered successfully!');
     } catch (error: any) {
       console.error('❌ Registration error in screen:', error);
       const errorMessage = error.response?.data?.error
@@ -74,9 +75,8 @@ export default function RegisterScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
           >
-            <ScrollView
+            <ScrollView keyboardShouldPersistTaps="handled"
               contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.content}>
@@ -88,14 +88,38 @@ export default function RegisterScreen() {
                   >
                     <Ionicons name="person-add" size={32} color="#fff" />
                   </LinearGradient>
-                  <Text style={styles.title}>Register</Text>
-                  <Text style={styles.subtitle}>Create an account</Text>
+                  <Text style={styles.title}>Đăng ký</Text>
+                  <Text style={styles.subtitle}>Tạo tài khoản</Text>
                 </View>
 
                 {/* Form Card */}
                 <View style={styles.formCard}>
+
+                  {/* Role Selector */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Full Name (Optional)</Text>
+                    <Text style={styles.label}>Loại tài khoản</Text>
+                    <View style={styles.roleSelector}>
+                      <TouchableOpacity
+                        style={[styles.roleButton, role === 'user' && styles.roleButtonActive]}
+                        onPress={() => setRole('user')}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="person" size={20} color={role === 'user' ? '#fff' : '#64748B'} />
+                        <Text style={[styles.roleText, role === 'user' && styles.roleTextActive]}>Người mua</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.roleButton, role === 'vendor' && styles.roleButtonActive]}
+                        onPress={() => setRole('vendor')}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="storefront" size={20} color={role === 'vendor' ? '#fff' : '#64748B'} />
+                        <Text style={[styles.roleText, role === 'vendor' && styles.roleTextActive]}>Người bán</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Họ và tên (Tuỳ chọn)</Text>
                     <View style={[
                       styles.inputContainer,
                       isNameFocused && styles.inputContainerFocused
@@ -108,7 +132,7 @@ export default function RegisterScreen() {
                       />
                       <TextInput
                         style={styles.input}
-                        placeholder="Enter full name..."
+                        placeholder="Nhập họ và tên..."
                         placeholderTextColor="#475569"
                         value={fullName}
                         onChangeText={setFullName}
@@ -135,7 +159,7 @@ export default function RegisterScreen() {
                       />
                       <TextInput
                         style={styles.input}
-                        placeholder="Enter email address..."
+                        placeholder="Nhập email..."
                         placeholderTextColor="#475569"
                         value={email}
                         onChangeText={setEmail}
@@ -151,7 +175,7 @@ export default function RegisterScreen() {
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Password</Text>
+                    <Text style={styles.label}>Mật khẩu</Text>
                     <View style={[
                       styles.inputContainer,
                       isPasswordFocused && styles.inputContainerFocused
@@ -164,7 +188,7 @@ export default function RegisterScreen() {
                       />
                       <TextInput
                         style={styles.input}
-                        placeholder="Enter password (minimum 6 characters)..."
+                        placeholder="Nhập password (minimum 6 characters)..."
                         placeholderTextColor="#475569"
                         value={password}
                         onChangeText={setPassword}
@@ -191,7 +215,7 @@ export default function RegisterScreen() {
                       {loading ? (
                         <ActivityIndicator color="#fff" />
                       ) : (
-                        <Text style={styles.buttonText}>Register Now</Text>
+                        <Text style={styles.buttonText}>Đăng ký ngay</Text>
                       )}
                     </LinearGradient>
                   </TouchableOpacity>
@@ -202,7 +226,7 @@ export default function RegisterScreen() {
                     activeOpacity={0.7}
                   >
                     <Text style={styles.linkText}>
-                      Already have an account? <Text style={styles.linkTextBold}>Login</Text>
+                      Đã có tài khoản? <Text style={styles.linkTextBold}>Đăng nhập</Text>
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -282,6 +306,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#E2E8F0',
     marginBottom: 8,
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: 'rgba(2, 6, 23, 0.5)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 8,
+  },
+  roleButtonActive: {
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  roleText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  roleTextActive: {
+    color: '#fff',
   },
   inputContainer: {
     flexDirection: 'row',

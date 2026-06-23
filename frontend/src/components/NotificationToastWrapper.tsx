@@ -12,7 +12,7 @@ export default function NotificationToastWrapper() {
     <NotificationToast
       onPress={(notification) => {
         try {
-          (navigation as any).navigate('Notifications');
+          (navigation as any).navigate('Thông báo');
         } catch (error) {
           console.log('Navigation error:', error);
         }

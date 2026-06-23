@@ -18,20 +18,25 @@ import api from '../../config/api';
 import { OrderStatus, getStatusLabel, getStatusColor } from '../../services/order.service';
 
 const FILTERS: { label: string; value: OrderStatus | 'all' }[] = [
-  { label: 'All', value: 'all' },
+  { label: 'Tất cả', value: 'all' },
   { label: 'Processing', value: 'processing' },
   { label: 'Shipped', value: 'shipped' },
   { label: 'Delivered', value: 'delivered' },
 ];
 
-export default function AdminOrdersScreen() {
+export default function AdminOrdersScreen({ route }: any) {
   const navigation = useNavigation<any>();
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+  const vendorId = route?.params?.vendorId;
+  const vendorName = route?.params?.vendorName;
 
   const { data: response, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['adminOrders', filter],
+    queryKey: ['adminOrders', filter, vendorId],
     queryFn: async () => {
-      const params = filter !== 'all' ? { status: filter } : {};
+      const params: any = filter !== 'all' ? { status: filter } : {};
+      if (vendorId) {
+        params.vendor_id = vendorId;
+      }
       const res = await api.get('/orders', { params });
       return res.data;
     },
@@ -63,11 +68,11 @@ export default function AdminOrdersScreen() {
 
         <View style={styles.infoRow}>
           <View style={styles.infoCol}>
-            <Text style={styles.infoLabel}>Customer</Text>
+            <Text style={styles.infoLabel}>Khách hàng</Text>
             <Text style={styles.infoValue}>{item.client?.full_name || item.client?.email || 'N/A'}</Text>
           </View>
           <View style={styles.infoColRight}>
-            <Text style={styles.infoLabel}>Vendor</Text>
+            <Text style={styles.infoLabel}>Người bán</Text>
             <Text style={styles.infoValue}>{item.vendor?.full_name || item.vendor?.email || 'N/A'}</Text>
           </View>
         </View>
@@ -85,7 +90,7 @@ export default function AdminOrdersScreen() {
           <View style={styles.priceContainer}>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.priceVnd}>
-                {Math.round(item.original_price_coins).toLocaleString('en-US')} VND
+                {Math.round(item.original_price_coins).toLocaleString('en-US')} VNĐ
               </Text>
               {item.price_coins > 0 && (
                 <Text style={{ fontSize: 11, color: '#F59E0B', marginTop: 2 }}>
@@ -108,13 +113,15 @@ export default function AdminOrdersScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order Management</Text>
+        <Text style={styles.headerTitle}>
+          {vendorName ? `${vendorName}'s Orders` : 'Quản lý đơn hàng'}
+        </Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
       {/* Filters */}
       <View style={styles.filterContainer}>
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           horizontal
           showsHorizontalScrollIndicator={false}
           data={FILTERS}
@@ -141,10 +148,10 @@ export default function AdminOrdersScreen() {
       ) : orders.length === 0 ? (
         <View style={styles.centerContainer}>
           <Ionicons name="receipt-outline" size={64} color="#334155" />
-          <Text style={styles.emptyText}>No orders yet</Text>
+          <Text style={styles.emptyText}>Chưa có đơn hàng nào</Text>
         </View>
       ) : (
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           data={orders}
           keyExtractor={(item) => item.id}
           renderItem={renderOrderItem}

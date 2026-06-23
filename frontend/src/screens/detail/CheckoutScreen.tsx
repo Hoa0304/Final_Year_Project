@@ -34,7 +34,7 @@ export default function CheckoutScreen() {
   const [quantity, setQuantity] = useState(routeQuantity || 1);
   const [useCoins, setUseCoins] = useState(false);
 
-  // Fetch current user coins balance
+  // Fetch current user xu balance
   const { data: balance = 0, isLoading: balanceLoading } = useQuery({
     queryKey: ['balance'],
     queryFn: getBalance,
@@ -85,7 +85,7 @@ export default function CheckoutScreen() {
           quantity: item.quantity,
           paymentMethod: 'vnd',
           useCoins: useCoins, // backend will automatically deduct remaining balance
-          addressText: 'Default Address', // Can be customized
+          addressText: 'Default Địa chỉ', // Can be customized
         });
         
         placedOrders.push(orderData.order);
@@ -95,7 +95,7 @@ export default function CheckoutScreen() {
           try {
             await mockVndPayment(orderData.order.id);
           } catch (e) {
-            console.error('Failed to mock VND payment:', e);
+            console.error('Failed to mock VNĐ payment:', e);
           }
         }
       }
@@ -117,7 +117,7 @@ export default function CheckoutScreen() {
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
-      Alert.alert('Success', 'Your order has been placed successfully!', [
+      Alert.alert('Thành công', 'Your order has been placed successfully!', [
         {
           text: 'View Order',
           onPress: () => {
@@ -139,9 +139,9 @@ export default function CheckoutScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>No products found for checkout</Text>
+          <Text style={styles.errorText}>Không có sản phẩm nào for checkout</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
-            <Text style={styles.backLinkText}>Go Back</Text>
+            <Text style={styles.backLinkText}>Quay lại</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -152,9 +152,9 @@ export default function CheckoutScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#020617" />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
-        {/* Vendor Header if checkout from cart */}
+        {/* Người bán Header if checkout from cart */}
         {vendor && (
           <View style={styles.vendorHeader}>
             <Ionicons name="storefront-outline" size={18} color="#818CF8" />
@@ -164,7 +164,7 @@ export default function CheckoutScreen() {
 
         {/* Products List */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Checkout Products</Text>
+          <Text style={styles.sectionTitle}>Thanh toán sản phẩm</Text>
           {items.map((item: any, index: number) => (
             <View key={index} style={styles.productCard}>
               {item.imageUrl ? (
@@ -177,7 +177,7 @@ export default function CheckoutScreen() {
               <View style={styles.productInfo}>
                 <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
                 <View style={styles.priceQtyRow}>
-                  <Text style={styles.priceText}>{item.price.toLocaleString('en-US')} VND</Text>
+                  <Text style={styles.priceText}>{item.price.toLocaleString('en-US')} VNĐ</Text>
                   <Text style={styles.qtyText}>x{item.quantity}</Text>
                 </View>
               </View>
@@ -188,7 +188,7 @@ export default function CheckoutScreen() {
         {/* Quantity Selector - Only for single product checkout */}
         {product && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quantity</Text>
+            <Text style={styles.sectionTitle}>Số lượng</Text>
             <View style={styles.quantityRow}>
               <TouchableOpacity
                 style={[styles.qtyBtn, quantity <= 1 && styles.qtyBtnDisabled]}
@@ -221,9 +221,9 @@ export default function CheckoutScreen() {
             <View style={styles.coinHeader}>
               <Ionicons name="logo-bitcoin" size={22} color="#F59E0B" />
               <View style={styles.coinTextContainer}>
-                <Text style={styles.coinTitle}>Use Shopee Coins for Discount</Text>
+                <Text style={styles.coinTitle}>Sử dụng Xu để giảm giá</Text>
                 <Text style={styles.coinSubtitle}>
-                  You have: <Text style={styles.coinBalance}>{Math.round(balance).toLocaleString('en-US')} coins</Text>
+                  Bạn có: <Text style={styles.coinBalance}>{Math.round(balance).toLocaleString('en-US')} xu</Text>
                 </Text>
               </View>
               <Switch
@@ -238,7 +238,7 @@ export default function CheckoutScreen() {
               <View style={styles.coinSavingInfo}>
                 <Ionicons name="checkmark-circle-outline" size={16} color="#10B981" />
                 <Text style={styles.coinSavingText}>
-                  Used {maxCoinsToUse.toLocaleString('en-US')} coins to save {maxCoinsToUse.toLocaleString('en-US')} VND
+                  Used {maxCoinsToUse.toLocaleString('en-US')} xu to save {maxCoinsToUse.toLocaleString('en-US')} VNĐ
                 </Text>
               </View>
             )}
@@ -247,11 +247,11 @@ export default function CheckoutScreen() {
 
         {/* Delivery Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Delivery Information</Text>
+          <Text style={styles.sectionTitle}>Thông tin giao hàng</Text>
           <View style={styles.deliveryCard}>
             <Ionicons name="time-outline" size={20} color="#6366F1" />
             <View style={styles.deliveryInfo}>
-              <Text style={styles.deliveryTitle}>Estimated Delivery Time</Text>
+              <Text style={styles.deliveryTitle}>Thời gian giao hàng dự kiến</Text>
               <Text style={styles.deliveryDate}>
                 {new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
                   weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -263,21 +263,21 @@ export default function CheckoutScreen() {
 
         {/* Order Summary */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Details</Text>
+          <Text style={styles.sectionTitle}>Chi tiết thanh toán</Text>
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>{totalPriceVnd.toLocaleString('en-US')} VND</Text>
+              <Text style={styles.summaryLabel}>Tạm tính</Text>
+              <Text style={styles.summaryValue}>{totalPriceVnd.toLocaleString('en-US')} VNĐ</Text>
             </View>
             {useCoins && maxCoinsToUse > 0 && (
               <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: '#F59E0B' }]}>Shopee Coins Discount</Text>
-                <Text style={[styles.summaryValue, { color: '#F59E0B' }]}>-{maxCoinsToUse.toLocaleString('en-US')} VND</Text>
+                <Text style={[styles.summaryLabel, { color: '#F59E0B' }]}>Giảm giá bằng Xu</Text>
+                <Text style={[styles.summaryValue, { color: '#F59E0B' }]}>-{maxCoinsToUse.toLocaleString('en-US')} VNĐ</Text>
               </View>
             )}
             <View style={[styles.summaryRow, styles.summaryTotal]}>
-              <Text style={styles.summaryTotalLabel}>Total Payment</Text>
-              <Text style={styles.summaryTotalValue}>{finalPriceVnd.toLocaleString('en-US')} VND</Text>
+              <Text style={styles.summaryTotalLabel}>Tổng thanh toán</Text>
+              <Text style={styles.summaryTotalValue}>{finalPriceVnd.toLocaleString('en-US')} VNĐ</Text>
             </View>
           </View>
         </View>
@@ -286,8 +286,8 @@ export default function CheckoutScreen() {
       {/* Bottom CTA */}
       <View style={styles.bottomBar}>
         <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalAmount}>{finalPriceVnd.toLocaleString('en-US')} VND</Text>
+          <Text style={styles.totalLabel}>Tổng cộng</Text>
+          <Text style={styles.totalAmount}>{finalPriceVnd.toLocaleString('en-US')} VNĐ</Text>
         </View>
 
         <TouchableOpacity
@@ -307,7 +307,7 @@ export default function CheckoutScreen() {
             ) : (
               <>
                 <Ionicons name="card-outline" size={20} color="#fff" />
-                <Text style={styles.orderBtnText}>Place Order Now</Text>
+                <Text style={styles.orderBtnText}>Đặt hàng ngay</Text>
               </>
             )}
           </LinearGradient>

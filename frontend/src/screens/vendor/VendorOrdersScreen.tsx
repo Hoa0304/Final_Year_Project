@@ -18,7 +18,7 @@ import { getVendorOrders, OrderStatus, getStatusLabel, getStatusColor } from '..
 import { LinearGradient } from 'expo-linear-gradient';
 
 const FILTERS: { label: string; value: OrderStatus | 'all' }[] = [
-  { label: 'All', value: 'all' },
+  { label: 'Tất cả', value: 'all' },
   { label: 'Processing', value: 'processing' },
   { label: 'Shipped', value: 'shipped' },
   { label: 'Delivered', value: 'delivered' },
@@ -72,10 +72,10 @@ export default function VendorOrdersScreen() {
         <View style={styles.orderFooter}>
           <View style={styles.clientInfo}>
             <Ionicons name="person-circle-outline" size={16} color="#64748B" />
-            <Text style={styles.clientName}>{item.client?.full_name || item.client?.email || 'Customer'}</Text>
+            <Text style={styles.clientName}>{item.client?.full_name || item.client?.email || 'Khách hàng'}</Text>
           </View>
           <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>Revenue:</Text>
+            <Text style={styles.priceLabel}>Doanh thu:</Text>
             <View style={styles.priceValueRow}>
               <Ionicons name="logo-bitcoin" size={14} color="#F59E0B" />
               <Text style={styles.priceCoins}>
@@ -97,13 +97,13 @@ export default function VendorOrdersScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order Management</Text>
+        <Text style={styles.headerTitle}>Quản lý đơn hàng</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
       {/* Filters */}
       <View style={styles.filterContainer}>
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           horizontal
           showsHorizontalScrollIndicator={false}
           data={FILTERS}
@@ -130,10 +130,10 @@ export default function VendorOrdersScreen() {
       ) : orders?.length === 0 ? (
         <View style={styles.centerContainer}>
           <Ionicons name="receipt-outline" size={64} color="#334155" />
-          <Text style={styles.emptyText}>No orders yet</Text>
+          <Text style={styles.emptyText}>Chưa có đơn hàng nào</Text>
         </View>
       ) : (
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           data={orders}
           keyExtractor={(item) => item.id}
           renderItem={renderOrderItem}

@@ -96,7 +96,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
         productPrice: product.price,
         productCategory: product.category,
         productImageUrl: product.image_url,
-        reason: `Based on your ${category} purchases`,
+        reason: `Dựa trên lịch sử mua ${category}`,
         confidence: 0.75 + (categoryFrequency[category] / transactions.length) * 0.15
       });
     }
@@ -129,7 +129,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
             productPrice: product.price,
             productCategory: product.category,
             productImageUrl: product.image_url,
-            reason: `Similar to your previous ${mostPurchasedCategory} purchases`,
+            reason: `Tương tự các sản phẩm ${mostPurchasedCategory} bạn đã mua`,
             confidence: 0.7
           });
         }
@@ -159,7 +159,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
           productPrice: popularProduct.price,
           productCategory: popularProduct.category,
           productImageUrl: popularProduct.image_url,
-          reason: `Matches your spending pattern (${avgSpending.toFixed(0)} coins average)`,
+          reason: `Phù hợp mức chi tiêu (TB ${avgSpending.toFixed(0)} xu)`,
           confidence: 0.65
         });
       }
@@ -194,7 +194,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
         productPrice: product.price,
         productCategory: product.category,
         productImageUrl: product.image_url,
-        reason: `Explore ${product.category} category`,
+        reason: `Khám phá danh mục ${product.category}`,
         confidence: 0.6
       });
     }

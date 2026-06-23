@@ -96,7 +96,7 @@ export default function ShoppingCartScreen() {
     mutationFn: clearCart,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      Alert.alert('Success', 'Cart cleared successfully');
+      Alert.alert('Thành công', 'Cart cleared successfully');
     },
   });
 
@@ -117,7 +117,7 @@ export default function ShoppingCartScreen() {
 
     const stockQuantity = item.product?.stockQuantity || item.stockQuantity || 0;
     if (newQuantity > stockQuantity) {
-      Alert.alert('Error', 'Insufficient stock');
+      Alert.alert('Lỗi', 'Insufficient stock');
       return;
     }
     updateItemMutation.mutate({ itemId: item.id, quantity: newQuantity });
@@ -169,7 +169,7 @@ export default function ShoppingCartScreen() {
 
   function renderVendorGroup({ item: group }: { item: VendorGroup }) {
     const { final } = calculateVendorGroupTotal(group);
-    const vendorName = group.vendor?.full_name || group.vendor?.email || 'Vendor';
+    const vendorName = group.vendor?.full_name || group.vendor?.email || 'Người bán';
 
     return (
       <View style={styles.vendorGroup}>
@@ -208,7 +208,7 @@ export default function ShoppingCartScreen() {
                 </Text>
 
                 <View style={styles.priceRow}>
-                  <Text style={styles.productPrice}>{priceVnd.toLocaleString('en-US')} VND</Text>
+                  <Text style={styles.productPrice}>{priceVnd.toLocaleString('en-US')} VNĐ</Text>
                 </View>
 
                 <View style={styles.quantityControls}>
@@ -234,7 +234,7 @@ export default function ShoppingCartScreen() {
                 </View>
               </View>
               <View style={styles.itemActions}>
-                <Text style={styles.subtotal}>{(priceVnd * item.quantity).toLocaleString('en-US')} VND</Text>
+                <Text style={styles.subtotal}>{(priceVnd * item.quantity).toLocaleString('en-US')} VNĐ</Text>
                 <TouchableOpacity onPress={() => handleRemoveItem(item)}>
                   <Ionicons name="trash-outline" size={18} color="#EF4444" />
                 </TouchableOpacity>
@@ -246,8 +246,8 @@ export default function ShoppingCartScreen() {
         {/* Price Summary */}
         <View style={styles.priceSummary}>
           <View style={[styles.priceRowSummary, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total price:</Text>
-            <Text style={styles.totalValue}>{final.toLocaleString('en-US')} VND</Text>
+            <Text style={styles.totalLabel}>Tổng tiền:</Text>
+            <Text style={styles.totalValue}>{final.toLocaleString('en-US')} VNĐ</Text>
           </View>
         </View>
 
@@ -280,7 +280,7 @@ export default function ShoppingCartScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
+        <Text style={styles.headerTitle}>Giỏ hàng</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -288,25 +288,25 @@ export default function ShoppingCartScreen() {
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6366F1" />
-            <Text style={styles.loadingText}>Loading shopping cart...</Text>
+            <Text style={styles.loadingText}>Đang tải giỏ hàng...</Text>
           </View>
         ) : vendorGroupsWithInfo.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
               <Ionicons name="cart-outline" size={64} color="#6366F1" />
             </View>
-            <Text style={styles.emptyTextTitle}>Your shopping cart is empty</Text>
-            <Text style={styles.emptyTextSub}>Explore products in the Marketplace</Text>
+            <Text style={styles.emptyTextTitle}>Giỏ hàng trống</Text>
+            <Text style={styles.emptyTextSub}>Khám phá sản phẩm trong Chợ</Text>
             <TouchableOpacity
               style={styles.exploreButton}
               onPress={() => navigation.navigate('Marketplace')}
             >
-              <Text style={styles.exploreButtonText}>Shop Now</Text>
+              <Text style={styles.exploreButtonText}>Mua ngay</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <FlatList
+            <FlatList keyboardShouldPersistTaps="handled"
               data={vendorGroupsWithInfo}
               renderItem={renderVendorGroup}
               keyExtractor={(item) => item.vendorId}
@@ -326,10 +326,10 @@ export default function ShoppingCartScreen() {
             <View style={styles.footer}>
               <View style={styles.grandTotalRow}>
                 <View>
-                  <Text style={styles.grandTotalLabel}>Total payment:</Text>
-                  <Text style={styles.grandTotalSub}>You can use Shopee Coins for a discount at checkout</Text>
+                  <Text style={styles.grandTotalLabel}>Tổng thanh toán:</Text>
+                  <Text style={styles.grandTotalSub}>Sử dụng Xu để được giảm giá khi thanh toán</Text>
                 </View>
-                <Text style={styles.grandTotalAmount}>{grandTotal.toLocaleString('en-US')} VND</Text>
+                <Text style={styles.grandTotalAmount}>{grandTotal.toLocaleString('en-US')} VNĐ</Text>
               </View>
               <View style={styles.footerButtons}>
                 <TouchableOpacity
@@ -341,7 +341,7 @@ export default function ShoppingCartScreen() {
                       [
                         { text: 'Cancel', style: 'cancel' },
                         {
-                          text: 'Clear All',
+                          text: 'Xóa tất cả',
                           style: 'destructive',
                           onPress: () => clearCartMutation.mutate(),
                         },
@@ -350,7 +350,7 @@ export default function ShoppingCartScreen() {
                   }}
                   disabled={clearCartMutation.isPending}
                 >
-                  <Text style={styles.clearButtonText}>Clear All</Text>
+                  <Text style={styles.clearButtonText}>Xóa tất cả</Text>
                 </TouchableOpacity>
               </View>
             </View>

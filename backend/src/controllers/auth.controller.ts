@@ -11,7 +11,7 @@ import { createTransaction } from '../services/transaction.service';
  */
 export async function register(req: Request, res: Response) {
   try {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName, role } = req.body;
 
     console.log('📝 Registration request received:', { email, fullName });
 
@@ -51,6 +51,7 @@ export async function register(req: Request, res: Response) {
         email: email.toLowerCase(),
         password_hash: passwordHash,
         full_name: fullName || null,
+        role: role === 'vendor' ? 'vendor' : 'user',
         virtual_balance: 0.00 // Start with 0, will be updated by transaction
       })
       .select('id, email, full_name, role, virtual_balance')

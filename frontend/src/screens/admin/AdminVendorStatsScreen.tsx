@@ -11,7 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../config/api';
@@ -20,6 +20,7 @@ interface AdminVendorStat {
   id: string;
   full_name: string;
   email: string;
+  role: string;
   totalProducts: number;
   totalOrders: number;
   deliveredOrders: number;
@@ -30,6 +31,8 @@ interface AdminVendorStat {
 
 export default function AdminVendorStatsScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const filterParam = route.params?.filter || 'all'; // 'all' or 'vendors_only'
 
   const { data: vendors, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['adminVendorStats'],
@@ -39,62 +42,80 @@ export default function AdminVendorStatsScreen() {
     },
   });
 
+  const displayVendors = filterParam === 'vendors_only' 
+    ? vendors?.filter(v => v.role === 'vendor') 
+    : vendors;
+
+  const screenTitle = filterParam === 'vendors_only' ? 'Người bán Analytics' : 'Tổng số người dùng';
+
   const renderVendorItem = ({ item }: { item: AdminVendorStat }) => (
-    <View style={styles.vendorCard}>
+    <TouchableOpacity 
+      style={styles.vendorCard}
+      activeOpacity={0.8}
+      onPress={() => {
+        if (item.role === 'vendor') {
+          navigation.navigate('Orders', { vendorId: item.id, vendorName: item.full_name });
+        }
+      }}
+    >
       <View style={styles.vendorHeader}>
         <View style={styles.vendorAvatar}>
           <Text style={styles.avatarText}>{item.full_name?.charAt(0).toUpperCase() || 'V'}</Text>
         </View>
         <View style={styles.vendorInfo}>
-          <Text style={styles.vendorName}>{item.full_name || 'Vendor'}</Text>
+          <Text style={styles.vendorName}>{item.full_name || 'User'}</Text>
           <Text style={styles.vendorEmail}>{item.email}</Text>
         </View>
         <View style={[
           styles.planBadge,
-          item.subscriptionPlan === 'Premium' && styles.planPremium,
-          item.subscriptionPlan === 'Pro' && styles.planPro,
-          item.subscriptionPlan === 'Basic' && styles.planBasic,
+          item.role === 'vendor' ? (
+            (item.subscriptionPlan && item.subscriptionPlan.includes('VIP')) ? { backgroundColor: '#F59E0B20', borderColor: '#F59E0B' } : { backgroundColor: '#10B98120', borderColor: '#10B981' }
+          ) : styles.planUser,
         ]}>
           <Text style={[
             styles.planText,
-            item.subscriptionPlan === 'Premium' && styles.planTextPremium,
-            item.subscriptionPlan === 'Pro' && styles.planTextPro,
-            item.subscriptionPlan === 'Basic' && styles.planTextBasic,
+            item.role === 'vendor' ? (
+              (item.subscriptionPlan && item.subscriptionPlan.includes('VIP')) ? { color: '#F59E0B' } : { color: '#10B981' }
+            ) : styles.planTextUser,
           ]}>
-            {item.subscriptionPlan}
+            {item.role === 'vendor' ? ((item.subscriptionPlan && item.subscriptionPlan.includes('VIP')) ? item.subscriptionPlan : 'Free') : 'User'}
           </Text>
         </View>
       </View>
 
-      <View style={styles.statsGrid}>
-        <View style={styles.statBox}>
-          <Ionicons name="cube-outline" size={18} color="#94A3B8" />
-          <Text style={styles.statValue}>{item.totalProducts}</Text>
-          <Text style={styles.statLabel}>Products</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Ionicons name="cart-outline" size={18} color="#94A3B8" />
-          <Text style={styles.statValue}>{item.totalOrders}</Text>
-          <Text style={styles.statLabel}>Orders</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Ionicons name="checkmark-done-circle-outline" size={18} color="#10B981" />
-          <Text style={[styles.statValue, { color: '#10B981' }]}>{item.deliveredOrders}</Text>
-          <Text style={styles.statLabel}>Delivered</Text>
-        </View>
-      </View>
+      {item.role === 'vendor' && (
+        <>
+          <View style={styles.statsGrid}>
+            <View style={styles.statBox}>
+              <Ionicons name="cube-outline" size={18} color="#94A3B8" />
+              <Text style={styles.statValue}>{item.totalProducts}</Text>
+              <Text style={styles.statLabel}>Sản phẩm</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Ionicons name="cart-outline" size={18} color="#94A3B8" />
+              <Text style={styles.statValue}>{item.totalOrders}</Text>
+              <Text style={styles.statLabel}>Đơn hàng</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Ionicons name="checkmark-done-circle-outline" size={18} color="#10B981" />
+              <Text style={[styles.statValue, { color: '#10B981' }]}>{item.deliveredOrders}</Text>
+              <Text style={styles.statLabel}>Đã giao</Text>
+            </View>
+          </View>
 
-      <View style={styles.revenueContainer}>
-        <View style={styles.revenueItem}>
-          <Text style={styles.revenueLabel}>VND Revenue:</Text>
-          <Text style={styles.revenueVnd}>{Math.round(item.revenueVnd).toLocaleString('en-US')} VND</Text>
-        </View>
-        <View style={styles.revenueItem}>
-          <Text style={styles.revenueLabel}>Coin Discount Offset:</Text>
-          <Text style={styles.revenueCoin}>{Math.round(item.revenueCoins).toLocaleString('en-US')} coins</Text>
-        </View>
-      </View>
-    </View>
+          <View style={styles.revenueContainer}>
+            <View style={styles.revenueItem}>
+              <Text style={styles.revenueLabel}>Doanh thu VNĐ:</Text>
+              <Text style={styles.revenueVnd}>{Math.round(item.revenueVnd).toLocaleString('en-US')} VNĐ</Text>
+            </View>
+            <View style={styles.revenueItem}>
+              <Text style={styles.revenueLabel}>Doanh thu Xu:</Text>
+              <Text style={styles.revenueCoin}>{Math.round(item.revenueCoins).toLocaleString('en-US')} xu</Text>
+            </View>
+          </View>
+        </>
+      )}
+    </TouchableOpacity>
   );
 
   return (
@@ -106,7 +127,7 @@ export default function AdminVendorStatsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Vendor Stats</Text>
+        <Text style={styles.headerTitle}>{screenTitle}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
@@ -115,16 +136,16 @@ export default function AdminVendorStatsScreen() {
         {isLoading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#6366F1" />
-            <Text style={styles.loadingText}>Loading data...</Text>
+            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
           </View>
-        ) : vendors?.length === 0 ? (
+        ) : displayVendors?.length === 0 ? (
           <View style={styles.centerContainer}>
             <Ionicons name="people-outline" size={64} color="#334155" />
-            <Text style={styles.emptyText}>No vendors found</Text>
+            <Text style={styles.emptyText}>Không tìm thấy dữ liệu</Text>
           </View>
         ) : (
-          <FlatList
-            data={vendors}
+          <FlatList keyboardShouldPersistTaps="handled"
+            data={displayVendors}
             keyExtractor={(item) => item.id}
             renderItem={renderVendorItem}
             contentContainerStyle={styles.listContainer}
@@ -160,12 +181,31 @@ const styles = StyleSheet.create({
   vendorEmail: { fontSize: 13, color: '#94A3B8' },
   planBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#334155' },
   planPremium: { backgroundColor: '#F59E0B20' },
-  planPro: { backgroundColor: '#8B5CF620' },
-  planBasic: { backgroundColor: '#3B82F620' },
-  planText: { fontSize: 11, fontWeight: '700', color: '#94A3B8' },
-  planTextPremium: { color: '#F59E0B' },
-  planTextPro: { color: '#8B5CF6' },
-  planTextBasic: { color: '#3B82F6' },
+  planPro: {
+    backgroundColor: '#E0E7FF',
+  },
+  planBasic: {
+    backgroundColor: '#F1F5F9',
+  },
+  planUser: {
+    backgroundColor: '#D1FAE5',
+  },
+  planText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  planTextPremium: {
+    color: '#D97706',
+  },
+  planTextPro: {
+    color: '#4338CA',
+  },
+  planTextBasic: {
+    color: '#475569',
+  },
+  planTextUser: {
+    color: '#059669',
+  },
   statsGrid: { flexDirection: 'row', backgroundColor: '#1E293B', borderRadius: 12, padding: 12, marginBottom: 16 },
   statBox: { flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: '#334155' },
   statValue: { fontSize: 16, fontWeight: '800', color: '#F8FAFC', marginVertical: 4 },

@@ -33,6 +33,29 @@ type SortOption = 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'name_asc' 
 type ViewMode = 'grid' | 'list';
 type MarketplaceTab = 'all' | 'vendors';
 
+// Category translation map
+const CATEGORY_TRANSLATIONS: Record<string, string> = {
+  'Electronics': 'Điện tử',
+  'Clothing': 'Quần áo',
+  'Books': 'Sách',
+  'Home & Garden': 'Nhà cửa & Đời sống',
+  'Sports': 'Thể thao',
+  'Toys': 'Đồ chơi',
+  'Health & Beauty': 'Sức khỏe & Sắc đẹp',
+  'Automotive': 'Ô tô & Xe máy',
+  'Food & Grocery': 'Thực phẩm',
+  'Digital Services': 'Dịch vụ số',
+  'Software': 'Phần mềm',
+  'Courses': 'Khóa học',
+  'Fashion': 'Thời trang',
+  'Accessories': 'Phụ kiện',
+  'Gaming': 'Trò chơi',
+};
+
+function translateCategory(cat: string): string {
+  return CATEGORY_TRANSLATIONS[cat] || cat;
+}
+
 export default function MarketplaceScreen() {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<MarketplaceTab>('all');
@@ -74,7 +97,7 @@ export default function MarketplaceScreen() {
     staleTime: 5 * 60 * 1000, // 5 min
   });
   const ethRate = ethRateData?.rate || 85000000;
-  // Exchange rate: 1 coin = 1000 VND (fixed)
+  // Exchange rate: 1 coin = 1000 VNĐ (fixed)
   const COIN_TO_VND = 1000;
 
   // Fetch products - when on vendors tab, fetch all products to group by vendor
@@ -83,7 +106,7 @@ export default function MarketplaceScreen() {
     queryFn: () => getProducts(activeTab === 'vendors' ? {} : filters),
   });
 
-  // Fetch vendors for "By Vendor" tab - fetch all vendors to match with products
+  // Fetch vendors for "Theo người bán" tab - fetch all vendors to match with products
   // Use a large limit to get all vendors
   const { data: vendors = [], isLoading: isLoadingVendors } = useQuery({
     queryKey: ['vendors'],
@@ -243,15 +266,19 @@ export default function MarketplaceScreen() {
     queryFn: getCategories,
   });
 
-  // Fetch ML recommendations for "All Products" tab
+  // Fetch ML recommendations for "Tất cả sản phẩm" tab
   const { user } = useAuth();
-  const { data: mlRecommendations, isLoading: isLoadingML, error: mlError } = useQuery({
+  const { data: mlRecommendations, isLoading: isLoadingML, error: mlError, refetch: refetchML } = useQuery({
     queryKey: ['mlRecommendations', user?.id],
     queryFn: () => getMLRecommendations('hybrid', 6),
     enabled: activeTab === 'all' && !!user?.id,
     refetchInterval: 300000, // Refresh every 5 minutes
     retry: 1, // Only retry once
   });
+
+  const onRefreshMarketplace = async () => {
+    await Promise.all([refetch(), refetchML()]);
+  };
 
   // Map ML recommendations to products
   const recommendedProducts = useMemo(() => {
@@ -269,12 +296,12 @@ export default function MarketplaceScreen() {
 
 
   const sortOptions: { label: string; value: SortOption }[] = [
-    { label: 'Newest First', value: 'newest' },
-    { label: 'Oldest First', value: 'oldest' },
-    { label: 'Price: Low to High', value: 'price_asc' },
-    { label: 'Price: High to Low', value: 'price_desc' },
-    { label: 'Name: A to Z', value: 'name_asc' },
-    { label: 'Name: Z to A', value: 'name_desc' },
+    { label: 'Mới nhất', value: 'newest' },
+    { label: 'Cũ nhất', value: 'oldest' },
+    { label: 'Giá: Thấp đến Cao', value: 'price_asc' },
+    { label: 'Giá: Cao đến Thấp', value: 'price_desc' },
+    { label: 'Tên: A - Z', value: 'name_asc' },
+    { label: 'Tên: Z - A', value: 'name_desc' },
   ];
 
   const activeFiltersCount = useMemo(() => {
@@ -311,7 +338,7 @@ export default function MarketplaceScreen() {
           )}
           {item.stock_quantity === 0 && (
             <View style={styles.outOfStockOverlay}>
-              <Text style={styles.outOfStockText}>Out of Stock</Text>
+              <Text style={styles.outOfStockText}>Hết hàng</Text>
             </View>
           )}
         </View>
@@ -334,13 +361,13 @@ export default function MarketplaceScreen() {
           )}
 
           <View style={styles.priceContainerGrid}>
-            <Text style={styles.priceVndGrid}>{priceVnd.toLocaleString('en-US')} VND</Text>
+            <Text style={styles.priceVndGrid}>{priceVnd.toLocaleString('en-US')} VNĐ</Text>
           </View>
 
           {item.stock_quantity > 0 && (
             <View style={styles.stockBadge}>
               <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-              <Text style={styles.stockBadgeText}>In Stock</Text>
+              <Text style={styles.stockBadgeText}>Còn hàng</Text>
             </View>
           )}
         </View>
@@ -412,15 +439,15 @@ export default function MarketplaceScreen() {
           )}
           <View style={styles.productFooterList}>
             <View style={styles.priceContainerList}>
-              <Text style={styles.priceVndList}>{priceVnd.toLocaleString('en-US')} VND</Text>
+              <Text style={styles.priceVndList}>{priceVnd.toLocaleString('en-US')} VNĐ</Text>
             </View>
             {item.stock_quantity > 0 ? (
               <View style={styles.stockBadge}>
                 <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                <Text style={styles.stockBadgeText}>In Stock</Text>
+                <Text style={styles.stockBadgeText}>Còn hàng</Text>
               </View>
             ) : (
-              <Text style={styles.outOfStockTextList}>Out of Stock</Text>
+              <Text style={styles.outOfStockTextList}>Hết hàng</Text>
             )}
           </View>
         </View>
@@ -437,7 +464,7 @@ export default function MarketplaceScreen() {
             <Ionicons name="search" size={20} color="#64748B" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search products..."
+              placeholder="Tìm kiếm products..."
               placeholderTextColor="#64748B"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -459,7 +486,7 @@ export default function MarketplaceScreen() {
             onPress={() => setActiveTab('all')}
           >
             <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>
-              All Products
+              Tất cả sản phẩm
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -467,18 +494,18 @@ export default function MarketplaceScreen() {
             onPress={() => setActiveTab('vendors')}
           >
             <Text style={[styles.tabText, activeTab === 'vendors' && styles.tabTextActive]}>
-              By Vendor
+              Theo người bán
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Search Vendors - Only show for By Vendor tab */}
+        {/* Search Vendors - Only show for Theo người bán tab */}
         {activeTab === 'vendors' && (
           <View style={styles.searchVendorContainer}>
             <Ionicons name="search" size={20} color="#64748B" style={styles.searchVendorIcon} />
             <TextInput
               style={styles.searchVendorInput}
-              placeholder="Search vendors..."
+              placeholder="Tìm kiếm vendors..."
               placeholderTextColor="#475569"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -494,7 +521,7 @@ export default function MarketplaceScreen() {
           </View>
         )}
 
-        {/* Action Bar - Only show for All Products tab */}
+        {/* Action Bar - Only show for Tất cả sản phẩm tab */}
         {activeTab === 'all' && (
           <View style={styles.actionBar}>
             <View style={styles.actionBarLeft}>
@@ -513,7 +540,7 @@ export default function MarketplaceScreen() {
                 onPress={() => setShowSortModal(true)}
               >
                 <Ionicons name="swap-vertical" size={18} color="#64748B" />
-                <Text style={styles.actionButtonText}>Sort</Text>
+                <Text style={styles.actionButtonText}>Sắp xếp</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.actionBarRight}>
@@ -529,7 +556,7 @@ export default function MarketplaceScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.notificationButton}
-                onPress={() => (navigation as any).navigate('Notifications')}
+                onPress={() => (navigation as any).navigate('Thông báo')}
               >
                 <Ionicons name="notifications-outline" size={20} color="#64748B" />
                 {unreadCount > 0 && (
@@ -560,20 +587,20 @@ export default function MarketplaceScreen() {
           isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#6366F1" />
-              <Text style={styles.loadingText}>Loading products...</Text>
+              <Text style={styles.loadingText}>Đang tải sản phẩm...</Text>
             </View>
           ) : (
-            <ScrollView
-              refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={refetch} />}
+            <ScrollView keyboardShouldPersistTaps="handled"
+              refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={onRefreshMarketplace} />}
             >
               {Object.keys(filteredProductsByVendor).length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Ionicons name="storefront-outline" size={64} color="#64748B" />
                   <Text style={styles.emptyText}>
-                    {searchQuery ? 'No vendors found' : 'No products found'}
+                    {searchQuery ? 'Không tìm thấy người bán' : 'Không có sản phẩm nào'}
                   </Text>
                   <Text style={styles.emptySubtext}>
-                    {searchQuery ? 'Try a different search term' : 'No vendors have products yet'}
+                    {searchQuery ? 'Hãy thử từ khoá khác' : 'Chưa có người bán nào có sản phẩm'}
                   </Text>
                 </View>
               ) : (
@@ -625,7 +652,7 @@ export default function MarketplaceScreen() {
                           onPress={() => (navigation as any).navigate('VendorShop', { vendorId })}
                         >
                           <Text style={styles.viewAllButtonText}>
-                            View All {totalProductCount} Products
+                            View Tất cả {totalProductCount} Products
                           </Text>
                           <Ionicons name="arrow-forward" size={16} color="#6366F1" />
                         </TouchableOpacity>
@@ -640,10 +667,10 @@ export default function MarketplaceScreen() {
           isLoading && !products ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#6366F1" />
-              <Text style={styles.loadingText}>Loading products...</Text>
+              <Text style={styles.loadingText}>Đang tải sản phẩm...</Text>
             </View>
           ) : (
-            <FlatList
+            <FlatList keyboardShouldPersistTaps="handled"
               data={products}
               renderItem={viewMode === 'grid' ? renderProductGrid : renderProductList}
               keyExtractor={(item) => item.id}
@@ -653,12 +680,12 @@ export default function MarketplaceScreen() {
                 styles.listContent,
                 viewMode === 'grid' && styles.listContentGrid,
               ]}
-              refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={refetch} />}
+              refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={onRefreshMarketplace} />}
               ListHeaderComponent={
                 <>
-                  {/* Category Chips */}
+                  {/* Danh mục Chips */}
                   <View style={styles.categoryContainer}>
-                    <ScrollView
+                    <ScrollView keyboardShouldPersistTaps="handled"
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles.categoryContent}
@@ -680,7 +707,7 @@ export default function MarketplaceScreen() {
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
-                          All
+                          Tất cả
                         </Text>
                       </TouchableOpacity>
                       {categories.map((category) => {
@@ -711,18 +738,17 @@ export default function MarketplaceScreen() {
                   </View>
 
                   {/* ML Recommendations Section */}
-                  {(recommendedProducts.length > 0 || isLoadingML) && (
-                    <View style={styles.recommendationsSection}>
-                      <View style={styles.recommendationsHeader}>
+                  <View style={styles.recommendationsSection}>
+                    <View style={styles.recommendationsHeader}>
                         <Ionicons name="sparkles" size={20} color="#FF9500" />
-                        <Text style={styles.recommendationsTitle}>Recommended for You</Text>
+                        <Text style={styles.recommendationsTitle}>Gợi ý cho bạn</Text>
                         {mlRecommendations?.model && (
                           <View style={styles.modelBadge}>
                             <Text style={styles.modelBadgeText}>{mlRecommendations.model}</Text>
                           </View>
                         )}
                       </View>
-                      <ScrollView
+                      <ScrollView keyboardShouldPersistTaps="handled"
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.recommendationsContent}
@@ -731,12 +757,12 @@ export default function MarketplaceScreen() {
                         {isLoadingML ? (
                           <View style={styles.recommendationsLoading}>
                             <ActivityIndicator size="small" color="#6366F1" />
-                            <Text style={styles.recommendationsLoadingText}>Loading recommendations...</Text>
+                            <Text style={styles.recommendationsLoadingText}>Đang tải gợi ý...</Text>
                           </View>
                         ) : recommendedProducts.length === 0 ? (
                           <View style={styles.recommendationsEmpty}>
                             <Text style={styles.recommendationsEmptyText}>
-                              {mlError ? 'Unable to load recommendations' : 'No recommendations available'}
+                              {mlError ? 'Unable to load recommendations' : 'Không có gợi ý nào'}
                             </Text>
                           </View>
                         ) : (
@@ -758,7 +784,7 @@ export default function MarketplaceScreen() {
                                   </View>
                                 )}
                                 <View style={styles.recommendedProductInfo}>
-                                  <Text style={styles.recommendedProductPrice}>{product.price.toLocaleString('en-US')} VND</Text>
+                                  <Text style={styles.recommendedProductPrice}>{product.price.toLocaleString('en-US')} VNĐ</Text>
                                   {rec && (
                                     <View style={styles.recommendedProductScore}>
                                       <Ionicons name="star" size={12} color="#FF9500" />
@@ -773,15 +799,14 @@ export default function MarketplaceScreen() {
                           })
                         )}
                       </ScrollView>
-                    </View>
-                  )}
+                  </View>
                 </>
               }
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   <Ionicons name="search-outline" size={64} color="#64748B" />
-                  <Text style={styles.emptyText}>No products found</Text>
-                  <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+                  <Text style={styles.emptyText}>Không có sản phẩm nào</Text>
+                  <Text style={styles.emptySubtext}>Hãy thử điều chỉnh bộ lọc</Text>
                 </View>
               }
             />
@@ -798,19 +823,19 @@ export default function MarketplaceScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Filter Products</Text>
+                <Text style={styles.modalTitle}>Lọc sản phẩm</Text>
                 <TouchableOpacity onPress={() => setShowFilterModal(false)}>
                   <Ionicons name="close" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={styles.modalBody}>
-                {/* Price Range */}
+              <ScrollView keyboardShouldPersistTaps="handled" style={styles.modalBody}>
+                {/* Khoảng giá */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterSectionTitle}>Price Range</Text>
+                  <Text style={styles.filterSectionTitle}>Khoảng giá</Text>
                   <View style={styles.priceInputContainer}>
                     <View style={styles.priceInput}>
-                      <Text style={styles.priceLabel}>Min</Text>
+                      <Text style={styles.priceLabel}>Thấp nhất</Text>
                       <TextInput
                         style={styles.priceInputField}
                         placeholder="0"
@@ -822,7 +847,7 @@ export default function MarketplaceScreen() {
                     </View>
                     <Text style={styles.priceSeparator}>-</Text>
                     <View style={styles.priceInput}>
-                      <Text style={styles.priceLabel}>Max</Text>
+                      <Text style={styles.priceLabel}>Cao nhất</Text>
                       <TextInput
                         style={styles.priceInputField}
                         placeholder="No limit"
@@ -835,9 +860,9 @@ export default function MarketplaceScreen() {
                   </View>
                 </View>
 
-                {/* Stock Status */}
+                {/* Trạng thái kho */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterSectionTitle}>Stock Status</Text>
+                  <Text style={styles.filterSectionTitle}>Trạng thái kho</Text>
                   <TouchableOpacity
                     style={styles.checkboxContainer}
                     onPress={() => setInStockOnly(!inStockOnly)}
@@ -845,7 +870,7 @@ export default function MarketplaceScreen() {
                     <View style={[styles.checkbox, inStockOnly && styles.checkboxChecked]}>
                       {inStockOnly && <Ionicons name="checkmark" size={16} color="#fff" />}
                     </View>
-                    <Text style={styles.checkboxLabel}>In Stock Only</Text>
+                    <Text style={styles.checkboxLabel}>Chỉ hiển thị còn hàng</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -855,13 +880,13 @@ export default function MarketplaceScreen() {
                   style={[styles.modalButton, styles.modalButtonSecondary]}
                   onPress={handleResetFilters}
                 >
-                  <Text style={styles.modalButtonTextSecondary}>Reset</Text>
+                  <Text style={styles.modalButtonTextSecondary}>Đặt lại</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonPrimary]}
                   onPress={() => setShowFilterModal(false)}
                 >
-                  <Text style={styles.modalButtonTextPrimary}>Apply</Text>
+                  <Text style={styles.modalButtonTextPrimary}>Áp dụng</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -878,7 +903,7 @@ export default function MarketplaceScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Sort By</Text>
+                <Text style={styles.modalTitle}>Sắp xếp theo</Text>
                 <TouchableOpacity onPress={() => setShowSortModal(false)}>
                   <Ionicons name="close" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
@@ -1336,7 +1361,7 @@ const styles = StyleSheet.create({
     color: '#6366F1',
     fontWeight: '600',
   },
-  // Vendor Card Styles
+  // Người bán Card Styles
   vendorCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1515,7 +1540,7 @@ const styles = StyleSheet.create({
     color: '#818CF8',
     fontWeight: '600',
   },
-  // Vendor Section Styles
+  // Người bán Section Styles
   vendorSection: {
     marginBottom: 24,
     backgroundColor: 'rgba(15, 23, 42, 0.6)',

@@ -19,13 +19,14 @@ export interface AuthResponse {
 /**
  * Register a new user
  */
-export async function register(email: string, password: string, fullName?: string): Promise<AuthResponse> {
+export async function register(email: string, password: string, fullName?: string, role: string = 'user'): Promise<AuthResponse> {
   console.log('📝 Attempting to register user:', email);
   try {
     const response = await api.post<AuthResponse>('/auth/register', {
       email,
       password,
       fullName,
+      role,
     });
 
     console.log('✅ Registration successful:', response.data.user.email);

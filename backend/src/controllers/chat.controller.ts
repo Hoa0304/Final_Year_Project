@@ -163,10 +163,35 @@ export async function sendMessage(req: AuthRequest, res: Response) {
 
     const hasAccess = hasAIAccess(user.email);
     
-    // Rate limiting for users (basic implementation)
-    // TODO: Implement more sophisticated rate limiting with Redis or database
+    // Rate limiting for users
     if (hasAccess) {
-      // Check message length to prevent abuse
+      // 1. Daily message limit check (20 messages/day)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Get all conversations for the user
+      const { data: userConvs } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (userConvs && userConvs.length > 0) {
+        const convIds = userConvs.map(c => c.id);
+        const { count, error: countError } = await supabase
+          .from('chat_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'user')
+          .in('conversation_id', convIds)
+          .gte('created_at', today.toISOString());
+
+        if (count !== null && count >= 20) {
+          return res.status(429).json({ 
+            error: 'You have reached the daily limit of 20 AI messages. Please try again tomorrow.' 
+          });
+        }
+      }
+
+      // 2. Check message length to prevent abuse
       if (message.length > 2000) {
         return res.status(400).json({ error: 'Message too long. Maximum 2000 characters.' });
       }

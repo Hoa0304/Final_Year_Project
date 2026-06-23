@@ -10,7 +10,7 @@ export interface Product {
   stock_quantity: number;
   is_active: boolean;
   created_at: string;
-  created_by?: string; // Vendor ID who created this product
+  created_by?: string; // Người bán ID who created this product
   random_voucher_ids?: string[]; // Array of voucher IDs that can be randomly issued after purchase
   averageRating?: number; // Average rating (0-5)
   totalRatings?: number; // Total number of ratings

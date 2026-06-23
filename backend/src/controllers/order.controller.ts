@@ -60,12 +60,23 @@ export async function createOrder(req: AuthRequest, res: Response) {
     const estimatedDelivery = new Date();
     estimatedDelivery.setDate(estimatedDelivery.getDate() + 4); // 4 days default
 
+    // Determine vendor_id: if product has no creator, assign to an admin
+    let vendorId = product.created_by;
+    let isVendorAdmin = false;
+    if (!vendorId) {
+      const { data: adminUser } = await supabase.from('users').select('id').eq('role', 'admin').limit(1).single();
+      if (adminUser) {
+        vendorId = adminUser.id;
+        isVendorAdmin = true;
+      }
+    }
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         user_id: userId,
-        vendor_id: product.created_by,
+        vendor_id: vendorId,
         product_id: productId,
         quantity,
         payment_method: 'vnd', // Order is always VND in new system
@@ -100,11 +111,13 @@ export async function createOrder(req: AuthRequest, res: Response) {
     }
 
     // If fully paid with coins, credit vendor immediately
-    if (finalPriceVnd === 0) {
+    if (finalPriceVnd === 0 && vendorId) {
+      // Admin gets 100%, regular vendor gets 90%
+      const earnAmount = isVendorAdmin ? totalVnd : Math.round(totalVnd * 0.9);
       await createTransaction({
-        userId: product.created_by,
+        userId: vendorId,
         type: 'earn',
-        amount: Math.round(totalVnd * 0.9), // 90% goes to vendor (10% platform fee)
+        amount: earnAmount,
         description: `Sale (Fully offset with coins): ${product.name} x${quantity}`,
         referenceId: order.id,
         referenceType: 'order_income',
@@ -362,7 +375,7 @@ export async function getOrderAnalytics(req: AuthRequest, res: Response) {
 
     let query = supabase
       .from('orders')
-      .select('status, payment_method, price_coins, price_vnd, created_at, late_compensation_voucher_id, products(name)')
+      .select('status, payment_method, price_coins, price_vnd, created_at, products(name)')
       .gte('created_at', since.toISOString());
 
     if (vendorId) query = query.eq('vendor_id', vendorId);
@@ -382,13 +395,30 @@ export async function getOrderAnalytics(req: AuthRequest, res: Response) {
         acc[o.payment_method] = (acc[o.payment_method] || 0) + 1;
         return acc;
       }, {}),
-      totalRevenueCoins: allOrders.filter(o => o.payment_method === 'coin').reduce((sum, o) => sum + (o.price_coins || 0), 0),
-      totalRevenueVnd: allOrders.filter(o => o.payment_method === 'vnd').reduce((sum, o) => sum + (o.price_vnd || 0), 0),
+      totalRevenueCoins: allOrders.reduce((sum, o) => sum + (o.price_coins || 0), 0),
+      totalRevenueVnd: allOrders.reduce((sum, o) => sum + (o.price_vnd || 0), 0),
       deliveredOrders: allOrders.filter(o => o.status === 'delivered').length,
-      lateOrders: allOrders.filter(o => o.status === 'delivered' && o.late_compensation_voucher_id).length,
+      lateOrders: 0, // Removed late_compensation_voucher_id since column doesn't exist
     };
 
-    res.json({ analytics, period: parseInt(period as string) });
+    // Calculate daily revenue for last 7 days
+    const dailyRevenue: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      dailyRevenue[dateStr] = 0;
+    }
+    
+    allOrders.forEach(o => {
+      const d = new Date(o.created_at);
+      const dateStr = d.toISOString().split('T')[0];
+      if (dailyRevenue[dateStr] !== undefined) {
+        dailyRevenue[dateStr] += ((o.price_vnd || 0) + (o.price_coins || 0));
+      }
+    });
+
+    res.json({ analytics, dailyRevenue, period: parseInt(period as string) });
   } catch (error) {
     console.error('Get order analytics error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -423,27 +453,36 @@ export async function mockVndPayment(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Order already processed' });
     }
 
-    // Credit vendor via 90% of the original VND value (since coins offset is subsidized by platform)
-    const vendorCoins = Math.round(order.original_price_coins * 0.9);
+    // We also need to know if the vendor is an admin to give 100% vs 90%.
+    let isVendorAdmin = false;
+    if (order.vendor_id) {
+      const { data: vendorUser } = await supabase.from('users').select('role').eq('id', order.vendor_id).single();
+      isVendorAdmin = vendorUser?.role === 'admin';
+    }
+
+    // Credit vendor via 90% of the original VND value, or 100% if admin
+    const vendorCoins = isVendorAdmin ? order.original_price_coins : Math.round(order.original_price_coins * 0.9);
 
     await supabase.from('orders').update({
       status: 'processing',
       paid_at: new Date().toISOString(),
     }).eq('id', orderId);
 
-    await createTransaction({
-      userId: order.vendor_id,
-      type: 'earn',
-      amount: vendorCoins,
-      description: `VND Sale (mock) - order ${orderId.slice(0, 8)}`,
-      referenceId: orderId,
-      referenceType: 'order_income_vnd',
-    });
+    if (order.vendor_id) {
+      await createTransaction({
+        userId: order.vendor_id,
+        type: 'earn',
+        amount: vendorCoins,
+        description: `VND Sale (mock) - order ${orderId.slice(0, 8)}`,
+        referenceId: orderId,
+        referenceType: 'order_income_vnd',
+      });
+    }
 
     res.json({
       message: '✅ Mock VND payment confirmed (dev mode)',
       order: { ...order, status: 'processing' },
-      vendorCredited: vendorCoins,
+      vendorCredited: order.vendor_id ? vendorCoins : 0,
     });
   } catch (error) {
     console.error('Mock VND payment error:', error);

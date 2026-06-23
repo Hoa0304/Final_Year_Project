@@ -16,7 +16,6 @@ import TasksScreen from '../screens/main/TasksScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import NotificationsScreen from '../screens/main/NotificationsScreen';
 import NotificationPreferencesScreen from '../screens/main/NotificationPreferencesScreen';
-import TopUpScreen from '../screens/main/TopUpScreen';
 import ExpenseManagementScreen from '../screens/main/ExpenseManagementScreen';
 import ChatScreen from '../screens/main/ChatScreen';
 import SocialScreen from '../screens/main/SocialScreen';
@@ -31,7 +30,7 @@ import AdminVendorStatsScreen from '../screens/admin/AdminVendorStatsScreen';
 import AdminOrdersScreen from '../screens/admin/AdminOrdersScreen';
 import AdminMoreScreen from '../screens/admin/AdminMoreScreen';
 
-// Vendor screens
+// Người bán screens
 import VendorProductsScreen from '../screens/vendor/VendorProductsScreen';
 import VendorDashboardScreen from '../screens/vendor/VendorDashboardScreen';
 import VendorOrdersScreen from '../screens/vendor/VendorOrdersScreen';
@@ -66,13 +65,13 @@ function MainTabs({ userRole }: { userRole: string }) {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Marketplace') {
             iconName = focused ? 'storefront' : 'storefront-outline';
-          } else if (route.name === 'Tasks') {
+          } else if (route.name === 'Nhiệm vụ') {
             iconName = focused ? 'checkmark-circle' : 'checkmark-circle-outline';
           } else if (route.name === 'Chat') {
             iconName = focused ? 'sparkles' : 'sparkles-outline';
           } else if (route.name === 'Social') {
             iconName = focused ? 'people' : 'people-outline';
-          } else if (route.name === 'More') {
+          } else if (route.name === 'Khác') {
             iconName = focused ? 'apps' : 'apps-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
@@ -102,14 +101,14 @@ function MainTabs({ userRole }: { userRole: string }) {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ tabBarLabel: 'Home' }}
+        options={{ tabBarLabel: 'Trang chủ' }}
       />
-      <Tab.Screen name="Marketplace" component={MarketplaceScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Marketplace" component={MarketplaceScreen} options={{ tabBarLabel: 'Chợ' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Hồ sơ' }} />
       <Tab.Screen
-        name="More"
+        name="Khác"
         component={MoreScreen}
-        options={{ tabBarLabel: 'More' }}
+        options={{ tabBarLabel: 'Thêm' }}
       />
     </Tab.Navigator>
   );
@@ -129,7 +128,7 @@ function AdminTabs() {
             iconName = focused ? 'speedometer' : 'speedometer-outline';
           } else if (route.name === 'Products') {
             iconName = focused ? 'cube' : 'cube-outline';
-          } else if (route.name === 'More') {
+          } else if (route.name === 'Khác') {
             iconName = focused ? 'apps' : 'apps-outline';
           } else {
             iconName = 'help-outline';
@@ -154,15 +153,15 @@ function AdminTabs() {
         },
       })}
     >
-      <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ tabBarLabel: 'Overview' }} />
-      <Tab.Screen name="Products" component={AdminProductsScreen} options={{ tabBarLabel: 'Products' }} />
-      <Tab.Screen name="More" component={AdminMoreScreen} options={{ tabBarLabel: 'More' }} />
+      <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ tabBarLabel: 'Tổng quan' }} />
+      <Tab.Screen name="Products" component={AdminProductsScreen} options={{ tabBarLabel: 'Sản phẩm' }} />
+      <Tab.Screen name="Khác" component={AdminMoreScreen} options={{ tabBarLabel: 'Thêm' }} />
     </Tab.Navigator>
   );
 }
 
 /**
- * Vendor tab navigator
+ * Người bán tab navigator
  */
 function VendorTabs() {
   return (
@@ -200,11 +199,11 @@ function VendorTabs() {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={VendorDashboardScreen} />
-      <Tab.Screen name="Orders" component={VendorOrdersScreen} />
-      <Tab.Screen name="MyProducts" component={VendorProductsScreen} />
-      <Tab.Screen name="Marketplace" component={MarketplaceScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Dashboard" component={VendorDashboardScreen} options={{ tabBarLabel: 'Trang chủ' }} />
+      <Tab.Screen name="Orders" component={VendorOrdersScreen} options={{ tabBarLabel: 'Đơn hàng' }} />
+      <Tab.Screen name="MyProducts" component={VendorProductsScreen} options={{ tabBarLabel: 'Sản phẩm' }} />
+      <Tab.Screen name="Marketplace" component={MarketplaceScreen} options={{ tabBarLabel: 'Chợ' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Hồ sơ' }} />
     </Tab.Navigator>
   );
 }
@@ -271,19 +270,26 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Profile"
               component={ProfileScreen}
-              options={{ title: 'Profile' }}
+              options={{ title: 'Hồ sơ' }}
             />
             <Stack.Screen
-              name="TopUp"
-              component={TopUpScreen}
-              options={{
-                title: 'Top Up Coins',
-                headerShown: false,
-              }}
+              name="Giao dịch"
+              component={TransactionsScreen}
+              options={{ title: 'Giao dịch' }}
+            />
+            <Stack.Screen
+              name="OrderTracking"
+              component={OrderTrackingScreen}
+              options={{ title: 'Theo dõi Đơn hàng' }}
+            />
+            <Stack.Screen
+              name="ProductDetail"
+              component={ProductDetailScreen}
+              options={{ title: 'Chi tiết Sản phẩm' }}
             />
           </>
         ) : user.role === 'vendor' ? (
-          // Vendor stack
+          // Người bán stack
           <>
             <Stack.Screen
               name="VendorMain"
@@ -291,28 +297,20 @@ export default function AppNavigator() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="TopUp"
-              component={TopUpScreen}
-              options={{
-                title: 'Top Up Coins',
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
               name="ProductDetail"
               component={ProductDetailScreen}
-              options={{ title: 'Product Details' }}
+              options={{ title: 'Chi tiết Sản phẩm' }}
             />
             <Stack.Screen
-              name="Transactions"
+              name="Giao dịch"
               component={TransactionsScreen}
-              options={{ title: 'Transactions' }}
+              options={{ title: 'Giao dịch' }}
             />
             <Stack.Screen
               name="ExpenseManagement"
               component={ExpenseManagementScreen}
               options={{
-                title: 'Expense Management',
+                title: 'Quản lý Chi tiêu',
                 headerShown: false,
               }}
             />
@@ -329,12 +327,12 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Checkout"
               component={CheckoutScreen}
-              options={{ title: 'Checkout' }}
+              options={{ title: 'Thanh toán' }}
             />
             <Stack.Screen
               name="OrderTracking"
               component={OrderTrackingScreen}
-              options={{ title: 'Order Tracking' }}
+              options={{ title: 'Theo dõi Đơn hàng' }}
             />
             <Stack.Screen
               name="VendorPackages"
@@ -342,20 +340,20 @@ export default function AppNavigator() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="Notifications"
+              name="Thông báo"
               component={NotificationsScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen
               name="NotificationPreferences"
               component={NotificationPreferencesScreen}
-              options={{ title: 'Notification Settings' }}
+              options={{ title: 'Cài đặt Thông báo' }}
             />
             <Stack.Screen
               name="VendorShop"
               component={VendorShopScreen}
               options={{
-                title: 'Vendor Shop',
+                title: 'Cửa hàng',
                 headerShown: false,
               }}
             />
@@ -363,7 +361,7 @@ export default function AppNavigator() {
               name="Chat"
               component={ChatScreen}
               options={{
-                title: 'AI Chat Assistant',
+                title: 'Trợ lý AI',
                 headerShown: false,
               }}
             />
@@ -371,7 +369,7 @@ export default function AppNavigator() {
               name="Social"
               component={SocialScreen}
               options={{
-                title: 'Social Discussions',
+                title: 'Thảo luận Cộng đồng',
                 headerShown: false,
               }}
             />
@@ -388,18 +386,18 @@ export default function AppNavigator() {
             <Stack.Screen
               name="ProductDetail"
               component={ProductDetailScreen}
-              options={{ title: 'Product Details' }}
+              options={{ title: 'Chi tiết Sản phẩm' }}
             />
             <Stack.Screen
-              name="Transactions"
+              name="Giao dịch"
               component={TransactionsScreen}
-              options={{ title: 'Transactions' }}
+              options={{ title: 'Giao dịch' }}
             />
             <Stack.Screen
               name="ExpenseManagement"
               component={ExpenseManagementScreen}
               options={{
-                title: 'Expense Management',
+                title: 'Quản lý Chi tiêu',
                 headerShown: false,
               }}
             />
@@ -416,33 +414,33 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Checkout"
               component={CheckoutScreen}
-              options={{ title: 'Checkout' }}
+              options={{ title: 'Thanh toán' }}
             />
             <Stack.Screen
               name="OrderTracking"
               component={OrderTrackingScreen}
-              options={{ title: 'Order Tracking' }}
+              options={{ title: 'Theo dõi Đơn hàng' }}
             />
             <Stack.Screen
-              name="Notifications"
+              name="Thông báo"
               component={NotificationsScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen
               name="NotificationPreferences"
               component={NotificationPreferencesScreen}
-              options={{ title: 'Notification Settings' }}
+              options={{ title: 'Cài đặt Thông báo' }}
             />
             <Stack.Screen
               name="VendorShop"
               component={VendorShopScreen}
-              options={{ title: 'Vendor Shop' }}
+              options={{ title: 'Cửa hàng' }}
             />
             <Stack.Screen
               name="Chat"
               component={ChatScreen}
               options={{
-                title: 'AI Chat Assistant',
+                title: 'Trợ lý AI',
                 headerShown: false,
               }}
             />
@@ -450,7 +448,7 @@ export default function AppNavigator() {
               name="Social"
               component={SocialScreen}
               options={{
-                title: 'Social Discussions',
+                title: 'Thảo luận Cộng đồng',
                 headerShown: false,
               }}
             />
@@ -458,23 +456,15 @@ export default function AppNavigator() {
               name="Messages"
               component={MessagesScreen}
               options={{
-                title: 'Messages',
+                title: 'Tin nhắn',
                 headerShown: false,
               }}
             />
             <Stack.Screen
-              name="Tasks"
+              name="Nhiệm vụ"
               component={TasksScreen}
               options={{
-                title: 'Tasks',
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="TopUp"
-              component={TopUpScreen}
-              options={{
-                title: 'Top Up Coins',
+                title: 'Nhiệm vụ',
                 headerShown: false,
               }}
             />

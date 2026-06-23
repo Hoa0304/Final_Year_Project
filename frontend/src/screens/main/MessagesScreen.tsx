@@ -125,7 +125,7 @@ export default function MessagesScreen() {
       refetchConversations();
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to send message');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to send message');
     },
   });
 
@@ -144,7 +144,7 @@ export default function MessagesScreen() {
       queryClient.invalidateQueries({ queryKey: ['messagingConversations'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to start conversation');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to start conversation');
     },
   });
 
@@ -308,13 +308,13 @@ export default function MessagesScreen() {
             )}
             <View>
               <Text style={styles.chatHeaderTitle}>{chatTitle}</Text>
-              <Text style={styles.chatHeaderStatus}>Active now</Text>
+              <Text style={styles.chatHeaderStatus}>Đang hoạt động</Text>
             </View>
           </View>
           <View style={{ width: 36 }} />
         </View>
 
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           ref={flatListRef}
           data={messagesData?.messages || []}
           renderItem={renderMessage}
@@ -332,8 +332,8 @@ export default function MessagesScreen() {
           ListEmptyComponent={
             <View style={styles.emptyMessages}>
               <Ionicons name="chatbubble-ellipses-outline" size={48} color="#1E293B" style={{ marginBottom: 12 }} />
-              <Text style={styles.emptyMessagesText}>No messages yet</Text>
-              <Text style={styles.emptyMessagesSubtext}>Start the conversation!</Text>
+              <Text style={styles.emptyMessagesText}>Chưa có tin nhắn nào</Text>
+              <Text style={styles.emptyMessagesSubtext}>Bắt đầu cuộc trò chuyện!</Text>
             </View>
           }
         />
@@ -345,7 +345,7 @@ export default function MessagesScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Type a message..."
+              placeholder="Nhập tin nhắn..."
               placeholderTextColor="#475569"
               value={messageText}
               onChangeText={setMessageText}
@@ -379,7 +379,7 @@ export default function MessagesScreen() {
         >
           <Ionicons name="chevron-back" size={22} color="#94A3B8" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={styles.headerTitle}>Tin nhắn</Text>
         <TouchableOpacity
           onPress={() => setShowSearchModal(true)}
           style={styles.newMessageButton}
@@ -388,7 +388,7 @@ export default function MessagesScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
+      <FlatList keyboardShouldPersistTaps="handled"
         data={conversations || []}
         renderItem={renderConversationItem}
         keyExtractor={(item) => item.id}
@@ -406,14 +406,14 @@ export default function MessagesScreen() {
             <View style={styles.emptyIconCircle}>
               <Ionicons name="chatbubbles-outline" size={40} color="#334155" />
             </View>
-            <Text style={styles.emptyText}>No conversations yet</Text>
-            <Text style={styles.emptySubtext}>Chat with other users or sellers!</Text>
+            <Text style={styles.emptyText}>Chưa có cuộc trò chuyện nào</Text>
+            <Text style={styles.emptySubtext}>Trò chuyện với người mua hoặc người bán!</Text>
             <TouchableOpacity
               style={styles.emptyCreateBtn}
               onPress={() => setShowSearchModal(true)}
             >
               <Ionicons name="create-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.emptyCreateBtnText}>Create new message</Text>
+              <Text style={styles.emptyCreateBtnText}>Tạo tin nhắn mới</Text>
             </TouchableOpacity>
           </View>
         }
@@ -427,7 +427,7 @@ export default function MessagesScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Message</Text>
+              <Text style={styles.modalTitle}>Tin nhắn mới</Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowSearchModal(false);
@@ -442,7 +442,7 @@ export default function MessagesScreen() {
               <Ionicons name="search" size={18} color="#475569" style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search users or sellers..."
+                placeholder="Tìm kiếm users or sellers..."
                 placeholderTextColor="#475569"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -454,7 +454,7 @@ export default function MessagesScreen() {
                 <ActivityIndicator size="small" color="#0ea5e9" />
               </View>
             ) : searchQuery.length > 0 && searchResults ? (
-              <FlatList
+              <FlatList keyboardShouldPersistTaps="handled"
                 data={searchResults}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
@@ -478,20 +478,20 @@ export default function MessagesScreen() {
                       )}
                     </View>
                     {item.id === user?.id && (
-                      <Text style={styles.selfBadge}>You</Text>
+                      <Text style={styles.selfBadge}>Bạn</Text>
                     )}
                   </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                   <View style={styles.searchEmpty}>
-                    <Text style={styles.searchEmptyText}>No users found</Text>
+                    <Text style={styles.searchEmptyText}>Không tìm thấy người dùng</Text>
                   </View>
                 }
               />
             ) : (
               <View style={styles.searchEmpty}>
                 <Ionicons name="search-outline" size={36} color="#1E293B" style={{ marginBottom: 12 }} />
-                <Text style={styles.searchEmptyText}>Start typing to search...</Text>
+                <Text style={styles.searchEmptyText}>Bắt đầu gõ để tìm kiếm...</Text>
               </View>
             )}
           </View>

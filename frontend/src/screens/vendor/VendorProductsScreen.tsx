@@ -60,7 +60,7 @@ export default function VendorProductsScreen() {
 
   const queryClient = useQueryClient();
 
-  // Fetch Vendor Analytics for weekly limit
+  // Fetch Người bán Analytics for weekly limit
   const { data: analyticsData } = useQuery({
     queryKey: ['vendorAnalytics', 30],
     queryFn: () => getVendorAnalytics(30),
@@ -91,10 +91,10 @@ export default function VendorProductsScreen() {
       queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
       setModalVisible(false);
       resetForm();
-      Alert.alert('Success', 'Product created successfully');
+      Alert.alert('Thành công', 'Product created successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to create product');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to create product');
     },
   });
 
@@ -107,10 +107,10 @@ export default function VendorProductsScreen() {
       queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
       setModalVisible(false);
       resetForm();
-      Alert.alert('Success', 'Product updated successfully');
+      Alert.alert('Thành công', 'Product updated successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update product');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update product');
     },
   });
 
@@ -121,10 +121,10 @@ export default function VendorProductsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
-      Alert.alert('Success', 'Product deleted successfully');
+      Alert.alert('Thành công', 'Product deleted successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to delete product');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to delete product');
     },
   });
 
@@ -138,10 +138,10 @@ export default function VendorProductsScreen() {
       setDiscountModalVisible(false);
       setSelectedProduct(null);
       setDiscountPercentage('');
-      Alert.alert('Success', 'Discount updated successfully');
+      Alert.alert('Thành công', 'Discount updated successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update discount');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update discount');
     },
   });
 
@@ -161,7 +161,7 @@ export default function VendorProductsScreen() {
     if (!canPostProduct) {
       Alert.alert(
         'Listing Limit',
-        'You have reached your product listing limit for this week. Please upgrade your package to list more.',
+        'Bạn have reached your product listing limit for this week. Please upgrade your package to list more.',
         [{ text: 'Close', style: 'cancel' }]
       );
       return;
@@ -186,7 +186,7 @@ export default function VendorProductsScreen() {
   const handleSave = () => {
     Keyboard.dismiss();
     if (!formData.name || !formData.price) {
-      Alert.alert('Error', 'Name and price are required');
+      Alert.alert('Lỗi', 'Name and price are required');
       return;
     }
 
@@ -234,7 +234,7 @@ export default function VendorProductsScreen() {
     const validation = validateDiscountPercentage(discountValue);
 
     if (!validation.isValid) {
-      Alert.alert('Error', validation.error || 'Invalid discount percentage');
+      Alert.alert('Lỗi', validation.error || 'Invalid discount percentage');
       return;
     }
 
@@ -265,17 +265,17 @@ export default function VendorProductsScreen() {
           <View style={styles.priceContainer}>
             {hasDiscount ? (
               <>
-                <Text style={styles.productPriceOriginal}>{item.price.toLocaleString('en-US')} VND</Text>
-                <Text style={styles.productPrice}>{finalPrice.toLocaleString('en-US')} <Text style={styles.currency}>VND</Text></Text>
+                <Text style={styles.productPriceOriginal}>{item.price.toLocaleString('en-US')} VNĐ</Text>
+                <Text style={styles.productPrice}>{finalPrice.toLocaleString('en-US')} <Text style={styles.currency}>VNĐ</Text></Text>
                 <View style={styles.discountBadge}>
                   <Text style={styles.discountBadgeText}>-{discountPercent.toFixed(0)}%</Text>
                 </View>
               </>
             ) : (
-              <Text style={styles.productPrice}>{item.price.toLocaleString('en-US')} <Text style={styles.currency}>VND</Text></Text>
+              <Text style={styles.productPrice}>{item.price.toLocaleString('en-US')} <Text style={styles.currency}>VNĐ</Text></Text>
             )}
           </View>
-          <Text style={styles.productStock}>Stock: <Text style={styles.stockValue}>{item.stock_quantity}</Text></Text>
+          <Text style={styles.productStock}>Kho: <Text style={styles.stockValue}>{item.stock_quantity}</Text></Text>
 
           <View style={styles.statusRow}>
             {item.category && <View style={styles.categoryBadge}><Text style={styles.categoryText}>{item.category}</Text></View>}
@@ -309,8 +309,8 @@ export default function VendorProductsScreen() {
       {/* Header */}
       <LinearGradient colors={['#0F172A', '#020617']} style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>My Products</Text>
-          <Text style={styles.headerSub}>Manage inventory</Text>
+          <Text style={styles.headerTitle}>Sản phẩm của tôi</Text>
+          <Text style={styles.headerSub}>Quản lý kho</Text>
         </View>
         <TouchableOpacity
           style={[styles.addButton, !canPostProduct && styles.addButtonDisabled]}
@@ -323,7 +323,7 @@ export default function VendorProductsScreen() {
       {/* Limit Indicator */}
       <View style={styles.limitContainer}>
         <View style={styles.limitHeader}>
-          <Text style={styles.limitLabel}>Listing limit this week</Text>
+          <Text style={styles.limitLabel}>Giới hạn đăng tin tuần này</Text>
           <Text style={styles.limitValue}>
             {productsThisWeek} / {productLimit === -1 ? '∞' : productLimit}
           </Text>
@@ -349,7 +349,7 @@ export default function VendorProductsScreen() {
             <ActivityIndicator size="large" color="#10B981" />
           </View>
         ) : (
-          <FlatList
+          <FlatList keyboardShouldPersistTaps="handled"
             data={response?.products || []}
             keyExtractor={(item) => item.id}
             renderItem={renderProduct}
@@ -357,7 +357,7 @@ export default function VendorProductsScreen() {
             ListEmptyComponent={
               <View style={styles.centerContainer}>
                 <Ionicons name="cube-outline" size={64} color="#334155" />
-                <Text style={styles.emptyText}>No products found.</Text>
+                <Text style={styles.emptyText}>Không tìm thấy sản phẩm nào.</Text>
               </View>
             }
           />
@@ -370,18 +370,18 @@ export default function VendorProductsScreen() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editingProduct ? 'Edit Product' : 'Create Product'}</Text>
+                <Text style={styles.modalTitle}>{editingProduct ? 'Sửa sản phẩm' : 'Tạo sản phẩm'}</Text>
                 <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
                   <Ionicons name="close" size={24} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Product Name *</Text>
+                  <Text style={styles.label}>Tên sản phẩm *</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Product name"
+                    placeholder="Tên sản phẩm"
                     placeholderTextColor="#64748B"
                     value={formData.name}
                     onChangeText={(text) => setFormData({ ...formData, name: text })}
@@ -389,7 +389,7 @@ export default function VendorProductsScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Description</Text>
+                  <Text style={styles.label}>Mô tả</Text>
                   <TextInput
                     style={[styles.input, styles.textArea]}
                     placeholder="Description"
@@ -402,7 +402,7 @@ export default function VendorProductsScreen() {
 
                 <View style={styles.row}>
                   <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
-                    <Text style={styles.label}>Product Price (VND) *</Text>
+                    <Text style={styles.label}>Product Giá (VNĐ) *</Text>
                     <TextInput
                       style={styles.input}
                       placeholder="0"
@@ -413,7 +413,7 @@ export default function VendorProductsScreen() {
                     />
                   </View>
                   <View style={[styles.inputGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Stock Quantity</Text>
+                    <Text style={styles.label}>Số lượng trong kho</Text>
                     <TextInput
                       style={styles.input}
                       placeholder="0"
@@ -426,10 +426,10 @@ export default function VendorProductsScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Category</Text>
+                  <Text style={styles.label}>Danh mục</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="e.g., Electronics, Fashion..."
+                    placeholder="VD: Điện tử, Thời trang..."
                     placeholderTextColor="#64748B"
                     value={formData.category}
                     onChangeText={(text) => setFormData({ ...formData, category: text })}
@@ -438,7 +438,7 @@ export default function VendorProductsScreen() {
 
                 <ImageUploadPicker
                   label="Image"
-                  placeholder="URL or upload"
+                  placeholder="URL hoặc tải lên"
                   value={formData.imageUrl}
                   onChange={(url) => setFormData({ ...formData, imageUrl: url })}
                   folder="products"
@@ -452,7 +452,7 @@ export default function VendorProductsScreen() {
                   {createMutation.isPending || updateMutation.isPending ? (
                     <ActivityIndicator color="#020617" size="small" />
                   ) : (
-                    <Text style={styles.saveButtonText}>{editingProduct ? 'Update' : 'Save Product'}</Text>
+                    <Text style={styles.saveButtonText}>{editingProduct ? 'Cập nhật' : 'Lưu sản phẩm'}</Text>
                   )}
                 </TouchableOpacity>
                 <View style={{ height: 20 }} />
@@ -468,7 +468,7 @@ export default function VendorProductsScreen() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Set Discount</Text>
+                <Text style={styles.modalTitle}>Cài đặt giảm giá</Text>
                 <TouchableOpacity onPress={() => setDiscountModalVisible(false)} style={styles.closeBtn}>
                   <Ionicons name="close" size={24} color="#94A3B8" />
                 </TouchableOpacity>
@@ -477,13 +477,13 @@ export default function VendorProductsScreen() {
               {selectedProduct && (
                 <>
                   <Text style={styles.discountProductName}>{selectedProduct.name}</Text>
-                  <Text style={styles.discountProductPrice}>Original Price: {selectedProduct.price.toLocaleString('en-US')} VND</Text>
+                  <Text style={styles.discountProductPrice}>Original Price: {selectedProduct.price.toLocaleString('en-US')} VNĐ</Text>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Discount % (0-100)</Text>
+                    <Text style={styles.label}>Phần trăm giảm (0-100)</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="e.g. 15"
+                      placeholder="VD: 15"
                       placeholderTextColor="#64748B"
                       value={discountPercentage}
                       onChangeText={setDiscountPercentage}
@@ -493,9 +493,9 @@ export default function VendorProductsScreen() {
 
                   {discountPercentage && !isNaN(parseFloat(discountPercentage)) && (
                     <View style={styles.discountPreview}>
-                      <Text style={styles.discountPreviewLabel}>Price after discount:</Text>
+                      <Text style={styles.discountPreviewLabel}>Giá sau giảm:</Text>
                       <Text style={styles.discountPreviewPrice}>
-                        {Math.round(calculateDiscountedPrice(selectedProduct.price, parseFloat(discountPercentage))).toLocaleString('en-US')} VND
+                        {Math.round(calculateDiscountedPrice(selectedProduct.price, parseFloat(discountPercentage))).toLocaleString('en-US')} VNĐ
                       </Text>
                     </View>
                   )}

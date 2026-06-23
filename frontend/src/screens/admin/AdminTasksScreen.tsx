@@ -115,10 +115,10 @@ export default function AdminTasksScreen() {
       queryClient.invalidateQueries({ queryKey: ['adminTasks'] });
       setModalVisible(false);
       resetForm();
-      Alert.alert('Success', 'Task created successfully');
+      Alert.alert('Thành công', 'Task created successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to create task');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to create task');
     },
   });
 
@@ -131,10 +131,10 @@ export default function AdminTasksScreen() {
       queryClient.invalidateQueries({ queryKey: ['adminTasks'] });
       setModalVisible(false);
       resetForm();
-      Alert.alert('Success', 'Task updated successfully');
+      Alert.alert('Thành công', 'Task updated successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update task');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update task');
     },
   });
 
@@ -145,10 +145,10 @@ export default function AdminTasksScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminTasks'] });
-      Alert.alert('Success', 'Task deleted successfully');
+      Alert.alert('Thành công', 'Task deleted successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to delete task');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to delete task');
     },
   });
 
@@ -238,7 +238,7 @@ export default function AdminTasksScreen() {
 
   const handleSave = () => {
     if (!formData.title || !formData.rewardAmount) {
-      Alert.alert('Error', 'Title and reward amount are required');
+      Alert.alert('Lỗi', 'Title and reward amount are required');
       return;
     }
 
@@ -314,10 +314,10 @@ export default function AdminTasksScreen() {
       <View style={styles.taskInfo}>
         <Text style={styles.taskTitle}>{item.title}</Text>
         {item.description && <Text style={styles.taskDescription}>{item.description}</Text>}
-        <Text style={styles.taskReward}>Reward: {Math.round(item.reward_amount).toLocaleString('vi-VN')} xu</Text>
+        <Text style={styles.taskReward}>Phần thưởng: {Math.round(item.reward_amount).toLocaleString('vi-VN')} xu</Text>
         <View style={styles.taskMeta}>
           <Text style={[styles.taskStatus, !item.is_active && styles.inactive]}>
-            {item.is_active ? 'Active' : 'Inactive'}
+            {item.is_active ? 'Hoạt động' : 'Inactive'}
           </Text>
           <Text style={styles.completionCount}>
             {item.completionCount !== undefined ? `${item.completionCount} completed` : '0 completed'}
@@ -345,7 +345,7 @@ export default function AdminTasksScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Tasks Management</Text>
+          <Text style={styles.headerTitle}>Quản lý nhiệm vụ</Text>
           <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
             <Ionicons name="add" size={24} color="#fff" />
           </TouchableOpacity>
@@ -353,17 +353,17 @@ export default function AdminTasksScreen() {
 
         {isLoading ? (
           <View style={styles.centerContainer}>
-            <Text>Loading...</Text>
+            <Text>Đang tải...</Text>
           </View>
         ) : (
-          <FlatList
+          <FlatList keyboardShouldPersistTaps="handled"
             data={response?.tasks || []}
             keyExtractor={(item) => item.id}
             renderItem={renderTask}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.centerContainer}>
-                <Text style={styles.emptyText}>No tasks found</Text>
+                <Text style={styles.emptyText}>Không tìm thấy nhiệm vụ</Text>
               </View>
             }
           />
@@ -406,10 +406,10 @@ export default function AdminTasksScreen() {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Task Title *</Text>
+                        <Text style={styles.label}>Tiêu đề nhiệm vụ *</Text>
                         <TextInput
                           style={styles.input}
-                          placeholder="Task Title *"
+                          placeholder="Tiêu đề nhiệm vụ *"
                           placeholderTextColor="#000"
                           value={formData.title}
                           onChangeText={(text) => setFormData({ ...formData, title: text })}
@@ -418,7 +418,7 @@ export default function AdminTasksScreen() {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Description</Text>
+                        <Text style={styles.label}>Mô tả</Text>
                         <TextInput
                           style={[styles.input, styles.textArea]}
                           placeholder="Description"
@@ -434,10 +434,10 @@ export default function AdminTasksScreen() {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Reward Amount *</Text>
+                        <Text style={styles.label}>Phần thưởng *</Text>
                         <TextInput
                           style={styles.input}
-                          placeholder="Reward Amount *"
+                          placeholder="Phần thưởng *"
                           placeholderTextColor="#000"
                           value={formData.rewardAmount}
                           onChangeText={(text) => setFormData({ ...formData, rewardAmount: text })}
@@ -448,22 +448,22 @@ export default function AdminTasksScreen() {
                       </View>
 
                       <View style={styles.switchContainer}>
-                        <Text style={styles.switchLabel}>Active</Text>
+                        <Text style={styles.switchLabel}>Hoạt động</Text>
                         <Switch
                           value={formData.isActive}
                           onValueChange={(value) => setFormData({ ...formData, isActive: value })}
                         />
                       </View>
 
-                      {/* Validation Rule Section */}
+                      {/* Quy tắc xác minh Section */}
                       <View style={styles.sectionDivider} />
-                      <Text style={styles.sectionTitle}>Validation Rule</Text>
+                      <Text style={styles.sectionTitle}>Quy tắc xác minh</Text>
                       <Text style={styles.sectionDescription}>
-                        Set how the system will check if users completed this task
+                        Cài đặt cách hệ thống kiểm tra nhiệm vụ
                       </Text>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Rule Type</Text>
+                        <Text style={styles.label}>Loại quy tắc</Text>
                         <TouchableOpacity
                           style={styles.selectButton}
                           onPress={() => setRuleTypePickerVisible(true)}
@@ -472,14 +472,13 @@ export default function AdminTasksScreen() {
                             {formData.validationRuleType === 'manual' && 'Manual (can complete directly)'}
                             {formData.validationRuleType === 'purchase' && 'Purchase Product(s)'}
                             {formData.validationRuleType === 'play_game' && 'Play Game(s)'}
-                            {formData.validationRuleType === 'buy_stock' && 'Buy Stock(s)'}
                             {formData.validationRuleType === 'complete_tasks' && 'Complete Task(s)'}
-                            {!formData.validationRuleType && 'Select Rule Type'}
+                            {!formData.validationRuleType && 'Select Loại quy tắc'}
                           </Text>
                           <Ionicons name="chevron-down" size={20} color="#666" />
                         </TouchableOpacity>
 
-                        {/* Rule Type Picker Modal */}
+                        {/* Loại quy tắc Picker Modal */}
                         <Modal
                           visible={ruleTypePickerVisible}
                           transparent={true}
@@ -491,17 +490,16 @@ export default function AdminTasksScreen() {
                               <TouchableWithoutFeedback onPress={() => { }}>
                                 <View style={styles.pickerModalContent}>
                                   <View style={styles.pickerModalHeader}>
-                                    <Text style={styles.pickerModalTitle}>Select Rule Type</Text>
+                                    <Text style={styles.pickerModalTitle}>Select Loại quy tắc</Text>
                                     <TouchableOpacity onPress={() => setRuleTypePickerVisible(false)}>
                                       <Ionicons name="close" size={24} color="#000" />
                                     </TouchableOpacity>
                                   </View>
-                                  <ScrollView>
+                                  <ScrollView keyboardShouldPersistTaps="handled">
                                     {[
                                       { label: 'Manual (can complete directly)', value: 'manual' },
                                       { label: 'Purchase Product(s)', value: 'purchase' },
                                       { label: 'Play Game(s)', value: 'play_game' },
-                                      { label: 'Buy Stock(s)', value: 'buy_stock' },
                                       { label: 'Complete Task(s)', value: 'complete_tasks' },
                                     ].map((option) => (
                                       <TouchableOpacity
@@ -539,7 +537,7 @@ export default function AdminTasksScreen() {
                       {formData.validationRuleType !== 'manual' && (
                         <>
                           <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Required Count</Text>
+                            <Text style={styles.label}>Số lượng yêu cầu</Text>
                             <TextInput
                               style={styles.input}
                               placeholder="1"
@@ -554,16 +552,16 @@ export default function AdminTasksScreen() {
 
                           {formData.validationRuleType === 'purchase' && (
                             <View style={styles.inputGroup}>
-                              <Text style={styles.label}>Select Product (optional)</Text>
+                              <Text style={styles.label}>Chọn sản phẩm (tuỳ chọn)</Text>
                               <Text style={styles.hintText}>
-                                Select a product or leave empty to allow any product. You can also enter keyword manually below.
+                                Chọn một sản phẩm hoặc để trống. Bạn cũng có thể nhập từ khoá bên dưới.
                               </Text>
                               <TouchableOpacity
                                 style={styles.selectButton}
                                 onPress={() => setProductPickerVisible(true)}
                               >
                                 <Text style={styles.selectButtonText}>
-                                  {formData.validationRuleProductName || 'Select Product (optional)'}
+                                  {formData.validationRuleProductName || 'Chọn sản phẩm (tuỳ chọn)'}
                                 </Text>
                                 <Ionicons name="chevron-down" size={20} color="#666" />
                               </TouchableOpacity>
@@ -580,12 +578,12 @@ export default function AdminTasksScreen() {
                                     <TouchableWithoutFeedback onPress={() => { }}>
                                       <View style={styles.pickerModalContent}>
                                         <View style={styles.pickerModalHeader}>
-                                          <Text style={styles.pickerModalTitle}>Select Product</Text>
+                                          <Text style={styles.pickerModalTitle}>Chọn sản phẩm</Text>
                                           <TouchableOpacity onPress={() => setProductPickerVisible(false)}>
                                             <Ionicons name="close" size={24} color="#000" />
                                           </TouchableOpacity>
                                         </View>
-                                        <ScrollView>
+                                        <ScrollView keyboardShouldPersistTaps="handled">
                                           <TouchableOpacity
                                             style={[
                                               styles.pickerOption,
@@ -607,7 +605,7 @@ export default function AdminTasksScreen() {
                                                 !formData.validationRuleProductId && styles.pickerOptionTextActive,
                                               ]}
                                             >
-                                              Any Product
+                                              Bất kỳ sản phẩm
                                             </Text>
                                             {!formData.validationRuleProductId && (
                                               <Ionicons name="checkmark" size={20} color="#007AFF" />
@@ -656,11 +654,11 @@ export default function AdminTasksScreen() {
                               </Modal>
 
                               <Text style={[styles.hintText, { marginTop: 10 }]}>
-                                Or enter keyword manually:
+                                Hoặc nhập từ khoá thủ công:
                               </Text>
                               <TextInput
                                 style={styles.input}
-                                placeholder="laptop, iPhone, etc."
+                                placeholder="laptop, iPhone, v.v..."
                                 placeholderTextColor="#000"
                                 value={formData.validationRuleProductKeyword}
                                 onChangeText={(text) => setFormData({ ...formData, validationRuleProductKeyword: text, validationRuleProductId: '', validationRuleProductName: '' })}
@@ -672,16 +670,16 @@ export default function AdminTasksScreen() {
 
                           {formData.validationRuleType === 'play_game' && (
                             <View style={styles.inputGroup}>
-                              <Text style={styles.label}>Select Game (optional)</Text>
+                              <Text style={styles.label}>Chọn trò chơi (tuỳ chọn)</Text>
                               <Text style={styles.hintText}>
-                                Select a specific game or leave empty to count any game
+                                Chọn trò chơi cụ thể hoặc để trống
                               </Text>
                               <TouchableOpacity
                                 style={styles.selectButton}
                                 onPress={() => setGamePickerVisible(true)}
                               >
                                 <Text style={styles.selectButtonText}>
-                                  {formData.validationRuleGameName || 'Select Game (optional)'}
+                                  {formData.validationRuleGameName || 'Chọn trò chơi (tuỳ chọn)'}
                                 </Text>
                                 <Ionicons name="chevron-down" size={20} color="#666" />
                               </TouchableOpacity>
@@ -698,12 +696,12 @@ export default function AdminTasksScreen() {
                                     <TouchableWithoutFeedback onPress={() => { }}>
                                       <View style={styles.pickerModalContent}>
                                         <View style={styles.pickerModalHeader}>
-                                          <Text style={styles.pickerModalTitle}>Select Game</Text>
+                                          <Text style={styles.pickerModalTitle}>Chọn trò chơi</Text>
                                           <TouchableOpacity onPress={() => setGamePickerVisible(false)}>
                                             <Ionicons name="close" size={24} color="#000" />
                                           </TouchableOpacity>
                                         </View>
-                                        <ScrollView>
+                                        <ScrollView keyboardShouldPersistTaps="handled">
                                           <TouchableOpacity
                                             style={[
                                               styles.pickerOption,
@@ -724,7 +722,7 @@ export default function AdminTasksScreen() {
                                                 !formData.validationRuleGameId && styles.pickerOptionTextActive,
                                               ]}
                                             >
-                                              Any Game
+                                              Bất kỳ trò chơi
                                             </Text>
                                             {!formData.validationRuleGameId && (
                                               <Ionicons name="checkmark" size={20} color="#007AFF" />
@@ -775,108 +773,7 @@ export default function AdminTasksScreen() {
                             </View>
                           )}
 
-                          {formData.validationRuleType === 'buy_stock' && (
-                            <View style={styles.inputGroup}>
-                              <Text style={styles.label}>Select Stock (optional)</Text>
-                              <Text style={styles.hintText}>
-                                Select a specific stock or leave empty to count any stock
-                              </Text>
-                              <TouchableOpacity
-                                style={styles.selectButton}
-                                onPress={() => setStockPickerVisible(true)}
-                              >
-                                <Text style={styles.selectButtonText}>
-                                  {formData.validationRuleStockName || formData.validationRuleStockSymbol || 'Select Stock (optional)'}
-                                </Text>
-                                <Ionicons name="chevron-down" size={20} color="#666" />
-                              </TouchableOpacity>
 
-                              {/* Stock Picker Modal */}
-                              <Modal
-                                visible={stockPickerVisible}
-                                transparent={true}
-                                animationType="slide"
-                                onRequestClose={() => setStockPickerVisible(false)}
-                              >
-                                <TouchableWithoutFeedback onPress={() => setStockPickerVisible(false)}>
-                                  <View style={styles.pickerModalOverlay}>
-                                    <TouchableWithoutFeedback onPress={() => { }}>
-                                      <View style={styles.pickerModalContent}>
-                                        <View style={styles.pickerModalHeader}>
-                                          <Text style={styles.pickerModalTitle}>Select Stock</Text>
-                                          <TouchableOpacity onPress={() => setStockPickerVisible(false)}>
-                                            <Ionicons name="close" size={24} color="#000" />
-                                          </TouchableOpacity>
-                                        </View>
-                                        <ScrollView>
-                                          <TouchableOpacity
-                                            style={[
-                                              styles.pickerOption,
-                                              !formData.validationRuleStockSymbol && styles.pickerOptionActive,
-                                            ]}
-                                            onPress={() => {
-                                              setFormData({
-                                                ...formData,
-                                                validationRuleStockSymbol: '',
-                                                validationRuleStockName: '',
-                                              });
-                                              setStockPickerVisible(false);
-                                            }}
-                                          >
-                                            <Text
-                                              style={[
-                                                styles.pickerOptionText,
-                                                !formData.validationRuleStockSymbol && styles.pickerOptionTextActive,
-                                              ]}
-                                            >
-                                              Any Stock
-                                            </Text>
-                                            {!formData.validationRuleStockSymbol && (
-                                              <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                            )}
-                                          </TouchableOpacity>
-                                          {stocks.map((stock) => (
-                                            <TouchableOpacity
-                                              key={stock.id}
-                                              style={[
-                                                styles.pickerOption,
-                                                formData.validationRuleStockSymbol === stock.symbol && styles.pickerOptionActive,
-                                              ]}
-                                              onPress={() => {
-                                                setFormData({
-                                                  ...formData,
-                                                  validationRuleStockSymbol: stock.symbol,
-                                                  validationRuleStockName: stock.name,
-                                                });
-                                                setStockPickerVisible(false);
-                                              }}
-                                            >
-                                              <View style={{ flex: 1 }}>
-                                                <Text
-                                                  style={[
-                                                    styles.pickerOptionText,
-                                                    formData.validationRuleStockSymbol === stock.symbol && styles.pickerOptionTextActive,
-                                                  ]}
-                                                >
-                                                  {stock.symbol} - {stock.name}
-                                                </Text>
-                                                <Text style={styles.pickerOptionSubtext}>
-                                                  Price: {stock.current_price.toFixed(2)} coins
-                                                </Text>
-                                              </View>
-                                              {formData.validationRuleStockSymbol === stock.symbol && (
-                                                <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                              )}
-                                            </TouchableOpacity>
-                                          ))}
-                                        </ScrollView>
-                                      </View>
-                                    </TouchableWithoutFeedback>
-                                  </View>
-                                </TouchableWithoutFeedback>
-                              </Modal>
-                            </View>
-                          )}
                         </>
                       )}
 
@@ -889,7 +786,7 @@ export default function AdminTasksScreen() {
                           {createMutation.isPending || updateMutation.isPending
                             ? 'Saving...'
                             : editingTask
-                              ? 'Update'
+                              ? 'Cập nhật'
                               : 'Create'}
                         </Text>
                       </TouchableOpacity>

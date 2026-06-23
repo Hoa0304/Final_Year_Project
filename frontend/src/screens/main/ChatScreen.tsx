@@ -78,7 +78,7 @@ export default function ChatScreen() {
     },
     onError: (error: any) => {
       setIsSending(false);
-      Alert.alert('Error', error.response?.data?.error || 'Failed to send message. Please try again.', [{ text: 'OK' }]);
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to send message. Please try again.', [{ text: 'OK' }]);
     },
   });
 
@@ -110,7 +110,7 @@ export default function ChatScreen() {
         id: 'temp-greeting',
         conversation_id: conversation.id,
         role: 'assistant',
-        content: `Hello! I am the HMall AI Assistant. I can help you with:\n\n• Expense & budget management\n• Product & voucher consultation\n• App usage guidelines\n• Financial & investment advice\n• And much more!\n\nHow can I help you today? 😊`,
+        content: `Hello! I am the HMall Trợ lý AI. I can help you with:\n\n• Expense & budget management\n• Product & voucher consultation\n• App usage guidelines\n• Financial & investment advice\n• And much more!\n\nHow can I help you today? 😊`,
         created_at: new Date().toISOString(),
       };
       setOptimisticGreeting(greetingMessage);
@@ -119,7 +119,7 @@ export default function ChatScreen() {
       }, 1000);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to create conversation.', [{ text: 'OK' }]);
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to create conversation.', [{ text: 'OK' }]);
     },
   });
 
@@ -229,7 +229,7 @@ export default function ChatScreen() {
             <View style={styles.aiBadge}>
               <Ionicons name="sparkles" size={14} color="#0ea5e9" />
             </View>
-            <Text style={styles.headerTitle}>AI Chat Assistant</Text>
+            <Text style={styles.headerTitle}>Trợ lý AI Chat</Text>
           </View>
           <TouchableOpacity
             onPress={() => setShowConversations(!showConversations)}
@@ -244,19 +244,19 @@ export default function ChatScreen() {
           {showConversations && (
             <View style={styles.sidebar}>
               <View style={styles.sidebarHeader}>
-                <Text style={styles.sidebarTitle}>History</Text>
+                <Text style={styles.sidebarTitle}>Lịch sử</Text>
                 <TouchableOpacity onPress={handleNewConversation} style={styles.newConvBtn}>
                   <Ionicons name="add" size={20} color="#0ea5e9" />
                 </TouchableOpacity>
               </View>
-              <FlatList
+              <FlatList keyboardShouldPersistTaps="handled"
                 data={conversations}
                 renderItem={renderConversationItem}
                 keyExtractor={(item) => item.id}
                 ListEmptyComponent={
                   <View style={styles.sidebarEmpty}>
                     <Ionicons name="chatbubbles-outline" size={36} color="#1E293B" />
-                    <Text style={styles.sidebarEmptyText}>No conversations yet</Text>
+                    <Text style={styles.sidebarEmptyText}>Chưa có cuộc trò chuyện nào</Text>
                   </View>
                 }
               />
@@ -270,9 +270,9 @@ export default function ChatScreen() {
                 <View style={styles.welcomeIconCircle}>
                   <Ionicons name="sparkles" size={40} color="#0ea5e9" />
                 </View>
-                <Text style={styles.welcomeTitle}>Welcome to AI Chat</Text>
+                <Text style={styles.welcomeTitle}>Chào mừng đến Trợ lý AI</Text>
                 <Text style={styles.welcomeText}>
-                  Ask me anything about HMall, finance, or life!
+                  Hãy hỏi tôi bất kỳ điều gì về tài chính, mua sắm!
                 </Text>
                 <TouchableOpacity
                   style={[styles.startBtn, createConversationMutation.isPending && styles.startBtnDisabled]}
@@ -284,14 +284,14 @@ export default function ChatScreen() {
                   ) : (
                     <>
                       <Ionicons name="add-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
-                      <Text style={styles.startBtnText}>Start Conversation</Text>
+                      <Text style={styles.startBtnText}>Bắt đầu</Text>
                     </>
                   )}
                 </TouchableOpacity>
 
                 {/* Quick questions */}
                 <View style={styles.quickSection}>
-                  <Text style={styles.quickTitle}>Suggested Questions</Text>
+                  <Text style={styles.quickTitle}>Câu hỏi gợi ý</Text>
                   {quickQuestions.map((q, i) => (
                     <TouchableOpacity
                       key={i}
@@ -310,11 +310,11 @@ export default function ChatScreen() {
             ) : messages.length === 0 ? (
               <View style={styles.welcomeContainer}>
                 <ActivityIndicator size="large" color="#0ea5e9" />
-                <Text style={styles.loadingText}>Initializing conversation...</Text>
+                <Text style={styles.loadingText}>Đang khởi tạo cuộc trò chuyện...</Text>
               </View>
             ) : (
               <>
-                <FlatList
+                <FlatList keyboardShouldPersistTaps="handled"
                   ref={flatListRef}
                   data={messages}
                   renderItem={renderMessage}
@@ -328,7 +328,7 @@ export default function ChatScreen() {
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={styles.input}
-                    placeholder="Type a message..."
+                    placeholder="Nhập tin nhắn..."
                     placeholderTextColor="#475569"
                     value={messageText}
                     onChangeText={setMessageText}

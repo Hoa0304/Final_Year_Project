@@ -31,27 +31,27 @@ export default function AdminMoreScreen() {
   const menuItems: AdminMenuItem[] = [
     {
       id: 'orders',
-      title: 'Order Management',
+      title: 'Quản lý đơn hàng',
       icon: 'receipt',
-      screen: 'Orders', // navigates to AdminOrdersScreen
+      screen: 'Orders',
       color: '#3B82F6',
-      description: 'Track and process all orders',
+      description: 'Theo dõi và xử lý tất cả đơn hàng',
     },
     {
       id: 'vendors',
-      title: 'Vendor Analytics',
+      title: 'Phân tích Người bán',
       icon: 'stats-chart',
-      screen: 'Vendors', // navigates to AdminVendorStatsScreen
+      screen: 'Vendors',
       color: '#10B981',
-      description: 'Statistics and revenue of vendor shops',
+      description: 'Thống kê và doanh thu của các shop',
     },
     {
       id: 'profile',
-      title: 'Profile',
+      title: 'Hồ sơ',
       icon: 'person',
-      screen: 'Profile', // navigates to ProfileScreen
+      screen: 'Profile',
       color: '#8B5CF6',
-      description: 'Administrator account details',
+      description: 'Chi tiết tài khoản quản trị viên',
     },
   ];
 
@@ -69,20 +69,26 @@ export default function AdminMoreScreen() {
       {/* Header */}
       <LinearGradient colors={['#1E1B4B', '#0F172A']} style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>System</Text>
-          <Text style={styles.headerSubtitle}>Manage extended administrator features</Text>
+          <Text style={styles.headerTitle}>Hệ thống</Text>
+          <Text style={styles.headerSubtitle}>Quản lý tính năng quản trị mở rộng</Text>
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Extended Features</Text>
+          <Text style={styles.sectionTitle}>Tính năng mở rộng</Text>
           <View style={styles.menuGrid}>
             {menuItems.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={styles.menuItem}
-                onPress={() => navigation.navigate(item.screen)}
+                onPress={() => {
+                  if (item.screen === 'Vendors') {
+                    navigation.navigate(item.screen, { filter: 'vendors_only' });
+                  } else {
+                    navigation.navigate(item.screen);
+                  }
+                }}
                 activeOpacity={0.7}
               >
                 <LinearGradient
@@ -100,7 +106,7 @@ export default function AdminMoreScreen() {
           </View>
         </View>
 
-        {/* Security & Logout */}
+        {/* Bảo mật & Logout */}
         <View style={styles.logoutSection}>
           <TouchableOpacity
             style={styles.logoutButton}
@@ -108,9 +114,9 @@ export default function AdminMoreScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="log-out-outline" size={20} color="#EF4444" style={{ marginRight: 8 }} />
-            <Text style={styles.logoutText}>Log Out Account</Text>
+            <Text style={styles.logoutText}>Đăng xuất tài khoản</Text>
           </TouchableOpacity>
-          <Text style={styles.versionText}>HMall Admin Console • Version 1.0.0</Text>
+          <Text style={styles.versionText}>Bảng quản trị HMall • Phiên bản 1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

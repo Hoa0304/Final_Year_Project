@@ -114,11 +114,25 @@ export async function getUserStats(req: Request, res: Response) {
 
     const totalBalance = balanceData?.reduce((sum, user) => sum + parseFloat(user.virtual_balance.toString()), 0) || 0;
 
+    // Count vendors
+    const { count: vendorCount } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'vendor');
+
+    // Count clients (user)
+    const { count: clientCount } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'user');
+
     res.json({
       totalUsers,
       totalTransactions,
       totalBalance,
-      averageBalance: totalUsers ? totalBalance / totalUsers : 0
+      averageBalance: totalUsers ? totalBalance / totalUsers : 0,
+      vendorCount: vendorCount || 0,
+      clientCount: clientCount || 0
     });
   } catch (error) {
     console.error('Get user stats error:', error);
@@ -134,7 +148,7 @@ export async function getProducts(req: Request, res: Response) {
     // Admin can see all products (active and inactive), no limit
     const { data: products, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, vendor:created_by(email, full_name)')
       .order('created_at', { ascending: false })
       .limit(10000); // Set a high limit to get all products
 

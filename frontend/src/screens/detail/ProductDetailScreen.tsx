@@ -99,7 +99,7 @@ export default function ProductDetailScreen() {
 
       let message = 'Product purchased successfully!';
 
-      Alert.alert('Success', message, [
+      Alert.alert('Thành công', message, [
         {
           text: 'OK',
           onPress: () => {
@@ -112,7 +112,7 @@ export default function ProductDetailScreen() {
       ]);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to purchase product');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to purchase product');
     },
   });
 
@@ -120,10 +120,10 @@ export default function ProductDetailScreen() {
     mutationFn: () => addToCart(productId, quantity),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      Alert.alert('Success', 'Product added to cart!');
+      Alert.alert('Thành công', 'Product added to cart!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to add product to cart');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to add product to cart');
     },
   });
 
@@ -136,10 +136,10 @@ export default function ProductDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['products'] }); // Update average rating in product list
       setShowRatingModal(false);
       setReviewText('');
-      Alert.alert('Success', 'Review submitted successfully!');
+      Alert.alert('Thành công', 'Review submitted successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to submit review');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to submit review');
     },
   });
 
@@ -151,10 +151,10 @@ export default function ProductDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       setShowRatingModal(false);
       setReviewText('');
-      Alert.alert('Success', 'Review updated successfully!');
+      Alert.alert('Thành công', 'Review updated successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update review');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update review');
     },
   });
 
@@ -165,10 +165,10 @@ export default function ProductDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['productRatings', productId] });
       queryClient.invalidateQueries({ queryKey: ['userRating', productId] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      Alert.alert('Success', 'Review deleted successfully!');
+      Alert.alert('Thành công', 'Review deleted successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to delete review');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to delete review');
     },
   });
 
@@ -182,11 +182,11 @@ export default function ProductDetailScreen() {
   function handlePurchase() {
     if (!product) return;
     if (quantity < 1) {
-      Alert.alert('Error', 'Quantity must be at least 1');
+      Alert.alert('Lỗi', 'Quantity must be at least 1');
       return;
     }
     if (product.stock_quantity < quantity) {
-      Alert.alert('Error', 'Insufficient stock');
+      Alert.alert('Lỗi', 'Insufficient stock');
       return;
     }
 
@@ -198,7 +198,7 @@ export default function ProductDetailScreen() {
     if (!hasPurchased) {
       Alert.alert(
         'Purchase Required',
-        'You must purchase this product before you can rate and review it.',
+        'Bạn must purchase this product before you can rate and review it.',
         [{ text: 'OK' }]
       );
       return;
@@ -216,7 +216,7 @@ export default function ProductDetailScreen() {
 
   function handleSubmitRating() {
     if (ratingValue < 1 || ratingValue > 5) {
-      Alert.alert('Error', 'Please select a star rating');
+      Alert.alert('Lỗi', 'Please select a star rating');
       return;
     }
 
@@ -259,7 +259,7 @@ export default function ProductDetailScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0ea5e9" />
-        <Text style={{ color: '#94A3B8', marginTop: 12, fontSize: 16 }}>Loading product details...</Text>
+        <Text style={{ color: '#94A3B8', marginTop: 12, fontSize: 16 }}>Đang tải chi tiết sản phẩm...</Text>
       </View>
     );
   }
@@ -272,14 +272,14 @@ export default function ProductDetailScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView style={styles.container}>
+        <ScrollView keyboardShouldPersistTaps="handled" style={styles.container}>
 
           {product.image_url ? (
             <Image source={{ uri: product.image_url }} style={styles.image} />
           ) : (
             <View style={styles.imagePlaceholder}>
               <Ionicons name="image-outline" size={48} color="#475569" />
-              <Text style={styles.imagePlaceholderText}>No image available</Text>
+              <Text style={styles.imagePlaceholderText}>Không có hình ảnh</Text>
             </View>
           )}
 
@@ -292,32 +292,32 @@ export default function ProductDetailScreen() {
               {product.hasDiscount && product.discountedPrice ? (
                 <>
                   <View style={styles.priceRow}>
-                    <Text style={styles.priceOriginal}>{Math.round(product.price).toLocaleString('en-US')} VND</Text>
+                    <Text style={styles.priceOriginal}>{Math.round(product.price).toLocaleString('en-US')} VNĐ</Text>
                     <View style={styles.discountBadge}>
                       <Text style={styles.discountBadgeText}>
                         {product.discount_percentage}% OFF
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.price}>{Math.round(product.discountedPrice).toLocaleString('en-US')} VND</Text>
+                  <Text style={styles.price}>{Math.round(product.discountedPrice).toLocaleString('en-US')} VNĐ</Text>
                   <Text style={styles.savingsText}>
-                    You save {Math.round(calculateDiscountAmount(product.price, product.discount_percentage)).toLocaleString('en-US')} VND!
+                    Bạn save {Math.round(calculateDiscountAmount(product.price, product.discount_percentage)).toLocaleString('en-US')} VNĐ!
                   </Text>
                 </>
               ) : (
-                <Text style={styles.price}>{Math.round(product.price).toLocaleString('en-US')} VND</Text>
+                <Text style={styles.price}>{Math.round(product.price).toLocaleString('en-US')} VNĐ</Text>
               )}
             </View>
 
             {product.description && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Product Description</Text>
+                <Text style={styles.sectionTitle}>Mô tả sản phẩm</Text>
                 <Text style={styles.description}>{product.description}</Text>
               </View>
             )}
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Inventory Info</Text>
+              <Text style={styles.sectionTitle}>Thông tin kho</Text>
               <Text style={styles.stockText}>
                 {product.stock_quantity > 0
                   ? `${product.stock_quantity} items remaining`
@@ -326,7 +326,7 @@ export default function ProductDetailScreen() {
             </View>
 
             <View style={styles.quantitySection}>
-              <Text style={styles.quantityLabel}>Quantity:</Text>
+              <Text style={styles.quantityLabel}>Số lượng:</Text>
               <View style={styles.quantityControls}>
                 <TouchableOpacity
                   style={styles.quantityButton}
@@ -345,7 +345,7 @@ export default function ProductDetailScreen() {
             </View>
 
             <Text style={styles.totalPrice}>
-              Total: {Math.round(calculateTotalPrice()).toLocaleString('en-US')} VND
+              Total: {Math.round(calculateTotalPrice()).toLocaleString('en-US')} VNĐ
             </Text>
 
             <View style={styles.actionButtons}>
@@ -363,7 +363,7 @@ export default function ProductDetailScreen() {
                 ) : (
                   <>
                     <Ionicons name="cart-outline" size={20} color="#0ea5e9" />
-                    <Text style={styles.addToCartButtonText}>Add to Cart</Text>
+                    <Text style={styles.addToCartButtonText}>Thêm vào giỏ</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -387,11 +387,11 @@ export default function ProductDetailScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Similar Products Section */}
+            {/* Sản phẩm tương tự Section */}
             {filteredSimilarProducts.length > 0 && (
               <View style={styles.similarProductsSection}>
-                <Text style={styles.sectionTitle}>Similar Products</Text>
-                <ScrollView
+                <Text style={styles.sectionTitle}>Sản phẩm tương tự</Text>
+                <ScrollView keyboardShouldPersistTaps="handled"
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.similarProductsContent}
@@ -421,7 +421,7 @@ export default function ProductDetailScreen() {
                         {p.name}
                       </Text>
                       <Text style={styles.similarProductPrice}>
-                        {Math.round(p.price).toLocaleString('en-US')} VND
+                        {Math.round(p.price).toLocaleString('en-US')} VNĐ
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -432,7 +432,7 @@ export default function ProductDetailScreen() {
             {/* Ratings Section */}
             <View style={styles.ratingsSection}>
               <View style={styles.ratingsHeader}>
-                <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
+                <Text style={styles.sectionTitle}>Đánh giá & Nhận xét</Text>
                 {ratingsData && (
                   <View style={styles.ratingSummary}>
                     <StarRating
@@ -451,21 +451,21 @@ export default function ProductDetailScreen() {
               {userRating ? (
                 <View style={styles.userRatingCard}>
                   <View style={styles.userRatingHeader}>
-                    <Text style={styles.userRatingTitle}>Your Rating</Text>
+                    <Text style={styles.userRatingTitle}>Đánh giá của bạn</Text>
                     <View style={styles.userRatingActions}>
                       <TouchableOpacity
                         onPress={handleOpenRatingModal}
                         style={styles.editButton}
                       >
                         <Ionicons name="create-outline" size={18} color="#0ea5e9" />
-                        <Text style={styles.editButtonText}>Edit</Text>
+                        <Text style={styles.editButtonText}>Sửa</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={handleDeleteRating}
                         style={styles.deleteButton}
                       >
                         <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-                        <Text style={styles.deleteButtonText}>Delete</Text>
+                        <Text style={styles.deleteButtonText}>Xóa</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -480,13 +480,13 @@ export default function ProductDetailScreen() {
                   onPress={handleOpenRatingModal}
                 >
                   <Ionicons name="star-outline" size={20} color="#0ea5e9" />
-                  <Text style={styles.rateButtonText}>Rate this product</Text>
+                  <Text style={styles.rateButtonText}>Đánh giá sản phẩm này</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.rateButtonDisabled}>
                   <Ionicons name="star-outline" size={20} color="#64748B" />
                   <Text style={styles.rateButtonTextDisabled}>
-                    Purchase this product to write a review
+                    Mua sản phẩm để viết đánh giá
                   </Text>
                 </View>
               )}
@@ -494,7 +494,7 @@ export default function ProductDetailScreen() {
               {/* Reviews List */}
               {ratingsData && ratingsData.ratings.length > 0 && (
                 <View style={styles.reviewsList}>
-                  <Text style={styles.reviewsTitle}>Recent Reviews</Text>
+                  <Text style={styles.reviewsTitle}>Đánh giá gần đây</Text>
                   {ratingsData.ratings.slice(0, 5).map((rating) => (
                     <View key={rating.id} style={styles.reviewCard}>
                       <View style={styles.reviewHeader}>
@@ -536,9 +536,9 @@ export default function ProductDetailScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView style={styles.modalBody}>
+                <ScrollView keyboardShouldPersistTaps="handled" style={styles.modalBody}>
                   <View style={styles.ratingInputSection}>
-                    <Text style={styles.ratingLabel}>Star Rating</Text>
+                    <Text style={styles.ratingLabel}>Đánh giá sao</Text>
                     <StarRating
                       rating={ratingValue}
                       onRatingChange={setRatingValue}
@@ -547,10 +547,10 @@ export default function ProductDetailScreen() {
                   </View>
 
                   <View style={styles.reviewInputSection}>
-                    <Text style={styles.ratingLabel}>Review (Optional)</Text>
+                    <Text style={styles.ratingLabel}>Nhận xét (Tuỳ chọn)</Text>
                     <TextInput
                       style={styles.reviewInput}
-                      placeholder="Share your experience about this product..."
+                      placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
                       placeholderTextColor="#64748B"
                       multiline
                       numberOfLines={4}
@@ -566,7 +566,7 @@ export default function ProductDetailScreen() {
                     style={[styles.modalButton, styles.modalButtonSecondary]}
                     onPress={() => setShowRatingModal(false)}
                   >
-                    <Text style={styles.modalButtonTextSecondary}>Cancel</Text>
+                    <Text style={styles.modalButtonTextSecondary}>Hủy</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.modalButton, styles.modalButtonPrimary]}
@@ -577,7 +577,7 @@ export default function ProductDetailScreen() {
                       <ActivityIndicator color="#fff" />
                     ) : (
                       <Text style={styles.modalButtonTextPrimary}>
-                        {userRating ? 'Update' : 'Submit'}
+                        {userRating ? 'Cập nhật' : 'Submit'}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // Similar Products Section Styles
+  // Sản phẩm tương tự Section Styles
   similarProductsSection: {
     marginTop: 24,
     paddingTop: 20,

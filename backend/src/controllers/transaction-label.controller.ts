@@ -88,6 +88,19 @@ export async function updateTransactionLabel(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Label is required' });
     }
 
+    const MASTER_CATEGORIES = ['Shopping', 'Electronics', 'Entertainment', 'Earnings', 'Investment', 'Food', 'Transportation', 'Bills', 'Reward', 'Other'];
+    
+    const isMasterCategory = MASTER_CATEGORIES.includes(label);
+    const isSubCategory = MASTER_CATEGORIES.some(master => label.startsWith(`${master} - `) || label.startsWith(`${master} / `));
+    
+    if (!isMasterCategory && !isSubCategory) {
+      return res.status(400).json({ 
+        error: 'Invalid category label', 
+        message: 'Label must be one of the master categories or a valid sub-category (e.g. "Food - Lunch").',
+        validCategories: MASTER_CATEGORIES 
+      });
+    }
+
     // Get the transaction to check ownership
     const { data: transaction, error: fetchError } = await supabase
       .from('transactions')
@@ -218,8 +231,17 @@ export async function categorizeTransaction(req: AuthRequest, res: Response) {
         })) || []
       });
 
-      const suggestedLabel = response.data.category || 'other';
+      let suggestedLabel = response.data.category || 'Other';
       const confidence = response.data.confidence || 0.5;
+
+      // Ensure suggestedLabel is valid
+      const MASTER_CATEGORIES = ['Shopping', 'Electronics', 'Entertainment', 'Earnings', 'Investment', 'Food', 'Transportation', 'Bills', 'Reward', 'Other'];
+      const matchedMaster = MASTER_CATEGORIES.find(c => c.toLowerCase() === suggestedLabel.toLowerCase());
+      if (matchedMaster) {
+        suggestedLabel = matchedMaster;
+      } else if (!MASTER_CATEGORIES.some(master => suggestedLabel.startsWith(`${master} - `) || suggestedLabel.startsWith(`${master} / `))) {
+        suggestedLabel = 'Other';
+      }
 
       // Check if label already exists (manual override takes precedence)
       const { data: existingLabel } = await supabase
@@ -357,13 +379,18 @@ export async function getLabelBasedSuggestions(req: AuthRequest, res: Response) 
       .eq('id', userId)
       .single();
 
-    // Get products matching top labels
+    // Get products matching top labels and include Investment explicitly
+    const queryLabels = [...topLabels];
+    if (!queryLabels.map(l => l.toLowerCase()).includes('investment')) {
+      queryLabels.push('Investment');
+    }
+
     const { data: products } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
-      .in('category', topLabels.length > 0 ? topLabels : ['electronics', 'groceries', 'entertainment'])
-      .limit(10);
+      .in('category', queryLabels.length > 0 ? queryLabels : ['electronics', 'groceries', 'entertainment'])
+      .limit(15);
 
     // Get recent purchases to avoid suggesting recently bought items
     const { data: recentOrders } = await supabase
@@ -382,11 +409,14 @@ export async function getLabelBasedSuggestions(req: AuthRequest, res: Response) 
     // Sort by relevance (category match) and price
     const suggestions = suggestedProducts
       .map(product => {
-        const relevance = topLabels.includes(product.category?.toLowerCase() || '') ? 1 : 0.5;
+        const isInvestment = product.category?.toLowerCase() === 'investment';
+        const isTopLabel = topLabels.includes(product.category?.toLowerCase() || '');
+        const relevance = isInvestment ? 1.5 : (isTopLabel ? 1 : 0.5);
         return {
           product,
           relevance,
-          matchesLabel: topLabels.includes(product.category?.toLowerCase() || '')
+          matchesLabel: isTopLabel,
+          isInvestment
         };
       })
       .sort((a, b) => {
@@ -400,9 +430,11 @@ export async function getLabelBasedSuggestions(req: AuthRequest, res: Response) 
         price: s.product.price,
         category: s.product.category,
         imageUrl: s.product.image_url,
-        reason: s.matchesLabel 
-          ? `Based on your ${topLabels[0]} purchases` 
-          : 'Recommended for you'
+        reason: s.isInvestment 
+          ? 'Consider investing to grow your wealth instead of spending.'
+          : (s.matchesLabel && topLabels.length > 0
+            ? `Based on your ${topLabels[0]} purchases` 
+            : 'Recommended for you')
       }));
 
     res.json({
@@ -422,30 +454,38 @@ export async function getLabelBasedSuggestions(req: AuthRequest, res: Response) 
 export async function getExpenseStatistics(req: AuthRequest, res: Response) {
   try {
     const userId = req.user!.userId;
-    const { period = 'month' } = req.query; // 'day', 'week', 'month', 'year'
+    const { period = 'month', startDate: customStartDate, endDate: customEndDate } = req.query;
 
-    // Calculate date range based on period
+    // Calculate date range
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = now;
     
-    switch (period) {
-      case 'day':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'week':
-        const dayOfWeek = now.getDay();
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - dayOfWeek);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (customStartDate) {
+      startDate = new Date(customStartDate as string);
+      if (customEndDate) {
+        endDate = new Date(customEndDate as string);
+      }
+    } else {
+      switch (period) {
+        case 'day':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          const dayOfWeek = now.getDay();
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - dayOfWeek);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
     }
 
     // Get all spending transactions in the period
@@ -464,6 +504,7 @@ export async function getExpenseStatistics(req: AuthRequest, res: Response) {
       .eq('user_id', userId)
       .in('type', ['spend', 'revoke'])
       .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
       .order('created_at', { ascending: false });
 
     if (transError) {
@@ -477,7 +518,8 @@ export async function getExpenseStatistics(req: AuthRequest, res: Response) {
       .select('amount, type, created_at')
       .eq('user_id', userId)
       .in('type', ['earn', 'grant', 'task_reward', 'stock_profit'])
-      .gte('created_at', startDate.toISOString());
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
 
     // Calculate totals
     const totalSpending = transactions?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
@@ -556,30 +598,38 @@ export async function getExpenseStatistics(req: AuthRequest, res: Response) {
 export async function getExpenseInsights(req: AuthRequest, res: Response) {
   try {
     const userId = req.user!.userId;
-    const { period = 'month' } = req.query;
+    const { period = 'month', startDate: customStartDate, endDate: customEndDate } = req.query;
 
     // Get expense statistics
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = now;
     
-    switch (period) {
-      case 'day':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'week':
-        const dayOfWeek = now.getDay();
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - dayOfWeek);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (customStartDate) {
+      startDate = new Date(customStartDate as string);
+      if (customEndDate) {
+        endDate = new Date(customEndDate as string);
+      }
+    } else {
+      switch (period) {
+        case 'day':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          const dayOfWeek = now.getDay();
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - dayOfWeek);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
     }
 
     // Get spending transactions
@@ -598,6 +648,7 @@ export async function getExpenseInsights(req: AuthRequest, res: Response) {
       .eq('user_id', userId)
       .in('type', ['spend', 'revoke'])
       .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
       .order('created_at', { ascending: false });
 
     // Get earning transactions
@@ -606,7 +657,8 @@ export async function getExpenseInsights(req: AuthRequest, res: Response) {
       .select('amount, type, created_at')
       .eq('user_id', userId)
       .in('type', ['earn', 'grant', 'task_reward', 'stock_profit'])
-      .gte('created_at', startDate.toISOString());
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
 
     const totalSpending = transactions?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
     const totalEarnings = earnings?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
@@ -681,6 +733,66 @@ export async function getExpenseInsights(req: AuthRequest, res: Response) {
           priority: 'high',
           confidence: 0.9,
         });
+      }
+
+      // Anomaly detection: single large transaction
+      const largeTransaction = transactions?.find((t: any) => parseFloat(t.amount.toString()) > totalSpending * 0.3 && totalSpending > 0);
+      if (largeTransaction) {
+        insights.push({
+          type: 'alert',
+          title: 'Unusually Large Expense Detected',
+          message: `The ${parseFloat(largeTransaction.amount.toString()).toFixed(2)} coin expense on ${new Date(largeTransaction.created_at).toLocaleDateString()} is unusually high compared to your typical spending.`,
+          amount: parseFloat(largeTransaction.amount.toString()),
+          priority: 'high',
+          confidence: 0.85,
+        });
+      }
+      
+      // Calculate previous period for comparison
+      const duration = endDate.getTime() - startDate.getTime();
+      const prevStartDate = new Date(startDate.getTime() - duration);
+      const prevEndDate = new Date(endDate.getTime() - duration);
+      
+      const { data: prevTransactions } = await supabase
+        .from('transactions')
+        .select(`amount, transaction_labels(label)`)
+        .eq('user_id', userId)
+        .in('type', ['spend', 'revoke'])
+        .gte('created_at', prevStartDate.toISOString())
+        .lte('created_at', prevEndDate.toISOString());
+        
+      if (prevTransactions && prevTransactions.length > 0) {
+        const prevTotal = prevTransactions.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+        if (totalSpending > prevTotal * 1.5 && prevTotal > 0) {
+          insights.push({
+            type: 'warning',
+            title: 'Spending Increased Significantly',
+            message: `Your spending this period (${totalSpending.toFixed(2)}) is more than 50% higher than the previous period (${prevTotal.toFixed(2)}).`,
+            priority: 'medium',
+            confidence: 0.8,
+          });
+        }
+        
+        const prevCategoryBreakdown: { [key: string]: number } = {};
+        prevTransactions.forEach((t: any) => {
+          const cat = t.transaction_labels?.[0]?.label || 'Uncategorized';
+          prevCategoryBreakdown[cat] = (prevCategoryBreakdown[cat] || 0) + parseFloat(t.amount.toString());
+        });
+        
+        for (const [category, data] of Object.entries(categoryBreakdown)) {
+          const prevAmount = prevCategoryBreakdown[category] || 0;
+          if (prevAmount > 0 && (data as any).amount > prevAmount * 2) {
+            insights.push({
+              type: 'warning',
+              title: `${category} Spending Doubled`,
+              message: `You spent double on ${category} this period compared to the last period.`,
+              amount: (data as any).amount,
+              priority: 'medium',
+              confidence: 0.8,
+            });
+            break; // Just one insight is enough
+          }
+        }
       }
 
       res.json({

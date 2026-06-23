@@ -41,7 +41,7 @@ export default function VendorPackagesScreen() {
   const purchaseMutation = useMutation({
     mutationFn: async (packageId: string) => {
       const res = await api.post('/payments/create', {
-        amount: 0, // Server calculates based on package
+        amount: 0, // Máy chủ calculates based on package
         method: 'coin', // Mock method or actual
         packageId,
         referenceType: 'vendor_package'
@@ -49,12 +49,12 @@ export default function VendorPackagesScreen() {
       return res.data;
     },
     onSuccess: () => {
-      Alert.alert('Success', 'You have registered the package successfully!', [
+      Alert.alert('Thành công', 'Bạn have registered the package successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error?.response?.data?.error || 'Could not register package at this time');
+      Alert.alert('Lỗi', error?.response?.data?.error || 'Could not register package at this time');
     }
   });
 
@@ -76,14 +76,14 @@ export default function VendorPackagesScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Listing Packages</Text>
+        <Text style={styles.headerTitle}>Gói đăng tin</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.heroSection}>
-          <Text style={styles.heroTitle}>Upgrade Your Store</Text>
-          <Text style={styles.heroSub}>List more products, reach more customers</Text>
+          <Text style={styles.heroTitle}>Nâng cấp Cửa hàng</Text>
+          <Text style={styles.heroSub}>Đăng nhiều sản phẩm hơn, tiếp cận nhiều khách hàng hơn</Text>
         </View>
 
         {isLoading ? (
@@ -93,16 +93,16 @@ export default function VendorPackagesScreen() {
             {/* Free Tier Info */}
             <View style={styles.freeCard}>
               <View style={styles.freeHeader}>
-                <Text style={styles.freeTitle}>Free Package (Current)</Text>
-                <Text style={styles.freePrice}>0 VND</Text>
+                <Text style={styles.freeTitle}>Gói Miễn phí (Hiện tại)</Text>
+                <Text style={styles.freePrice}>0 VNĐ</Text>
               </View>
               <View style={styles.featureRow}>
                 <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                <Text style={styles.featureText}>1 product / week</Text>
+                <Text style={styles.featureText}>1 sản phẩm / tuần</Text>
               </View>
               <View style={styles.featureRow}>
                 <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                <Text style={styles.featureText}>Max 1 category</Text>
+                <Text style={styles.featureText}>Tối đa 1 danh mục</Text>
               </View>
             </View>
 
@@ -118,8 +118,8 @@ export default function VendorPackagesScreen() {
                 <View style={styles.pkgHeader}>
                   <Text style={styles.pkgName}>{pkg.name}</Text>
                   <View style={styles.pkgPriceBox}>
-                    <Text style={styles.pkgPrice}>{pkg.price_monthly.toLocaleString('en-US')} VND</Text>
-                    <Text style={styles.pkgPeriod}>/ month</Text>
+                    <Text style={styles.pkgPrice}>{pkg.price_monthly.toLocaleString('en-US')} VNĐ</Text>
+                    <Text style={styles.pkgPeriod}>/ tháng</Text>
                   </View>
                 </View>
 
@@ -156,7 +156,7 @@ export default function VendorPackagesScreen() {
                   {purchaseMutation.isPending ? (
                     <ActivityIndicator size="small" color="#000" />
                   ) : (
-                    <Text style={styles.buyBtnText}>Subscribe now</Text>
+                    <Text style={styles.buyBtnText}>Đăng ký ngay</Text>
                   )}
                 </TouchableOpacity>
               </LinearGradient>

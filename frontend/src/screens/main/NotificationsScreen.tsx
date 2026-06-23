@@ -85,7 +85,7 @@ export default function NotificationsScreen() {
       } else if (notification.data.productId) {
         navigation.navigate('ProductDetail', { productId: notification.data.productId });
       } else if (notification.data.taskId) {
-        navigation.navigate('Tasks');
+        navigation.navigate('Nhiệm vụ');
       }
     }
   };
@@ -107,12 +107,12 @@ export default function NotificationsScreen() {
 
   const handleMarkAllAsRead = () => {
     Alert.alert(
-      'Mark All as Read',
+      'Mark Tất cả as Read',
       'Mark all notifications as read?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Mark All Read',
+          text: 'Mark Tất cả Read',
           onPress: () => markAllAsReadMutation.mutate(),
         },
       ]
@@ -142,14 +142,14 @@ export default function NotificationsScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>Thông báo</Text>
         {unreadCount > 0 && (
           <TouchableOpacity
             style={styles.markAllButton}
             onPress={handleMarkAllAsRead}
             disabled={markAllAsReadMutation.isPending}
           >
-            <Text style={styles.markAllText}>Mark all read</Text>
+            <Text style={styles.markAllText}>Đánh dấu đã đọc</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -157,16 +157,16 @@ export default function NotificationsScreen() {
       {isLoading && notifications.length === 0 ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#F59E0B" />
-          <Text style={[styles.emptyText, { color: '#94A3B8', marginTop: 12 }]}>Loading notifications...</Text>
+          <Text style={[styles.emptyText, { color: '#94A3B8', marginTop: 12 }]}>Đang tải thông báo...</Text>
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.centerContainer}>
           <Ionicons name="notifications-outline" size={64} color="#334155" />
-          <Text style={styles.emptyText}>No notifications</Text>
-          <Text style={styles.emptySubtext}>You have read all notifications!</Text>
+          <Text style={styles.emptyText}>Không có thông báo</Text>
+          <Text style={styles.emptySubtext}>Bạn đã đọc hết thông báo!</Text>
         </View>
       ) : (
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           data={notifications}
           renderItem={renderNotification}
           keyExtractor={(item) => item.id}

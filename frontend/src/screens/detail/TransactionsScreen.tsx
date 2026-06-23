@@ -19,7 +19,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCategorizedTransactions, updateTransactionLabel, categorizeTransaction, CategorizedTransaction, getTransactionCategories } from '../../services/transaction-label.service';
 import { Ionicons } from '@expo/vector-icons';
 
-const CATEGORIES = ['Shopping', 'Electronics', 'Entertainment', 'Earnings', 'Investment', 'Food', 'Transportation', 'Bills', 'Reward', 'Other'];
+const CATEGORIES = ['Mua sắm', 'Điện tử', 'Giải trí', 'Thu nhập', 'Đầu tư', 'Ăn uống', 'Đi lại', 'Hóa đơn', 'Phần thưởng', 'Khác'];
 
 export default function TransactionsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
@@ -45,10 +45,10 @@ export default function TransactionsScreen() {
       queryClient.invalidateQueries({ queryKey: ['transactionCategories'] });
       setEditingTransaction(null);
       setNewCategory('');
-      Alert.alert('Success', 'Transaction label updated');
+      Alert.alert('Thành công', 'Transaction label updated');
     },
     onError: () => {
-      Alert.alert('Error', 'Failed to update label');
+      Alert.alert('Lỗi', 'Failed to update label');
     },
   });
 
@@ -56,7 +56,7 @@ export default function TransactionsScreen() {
     mutationFn: (transactionId: string) => categorizeTransaction(transactionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      Alert.alert('Success', 'Transaction categorized');
+      Alert.alert('Thành công', 'Transaction categorized');
     },
   });
 
@@ -117,7 +117,7 @@ export default function TransactionsScreen() {
                 style={styles.categorizeButton}
                 onPress={() => categorizeMutation.mutate(item.id)}
               >
-                <Text style={styles.categorizeButtonText}>Categorize</Text>
+                <Text style={styles.categorizeButtonText}>Phân loại</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -126,7 +126,7 @@ export default function TransactionsScreen() {
           </Text>
           <View style={styles.transactionMeta}>
             <Text style={styles.transactionBalance}>
-              Balance: {Math.round(item.balance_after).toLocaleString('en-US')} coins
+              Balance: {Math.round(item.balance_after).toLocaleString('en-US')} xu
             </Text>
           </View>
         </View>
@@ -146,12 +146,12 @@ export default function TransactionsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Category Filter */}
+        {/* Danh mục Filter */}
         <View style={styles.filterContainer}>
-          <FlatList
+          <FlatList keyboardShouldPersistTaps="handled"
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={[{ label: 'All', value: undefined }, ...CATEGORIES.map(c => ({ label: c, value: c }))]}
+            data={[{ label: 'Tất cả', value: undefined }, ...CATEGORIES.map(c => ({ label: c, value: c }))]}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={[
@@ -175,7 +175,7 @@ export default function TransactionsScreen() {
           />
         </View>
 
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           data={transactions}
           renderItem={renderTransaction}
           keyExtractor={(item) => item.id}
@@ -184,13 +184,13 @@ export default function TransactionsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="receipt-outline" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>No transactions yet</Text>
+              <Text style={styles.emptyText}>Chưa có giao dịch nào</Text>
             </View>
           }
         />
       </View>
 
-      {/* Edit Category Modal */}
+      {/* Edit Danh mục Modal */}
       <Modal
         visible={!!editingTransaction}
         transparent
@@ -199,7 +199,7 @@ export default function TransactionsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Category</Text>
+            <Text style={styles.modalTitle}>Edit Danh mục</Text>
             <Text style={styles.modalDescription}>
               {editingTransaction?.description || editingTransaction?.type}
             </Text>
@@ -234,7 +234,7 @@ export default function TransactionsScreen() {
                   setNewCategory('');
                 }}
               >
-                <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                <Text style={styles.modalButtonCancelText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonSave]}
@@ -248,7 +248,7 @@ export default function TransactionsScreen() {
                 }}
                 disabled={!newCategory || updateLabelMutation.isPending}
               >
-                <Text style={styles.modalButtonSaveText}>Save</Text>
+                <Text style={styles.modalButtonSaveText}>Lưu</Text>
               </TouchableOpacity>
             </View>
           </View>

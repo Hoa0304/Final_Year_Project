@@ -106,11 +106,17 @@ export async function getProducts(req: Request, res: Response) {
     // Calculate average rating for each product efficiently
     const productIds = (products || []).map((p) => p.id);
     
-    // Get all ratings for these products in one query
-    const { data: allRatings } = await supabase
-      .from('product_ratings')
-      .select('product_id, rating')
-      .in('product_id', productIds);
+    // Get all ratings for these products in one query using chunks to avoid URI too long
+    let allRatings: any[] = [];
+    const chunkSize = 50;
+    for (let i = 0; i < productIds.length; i += chunkSize) {
+      const chunk = productIds.slice(i, i + chunkSize);
+      const { data } = await supabase
+        .from('product_ratings')
+        .select('product_id, rating')
+        .in('product_id', chunk);
+      if (data) allRatings = allRatings.concat(data);
+    }
 
     // Calculate ratings per product
     const ratingsMap = new Map<string, { total: number; count: number }>();

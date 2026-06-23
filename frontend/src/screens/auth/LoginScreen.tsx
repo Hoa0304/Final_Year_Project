@@ -35,7 +35,7 @@ export default function LoginScreen() {
   async function handleLogin() {
     Keyboard.dismiss();
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Lỗi', 'Please fill in all fields');
       return;
     }
 
@@ -87,7 +87,7 @@ export default function LoginScreen() {
                     />
                     <TextInput
                       style={styles.input}
-                      placeholder="Enter your email..."
+                      placeholder="Nhập email..."
                       placeholderTextColor="#475569"
                       value={email}
                       onChangeText={setEmail}
@@ -103,7 +103,7 @@ export default function LoginScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Password</Text>
+                  <Text style={styles.label}>Mật khẩu</Text>
                   <View style={[
                     styles.inputContainer,
                     isPasswordFocused && styles.inputContainerFocused
@@ -116,7 +116,7 @@ export default function LoginScreen() {
                     />
                     <TextInput
                       style={styles.input}
-                      placeholder="Enter your password..."
+                      placeholder="Nhập mật khẩu..."
                       placeholderTextColor="#475569"
                       value={password}
                       onChangeText={setPassword}
@@ -143,7 +143,7 @@ export default function LoginScreen() {
                     {loading ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text style={styles.buttonText}>Login</Text>
+                      <Text style={styles.buttonText}>Đăng nhập</Text>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
@@ -154,7 +154,7 @@ export default function LoginScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={styles.linkText}>
-                    Don't have an account? <Text style={styles.linkTextBold}>Register now</Text>
+                    Chưa có tài khoản? <Text style={styles.linkTextBold}>Đăng ký ngay</Text>
                   </Text>
                 </TouchableOpacity>
               </View>

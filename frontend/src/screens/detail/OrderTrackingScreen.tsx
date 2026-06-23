@@ -72,11 +72,11 @@ export default function OrderTrackingScreen() {
           [{ text: 'OK' }]
         );
       } else {
-        Alert.alert('Success', `Status updated: ${getStatusLabel(selectedStatus!)}`);
+        Alert.alert('Thành công', `Status updated: ${getStatusLabel(selectedStatus!)}`);
       }
     },
     onError: (error: any) => {
-      Alert.alert('Error', error?.response?.data?.error || 'Could not update status');
+      Alert.alert('Lỗi', error?.response?.data?.error || 'Could not update status');
     },
   });
 
@@ -87,7 +87,7 @@ export default function OrderTrackingScreen() {
       Alert.alert('✅ Payment Successful (Mock)', 'The order payment has been confirmed');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error?.response?.data?.error || 'Mock payment error');
+      Alert.alert('Lỗi', error?.response?.data?.error || 'Mock payment error');
     },
   });
 
@@ -96,7 +96,7 @@ export default function OrderTrackingScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#7C3AED" />
-          <Text style={styles.loadingText}>Loading order...</Text>
+          <Text style={styles.loadingText}>Đang tải đơn hàng...</Text>
         </View>
       </SafeAreaView>
     );
@@ -107,7 +107,7 @@ export default function OrderTrackingScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
           <Ionicons name="alert-circle-outline" size={60} color="#FF3B30" />
-          <Text style={styles.errorText}>Order not found</Text>
+          <Text style={styles.errorText}>Không tìm thấy đơn hàng</Text>
         </View>
       </SafeAreaView>
     );
@@ -123,18 +123,18 @@ export default function OrderTrackingScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Late Warning Banner */}
         {isLate && (
           <View style={styles.lateBanner}>
             <Ionicons name="warning" size={20} color="#FF9500" />
             <View style={styles.lateBannerContent}>
-              <Text style={styles.lateBannerTitle}>Order is delayed</Text>
+              <Text style={styles.lateBannerTitle}>Đơn hàng bị trễ</Text>
               <Text style={styles.lateBannerSub}>
                 {order.late_compensation_voucher_id
                   ? '✅ Compensation voucher has been issued to you'
-                  : 'You will receive a compensation voucher when the order is delivered'
+                  : 'Bạn will receive a compensation voucher when the order is delivered'
                 }
               </Text>
             </View>
@@ -193,7 +193,7 @@ export default function OrderTrackingScreen() {
           {order.status === 'cancelled' && (
             <View style={styles.cancelledBadge}>
               <Ionicons name="close-circle" size={24} color="#FF3B30" />
-              <Text style={styles.cancelledText}>Order was cancelled</Text>
+              <Text style={styles.cancelledText}>Đơn hàng đã bị huỷ</Text>
             </View>
           )}
         </View>
@@ -219,7 +219,7 @@ export default function OrderTrackingScreen() {
           <View style={styles.infoCard}>
             <Ionicons name="checkmark-circle" size={20} color="#34C759" />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Delivered at</Text>
+              <Text style={styles.infoLabel}>Giao hàng lúc</Text>
               <Text style={[styles.infoValue, { color: '#34C759' }]}>
                 {new Date(order.delivered_at).toLocaleString('en-US')}
               </Text>
@@ -232,7 +232,7 @@ export default function OrderTrackingScreen() {
           <View style={styles.infoCard}>
             <Ionicons name="barcode-outline" size={20} color="#06B6D4" />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Tracking code</Text>
+              <Text style={styles.infoLabel}>Mã vận đơn</Text>
               <Text style={[styles.infoValue, { color: '#06B6D4' }]}>{order.tracking_code}</Text>
             </View>
           </View>
@@ -241,7 +241,7 @@ export default function OrderTrackingScreen() {
         {/* Product Info */}
         {order.products && (
           <View style={styles.productCard}>
-            <Text style={styles.sectionTitle}>Products</Text>
+            <Text style={styles.sectionTitle}>Sản phẩm</Text>
             <View style={styles.productRow}>
               {order.products.image_url ? (
                 <Image source={{ uri: order.products.image_url }} style={styles.productImg} resizeMode="cover" />
@@ -255,7 +255,7 @@ export default function OrderTrackingScreen() {
                 {order.products.category && (
                   <Text style={styles.productCategory}>{order.products.category}</Text>
                 )}
-                <Text style={styles.quantityText}>Quantity: {order.quantity}</Text>
+                <Text style={styles.quantityText}>Số lượng: {order.quantity}</Text>
               </View>
             </View>
           </View>
@@ -263,54 +263,54 @@ export default function OrderTrackingScreen() {
 
         {/* Payment Info */}
         <View style={styles.paymentCard}>
-          <Text style={styles.sectionTitle}>Payment Information</Text>
+          <Text style={styles.sectionTitle}>Thông tin thanh toán</Text>
           <View style={styles.paymentRow}>
             <Ionicons
               name="card"
               size={20}
               color="#06B6D4"
             />
-            <Text style={styles.paymentMethod}>Payment Method: VND</Text>
+            <Text style={styles.paymentMethod}>Phương thức thanh toán: VNĐ</Text>
           </View>
 
           <View style={{ marginTop: 12, gap: 6 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ color: '#888', fontSize: 13 }}>Original Price</Text>
+              <Text style={{ color: '#888', fontSize: 13 }}>Giá gốc</Text>
               <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
-                {Math.round(order.original_price_coins).toLocaleString('en-US')} VND
+                {Math.round(order.original_price_coins).toLocaleString('en-US')} VNĐ
               </Text>
             </View>
             {order.price_coins > 0 && (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#888', fontSize: 13 }}>Coins Discount</Text>
+                <Text style={{ color: '#888', fontSize: 13 }}>Giảm giá Xu</Text>
                 <Text style={{ color: '#F59E0B', fontSize: 14, fontWeight: '600' }}>
-                  -{Math.round(order.price_coins).toLocaleString('en-US')} coins (-{Math.round(order.price_coins).toLocaleString('en-US')} VND)
+                  -{Math.round(order.price_coins).toLocaleString('en-US')} xu (-{Math.round(order.price_coins).toLocaleString('en-US')} VND)
                 </Text>
               </View>
             )}
             <View style={{ height: 1, backgroundColor: '#2A2A3E', marginVertical: 4 }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Total Payment</Text>
+              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Tổng thanh toán</Text>
               <Text style={{ color: '#7C3AED', fontSize: 16, fontWeight: '800' }}>
-                {Math.round(order.price_vnd).toLocaleString('en-US')} VND
+                {Math.round(order.price_vnd).toLocaleString('en-US')} VNĐ
               </Text>
             </View>
           </View>
 
           {order.price_coins > 0 && (
             <Text style={styles.discountHint}>
-              You saved {Math.round(order.price_coins).toLocaleString('en-US')} VND by paying with coins
+              Bạn saved {Math.round(order.price_coins).toLocaleString('en-US')} VNĐ by paying with xu
             </Text>
           )}
 
-          {/* Dev: Mock VND Payment Button */}
+          {/* Dev: Mock VNĐ Payment Button */}
           {__DEV__ && order.payment_method === 'vnd' && order.status === 'pending_payment' && (
             <TouchableOpacity
               style={styles.mockPayBtn}
               onPress={() => {
                 Alert.alert(
                   '⚡ Dev Mode',
-                  'Confirm mock VND payment?',
+                  'Confirm mock VNĐ payment?',
                   [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Confirm', onPress: () => mockPayMutation.mutate() }
@@ -324,14 +324,14 @@ export default function OrderTrackingScreen() {
               ) : (
                 <>
                   <Ionicons name="flash" size={16} color="#fff" />
-                  <Text style={styles.mockPayText}>Mock VND Payment (Dev)</Text>
+                  <Text style={styles.mockPayText}>Thanh toán ảo (Dev)</Text>
                 </>
               )}
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Vendor Notes */}
+        {/* Người bán Notes */}
         {order.vendor_notes && (
           <View style={styles.notesCard}>
             <Ionicons name="chatbubble-outline" size={16} color="#888" />
@@ -339,11 +339,11 @@ export default function OrderTrackingScreen() {
           </View>
         )}
 
-        {/* Vendor Actions */}
+        {/* Người bán Actions */}
         {(isVendor || isAdmin) && order.vendor_id === user?.id || isAdmin ? (
           nextStatuses.length > 0 && (
             <View style={styles.vendorActionsCard}>
-              <Text style={styles.sectionTitle}>Update Status</Text>
+              <Text style={styles.sectionTitle}>Cập nhật trạng thái</Text>
               <View style={styles.nextStatusBtns}>
                 {nextStatuses.map((s) => (
                   <TouchableOpacity
@@ -385,19 +385,23 @@ export default function OrderTrackingScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalLabel}>Tracking Code (optional)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="e.g. tracking-12345"
-              placeholderTextColor="#555"
-              value={trackingCode}
-              onChangeText={setTrackingCode}
-            />
+            {selectedStatus === 'shipped' && (
+              <>
+                <Text style={styles.modalLabel}>Mã vận đơn (Tuỳ chọn)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="VD: tracking-12345"
+                  placeholderTextColor="#555"
+                  value={trackingCode}
+                  onChangeText={setTrackingCode}
+                />
+              </>
+            )}
 
-            <Text style={styles.modalLabel}>Notes for Customer (optional)</Text>
+            <Text style={styles.modalLabel}>Notes for Khách hàng (optional)</Text>
             <TextInput
               style={[styles.modalInput, styles.modalTextArea]}
-              placeholder="Add note..."
+              placeholder="Thêm ghi chú..."
               placeholderTextColor="#555"
               value={vendorNotes}
               onChangeText={setVendorNotes}
@@ -409,7 +413,7 @@ export default function OrderTrackingScreen() {
               <View style={styles.lateWarning}>
                 <Ionicons name="information-circle-outline" size={16} color="#FF9500" />
                 <Text style={styles.lateWarningText}>
-                  If this order is delivered late, a compensation voucher will be automatically issued to the customer
+                  Nếu đơn hàng trễ, voucher đền bù sẽ tự động gửi cho khách hàng
                 </Text>
               </View>
             )}
@@ -422,7 +426,7 @@ export default function OrderTrackingScreen() {
               {updateStatusMutation.isPending ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.confirmBtnText}>Confirm Update</Text>
+                <Text style={styles.confirmBtnText}>Xác nhận cập nhật</Text>
               )}
             </TouchableOpacity>
           </View>

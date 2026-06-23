@@ -33,12 +33,12 @@ export default function TasksScreen() {
       // Invalidate notifications to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
-      Alert.alert('Success', `You've earned ${Math.round(data.reward).toLocaleString('en-US')} Shopee Coins!`);
+      Alert.alert('Thành công', `You've earned ${Math.round(data.reward).toLocaleString('en-US')} Shopee Coins!`);
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to complete task');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to complete task');
     },
   });
 
@@ -64,18 +64,18 @@ export default function TasksScreen() {
         targetScreen = 'Marketplace';
         break;
       case 'games':
-        Alert.alert('Info', 'The Games feature has been discontinued.');
+        Alert.alert('Thông tin', 'The Games feature has been discontinued.');
         return;
       case 'stocks':
-        Alert.alert('Info', 'The Stocks feature has been discontinued.');
+        Alert.alert('Thông tin', 'The Stocks feature has been discontinued.');
         return;
       case 'tasks':
         // Already on tasks screen, just scroll to top or show message
-        Alert.alert('Info', 'Complete other tasks first to unlock this one!');
+        Alert.alert('Thông tin', 'Complete other tasks first to unlock this one!');
         return;
       default:
         console.log('Unknown action type:', actionType);
-        Alert.alert('Error', 'Unknown action type');
+        Alert.alert('Lỗi', 'Unknown action type');
         return;
     }
 
@@ -99,7 +99,7 @@ export default function TasksScreen() {
             (navigation as any).navigate('Main', { screen: targetScreen });
           } catch (nestedError) {
             console.error('Nested navigation error:', nestedError);
-            Alert.alert('Error', `Unable to navigate to ${targetScreen}. Please use the bottom tabs.`);
+            Alert.alert('Lỗi', `Unable to navigate to ${targetScreen}. Please use the bottom tabs.`);
           }
         }
       }
@@ -129,7 +129,7 @@ export default function TasksScreen() {
           </View>
           {isCompleted ? (
             <View style={styles.completeButtonDisabled}>
-              <Text style={styles.completeButtonTextDisabled}>Claimed</Text>
+              <Text style={styles.completeButtonTextDisabled}>Đã nhận</Text>
             </View>
           ) : canComplete ? (
             <TouchableOpacity
@@ -140,7 +140,7 @@ export default function TasksScreen() {
               {completeTaskMutation.isPending ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.completeButtonText}>Claim Reward</Text>
+                <Text style={styles.completeButtonText}>Nhận thưởng</Text>
               )}
             </TouchableOpacity>
           ) : (
@@ -156,7 +156,7 @@ export default function TasksScreen() {
                 }
               }}
             >
-              <Text style={styles.doItButtonText}>Start Now</Text>
+              <Text style={styles.doItButtonText}>Bắt đầu ngay</Text>
               <Ionicons name="chevron-forward" size={16} color="#818CF8" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           )}
@@ -183,8 +183,8 @@ export default function TasksScreen() {
             <Ionicons name="chevron-back" size={24} color="#F8FAFC" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.title}>Earn Coins Challenges</Text>
-            <Text style={styles.subtitle}>Complete challenges to earn Shopee Coins!</Text>
+            <Text style={styles.title}>Thử thách kiếm xu</Text>
+            <Text style={styles.subtitle}>Hoàn thành thử thách để nhận xu!</Text>
           </View>
         </View>
 
@@ -193,23 +193,23 @@ export default function TasksScreen() {
           <View style={styles.statCard}>
             <Ionicons name="logo-bitcoin" size={22} color="#F59E0B" />
             <Text style={styles.statValue}>{Math.round(totalAvailableReward).toLocaleString('en-US')}</Text>
-            <Text style={styles.statLabel}>Available</Text>
+            <Text style={styles.statLabel}>Có sẵn</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCard}>
             <Ionicons name="checkmark-circle" size={22} color="#10B981" />
             <Text style={styles.statValue}>{completedCount}/{totalCount}</Text>
-            <Text style={styles.statLabel}>Claimed</Text>
+            <Text style={styles.statLabel}>Đã nhận</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCard}>
             <Ionicons name="trophy" size={22} color="#818CF8" />
             <Text style={styles.statValue}>{totalCount - completedCount}</Text>
-            <Text style={styles.statLabel}>Remaining</Text>
+            <Text style={styles.statLabel}>Còn lại</Text>
           </View>
         </View>
 
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           data={tasks}
           renderItem={renderTask}
           keyExtractor={(item) => item.id}
@@ -225,7 +225,7 @@ export default function TasksScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="construct-outline" size={48} color="#475569" style={{ marginBottom: 12 }} />
-              <Text style={styles.emptyText}>No tasks available at this time</Text>
+              <Text style={styles.emptyText}>Hiện chưa có thử thách nào</Text>
             </View>
           }
         />

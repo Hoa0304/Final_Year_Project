@@ -80,7 +80,7 @@ export default function AdminDashboardScreen() {
   };
 
   const usersData = {
-    labels: ['Vendor', 'Client'],
+    labels: ['Người bán', 'Client'],
     datasets: [{ data: [35, 120] }],
   };
 
@@ -106,7 +106,7 @@ export default function AdminDashboardScreen() {
             <Ionicons name="shield-checkmark" size={24} color="#6366F1" />
           </View>
           <View>
-            <Text style={styles.greeting}>Welcome,</Text>
+            <Text style={styles.greeting}>Chào mừng,</Text>
             <Text style={styles.adminName}>{user?.fullName || user?.email || 'Administrator'}</Text>
           </View>
         </View>
@@ -115,7 +115,7 @@ export default function AdminDashboardScreen() {
         </TouchableOpacity>
       </LinearGradient>
 
-      <ScrollView
+      <ScrollView keyboardShouldPersistTaps="handled"
         style={styles.container}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />}
       >
@@ -127,7 +127,7 @@ export default function AdminDashboardScreen() {
                 <Ionicons name="people" size={24} color="#3B82F6" />
               </View>
               <Text style={styles.statValue}>{formatNumber(stats?.totalUsers || 0)}</Text>
-              <Text style={styles.statLabel}>Total Users</Text>
+              <Text style={styles.statLabel}>Tổng số người dùng</Text>
             </LinearGradient>
           </View>
 
@@ -137,7 +137,7 @@ export default function AdminDashboardScreen() {
                 <Ionicons name="swap-horizontal" size={24} color="#10B981" />
               </View>
               <Text style={styles.statValue}>{formatNumber(stats?.totalTransactions || 0)}</Text>
-              <Text style={styles.statLabel}>Transactions</Text>
+              <Text style={styles.statLabel}>Giao dịch</Text>
             </LinearGradient>
           </View>
 
@@ -147,7 +147,7 @@ export default function AdminDashboardScreen() {
                 <Ionicons name="wallet" size={24} color="#F59E0B" />
               </View>
               <Text style={styles.statValue}>{formatNumber(stats?.totalBalance || 0)}</Text>
-              <Text style={styles.statLabel}>Total Balance</Text>
+              <Text style={styles.statLabel}>Tổng số dư</Text>
             </LinearGradient>
           </View>
 
@@ -164,7 +164,7 @@ export default function AdminDashboardScreen() {
 
         {/* Charts Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Revenue last 7 days</Text>
+          <Text style={styles.sectionTitle}>Doanh thu 7 ngày qua</Text>
           <View style={styles.chartCard}>
             <LineChart
               data={revenueData}
@@ -178,7 +178,7 @@ export default function AdminDashboardScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>New Users</Text>
+          <Text style={styles.sectionTitle}>Người dùng mới</Text>
           <View style={styles.chartCard}>
             <BarChart
               data={usersData}
@@ -198,12 +198,12 @@ export default function AdminDashboardScreen() {
 
         {/* Quick Info Cards */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>System Status</Text>
+          <Text style={styles.sectionTitle}>Trạng thái hệ thống</Text>
           <View style={styles.quickInfoCard}>
             <Ionicons name="server-outline" size={24} color="#10B981" />
             <View style={styles.quickInfoContent}>
-              <Text style={styles.quickInfoLabel}>Server</Text>
-              <Text style={styles.quickInfoValue}>Running normally</Text>
+              <Text style={styles.quickInfoLabel}>Máy chủ</Text>
+              <Text style={styles.quickInfoValue}>Hoạt động bình thường</Text>
             </View>
             <View style={styles.statusDot} />
           </View>
@@ -211,8 +211,8 @@ export default function AdminDashboardScreen() {
           <View style={styles.quickInfoCard}>
             <Ionicons name="shield-checkmark-outline" size={24} color="#3B82F6" />
             <View style={styles.quickInfoContent}>
-              <Text style={styles.quickInfoLabel}>Security</Text>
-              <Text style={styles.quickInfoValue}>Secure</Text>
+              <Text style={styles.quickInfoLabel}>Bảo mật</Text>
+              <Text style={styles.quickInfoValue}>An toàn</Text>
             </View>
             <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />
           </View>

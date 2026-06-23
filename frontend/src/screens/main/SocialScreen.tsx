@@ -95,10 +95,10 @@ export default function SocialScreen() {
       setPostTitle('');
       setPostContent('');
       setPostImages([]);
-      Alert.alert('Success', 'Post has been published!');
+      Alert.alert('Thành công', 'Đăng bài has been published!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to post');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to post');
     },
   });
 
@@ -113,7 +113,7 @@ export default function SocialScreen() {
       setReplyingToPostId(undefined);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to submit comment');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to submit comment');
     },
   });
 
@@ -121,7 +121,7 @@ export default function SocialScreen() {
     mutationFn: deleteThread,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['socialThreads'] });
-      Alert.alert('Success', 'Post deleted');
+      Alert.alert('Thành công', 'Đăng bài deleted');
     },
   });
 
@@ -130,7 +130,7 @@ export default function SocialScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['socialThread', selectedThreadId] });
       queryClient.invalidateQueries({ queryKey: ['socialThreads'] });
-      Alert.alert('Success', 'Comment deleted');
+      Alert.alert('Thành công', 'Comment deleted');
     },
   });
 
@@ -150,13 +150,13 @@ export default function SocialScreen() {
       setReportReason('');
       setReportDescription('');
       setReportingContent(null);
-      Alert.alert('Success', 'Content has been reported. Thank you!');
+      Alert.alert('Thành công', 'Content has been reported. Thank you!');
     },
   });
 
   const handleCreatePost = () => {
     if (!postContent.trim() && postImages.length === 0) {
-      Alert.alert('Error', 'Please enter content or add an image');
+      Alert.alert('Lỗi', 'Please enter content or add an image');
       return;
     }
     createThreadMutation.mutate({
@@ -179,7 +179,7 @@ export default function SocialScreen() {
 
   const handlePostComment = () => {
     if (!commentContent.trim() && commentImages.length === 0) {
-      Alert.alert('Error', 'Please enter content or add an image');
+      Alert.alert('Lỗi', 'Please enter content or add an image');
       return;
     }
     if (!selectedThreadId) return;
@@ -212,7 +212,7 @@ export default function SocialScreen() {
 
   const handleSubmitReport = () => {
     if (!reportReason.trim()) {
-      Alert.alert('Error', 'Please select a reason for reporting');
+      Alert.alert('Lỗi', 'Please select a reason for reporting');
       return;
     }
     if (!reportingContent) return;
@@ -225,7 +225,7 @@ export default function SocialScreen() {
   };
 
   const handleDeletePost = (threadId: string) => {
-    Alert.alert('Delete Post', 'Are you sure you want to delete this post?', [
+    Alert.alert('Delete Đăng bài', 'Are you sure you want to delete this post?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteThreadMutation.mutate(threadId) },
     ]);
@@ -322,7 +322,7 @@ export default function SocialScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
             <Ionicons name="share-outline" size={20} color="#64748B" />
-            <Text style={styles.actionText}>Share</Text>
+            <Text style={styles.actionText}>Chia sẻ</Text>
           </TouchableOpacity>
         </View>
 
@@ -368,17 +368,17 @@ export default function SocialScreen() {
             <Text style={styles.commentTime}>{formatTimeAgo(post.created_at)}</Text>
             <TouchableOpacity onPress={() => handleLike('post', post.id, post.user_reaction)}>
               <Text style={[styles.commentAction, post.user_reaction === 'like' && styles.commentActionLiked]}>
-                Like
+                Thích
               </Text>
             </TouchableOpacity>
             {!isReply && (
               <TouchableOpacity onPress={() => handleReply(post.id)}>
-                <Text style={styles.commentAction}>Reply</Text>
+                <Text style={styles.commentAction}>Trả lời</Text>
               </TouchableOpacity>
             )}
             {post.created_by === user?.id && (
               <TouchableOpacity onPress={() => handleDeletePost(post.id)}>
-                <Text style={[styles.commentAction, styles.deleteAction]}>Delete</Text>
+                <Text style={[styles.commentAction, styles.deleteAction]}>Xóa</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -400,11 +400,11 @@ export default function SocialScreen() {
           <TouchableOpacity onPress={handleBackToFeed} style={styles.headerBtn}>
             <Ionicons name="chevron-back" size={22} color="#94A3B8" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Comments</Text>
+          <Text style={styles.headerTitle}>Bình luận</Text>
           <View style={{ width: 36 }} />
         </View>
 
-        <ScrollView
+        <ScrollView keyboardShouldPersistTaps="handled"
           style={styles.content}
           refreshControl={
             <RefreshControl
@@ -467,7 +467,7 @@ export default function SocialScreen() {
                 setShowCommentModal(true);
               }}
             >
-              <Text style={styles.commentInputPlaceholder}>Write a comment...</Text>
+              <Text style={styles.commentInputPlaceholder}>Viết bình luận...</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -479,7 +479,7 @@ export default function SocialScreen() {
           >
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Add Comment</Text>
+                <Text style={styles.modalTitle}>Thêm bình luận</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setShowCommentModal(false);
@@ -490,10 +490,10 @@ export default function SocialScreen() {
                   <Ionicons name="close" size={20} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
-              <ScrollView style={styles.modalBody}>
+              <ScrollView keyboardShouldPersistTaps="handled" style={styles.modalBody}>
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  placeholder={replyingToPostId ? 'Write a reply...' : 'Write a comment...'}
+                  placeholder={replyingToPostId ? 'Write a reply...' : 'Viết bình luận...'}
                   placeholderTextColor="#475569"
                   value={commentContent}
                   onChangeText={setCommentContent}
@@ -526,7 +526,7 @@ export default function SocialScreen() {
                   {createPostMutation.isPending ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.submitButtonText}>Post Comment</Text>
+                    <Text style={styles.submitButtonText}>Đăng bình luận</Text>
                   )}
                 </TouchableOpacity>
               </ScrollView>
@@ -547,7 +547,7 @@ export default function SocialScreen() {
         >
           <Ionicons name="chevron-back" size={22} color="#94A3B8" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Discussion Board</Text>
+        <Text style={styles.headerTitle}>Bảng thảo luận</Text>
         <TouchableOpacity
           onPress={() => setShowCreatePostModal(true)}
           style={styles.createPostBtn}
@@ -556,7 +556,7 @@ export default function SocialScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
+      <FlatList keyboardShouldPersistTaps="handled"
         data={threadsData?.threads || []}
         renderItem={({ item }) => renderPost(item)}
         keyExtractor={(item) => item.id}
@@ -574,19 +574,19 @@ export default function SocialScreen() {
             <View style={styles.emptyIconCircle}>
               <Ionicons name="newspaper-outline" size={40} color="#334155" />
             </View>
-            <Text style={styles.emptyText}>No posts yet</Text>
-            <Text style={styles.emptySubtext}>Be the first to share something!</Text>
+            <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
+            <Text style={styles.emptySubtext}>Hãy là người đầu tiên chia sẻ!</Text>
             <TouchableOpacity
               style={styles.emptyCreateBtn}
               onPress={() => setShowCreatePostModal(true)}
             >
-              <Text style={styles.emptyCreateBtnText}>Create Post</Text>
+              <Text style={styles.emptyCreateBtnText}>Tạo bài viết</Text>
             </TouchableOpacity>
           </View>
         }
       />
 
-      {/* Create Post Modal */}
+      {/* Tạo bài viết Modal */}
       <Modal visible={showCreatePostModal} animationType="slide" transparent>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
@@ -594,7 +594,7 @@ export default function SocialScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Post</Text>
+              <Text style={styles.modalTitle}>Tạo bài viết</Text>
               <TouchableOpacity
                 onPress={() => setShowCreatePostModal(false)}
                 style={styles.modalCloseBtn}
@@ -602,7 +602,7 @@ export default function SocialScreen() {
                 <Ionicons name="close" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalBody}>
+            <ScrollView keyboardShouldPersistTaps="handled" style={styles.modalBody}>
               <View style={styles.createPostHeader}>
                 {user?.avatarUrl ? (
                   <Image source={{ uri: user.avatarUrl }} style={styles.createPostAvatar} />
@@ -611,11 +611,11 @@ export default function SocialScreen() {
                     <Ionicons name="person" size={20} color="#475569" />
                   </View>
                 )}
-                <Text style={styles.createPostAuthorName}>{user?.fullName || user?.email || 'You'}</Text>
+                <Text style={styles.createPostAuthorName}>{user?.fullName || user?.email || 'Bạn'}</Text>
               </View>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="What's on your mind?"
+                placeholder="Bạn đang nghĩ gì?"
                 placeholderTextColor="#475569"
                 value={postContent}
                 onChangeText={setPostContent}
@@ -648,7 +648,7 @@ export default function SocialScreen() {
                 {createThreadMutation.isPending ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Post</Text>
+                  <Text style={styles.submitButtonText}>Đăng bài</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -664,7 +664,7 @@ export default function SocialScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Comment</Text>
+              <Text style={styles.modalTitle}>Thêm bình luận</Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowCommentModal(false);
@@ -675,10 +675,10 @@ export default function SocialScreen() {
                 <Ionicons name="close" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalBody}>
+            <ScrollView keyboardShouldPersistTaps="handled" style={styles.modalBody}>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder={replyingToPostId ? 'Write a reply...' : 'Write a comment...'}
+                placeholder={replyingToPostId ? 'Write a reply...' : 'Viết bình luận...'}
                 placeholderTextColor="#475569"
                 value={commentContent}
                 onChangeText={setCommentContent}
@@ -711,7 +711,7 @@ export default function SocialScreen() {
                 {createPostMutation.isPending ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Post</Text>
+                  <Text style={styles.submitButtonText}>Đăng bài</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -724,7 +724,7 @@ export default function SocialScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Report Content</Text>
+              <Text style={styles.modalTitle}>Báo cáo nội dung</Text>
               <TouchableOpacity
                 onPress={() => setShowReportModal(false)}
                 style={styles.modalCloseBtn}
@@ -732,19 +732,19 @@ export default function SocialScreen() {
                 <Ionicons name="close" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Reason</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" style={styles.modalBody}>
+              <Text style={styles.label}>Lý do</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Reason for report"
+                placeholder="Lý do for report"
                 placeholderTextColor="#475569"
                 value={reportReason}
                 onChangeText={setReportReason}
               />
-              <Text style={styles.label}>Description (optional)</Text>
+              <Text style={styles.label}>Mô tả (tuỳ chọn)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Additional details..."
+                placeholder="Chi tiết thêm..."
                 placeholderTextColor="#475569"
                 value={reportDescription}
                 onChangeText={setReportDescription}
@@ -759,7 +759,7 @@ export default function SocialScreen() {
                 {reportContentMutation.isPending ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Submit Report</Text>
+                  <Text style={styles.submitButtonText}>Gửi báo cáo</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>

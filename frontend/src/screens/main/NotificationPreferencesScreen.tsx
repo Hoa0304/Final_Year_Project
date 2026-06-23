@@ -44,22 +44,30 @@ const NOTIFICATION_TYPES: NotificationType[] = [
 const CHANNELS: NotificationChannel[] = ['in_app', 'push', 'email', 'sms'];
 const PRIORITIES: NotificationPriority[] = ['low', 'medium', 'high', 'urgent'];
 
-const NOTIFICATION_LABELS: Record<NotificationType, string> = {
-  order_placed: 'Order Placed',
-  order_completed: 'Order Completed',
-  order_cancelled: 'Order Cancelled',
-  task_completed: 'Task Completed',
-  task_reward_claimed: 'Task Reward Claimed',
-  stock_price_alert: 'Stock Price Alert',
-  balance_low: 'Low Balance',
-  balance_high: 'High Balance',
-  product_discount: 'Product Discount',
-  new_product: 'New Product',
-  system_announcement: 'System Announcement',
-  game_completed: 'Game Completed',
-  game_reward: 'Game Reward',
-  rating_received: 'Rating Received',
-  cart_reminder: 'Cart Reminder',
+const NOTIFICATION_LABELS: Record<string, string> = {
+  system_alert: 'Cảnh báo hệ thống',
+  system_maintenance: 'Bảo trì hệ thống',
+  order_completed: 'Đơn hàng hoàn tất',
+  task_completed: 'Nhiệm vụ hoàn tất',
+  task_reward_claimed: 'Đã nhận thưởng nhiệm vụ',
+  admin_message: 'Tin nhắn từ Admin',
+  expense_warning: 'Cảnh báo chi tiêu',
+  budget_alert: 'Cảnh báo ngân sách',
+  savings_milestone: 'Cột mốc tiết kiệm',
+  price_drop: 'Giảm giá sản phẩm',
+  restock: 'Sản phẩm có hàng lại',
+  game_completed: 'Hoàn thành trò chơi',
+  order_placed: 'Đơn hàng đã đặt',
+  order_cancelled: 'Đơn hàng đã hủy',
+  stock_price_alert: 'Cảnh báo giá cổ phiếu',
+  balance_low: 'Số dư thấp',
+  balance_high: 'Số dư cao',
+  product_discount: 'Giảm giá sản phẩm',
+  new_product: 'Sản phẩm mới',
+  system_announcement: 'Thông báo hệ thống',
+  game_reward: 'Phần thưởng trò chơi',
+  rating_received: 'Đã nhận đánh giá',
+  cart_reminder: 'Nhắc nhở giỏ hàng',
 };
 
 export default function NotificationPreferencesScreen() {
@@ -75,10 +83,10 @@ export default function NotificationPreferencesScreen() {
     mutationFn: updateNotificationPreferences,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
-      Alert.alert('Success', 'Preferences updated successfully');
+      Alert.alert('Thành công', 'Preferences updated successfully');
     },
     onError: () => {
-      Alert.alert('Error', 'Failed to update preferences');
+      Alert.alert('Lỗi', 'Failed to update preferences');
     },
   });
 
@@ -149,7 +157,7 @@ export default function NotificationPreferencesScreen() {
             {isEditing ? (
               <View style={styles.editingContainer}>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Max per day:</Text>
+                  <Text style={styles.detailLabel}>Tối đa mỗi ngày:</Text>
                   <TextInput
                     style={styles.detailInput}
                     value={pref?.maxPerDay?.toString() || '10'}
@@ -162,7 +170,7 @@ export default function NotificationPreferencesScreen() {
                   />
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Cooldown (minutes):</Text>
+                  <Text style={styles.detailLabel}>Thời gian chờ (phút):</Text>
                   <TextInput
                     style={styles.detailInput}
                     value={pref?.cooldownMinutes?.toString() || '0'}
@@ -178,7 +186,7 @@ export default function NotificationPreferencesScreen() {
                   style={styles.saveButton}
                   onPress={() => setEditingType(null)}
                 >
-                  <Text style={styles.saveButtonText}>Done</Text>
+                  <Text style={styles.saveButtonText}>Xong</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -205,7 +213,7 @@ export default function NotificationPreferencesScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#10B981" />
-          <Text style={{ color: '#94A3B8', marginTop: 12 }}>Loading preferences...</Text>
+          <Text style={{ color: '#94A3B8', marginTop: 12 }}>Đang tải thiết lập...</Text>
         </View>
       </SafeAreaView>
     );
@@ -215,10 +223,10 @@ export default function NotificationPreferencesScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notification Settings</Text>
+        <Text style={styles.headerTitle}>Cài đặt thông báo</Text>
       </View>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>System Notification Types</Text>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionTitle}>Các loại thông báo hệ thống</Text>
         {NOTIFICATION_TYPES.map(renderPreferenceRow)}
       </ScrollView>
     </SafeAreaView>

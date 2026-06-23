@@ -74,10 +74,10 @@ export default function ExpenseManagementScreen() {
       queryClient.invalidateQueries({ queryKey: ['budgetProgress'] });
       setShowBudgetModal(false);
       setBudgetAmount('');
-      Alert.alert('Success', 'Budget set successfully!');
+      Alert.alert('Thành công', 'Budget set successfully!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.message || 'Failed to set budget');
+      Alert.alert('Lỗi', error.message || 'Failed to set budget');
     },
   });
 
@@ -90,10 +90,10 @@ export default function ExpenseManagementScreen() {
       setShowSavingsGoalModal(false);
       setSavingsGoalTitle('');
       setSavingsGoalAmount('');
-      Alert.alert('Success', 'Savings goal created!');
+      Alert.alert('Thành công', 'Savings goal created!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.message || 'Failed to create savings goal');
+      Alert.alert('Lỗi', error.message || 'Failed to create savings goal');
     },
   });
 
@@ -136,13 +136,13 @@ export default function ExpenseManagementScreen() {
         break;
       case 'reduce':
         if (insight.category) {
-          (navigation as any).navigate('Transactions', { category: insight.category });
+          (navigation as any).navigate('Giao dịch', { category: insight.category });
         } else {
-          (navigation as any).navigate('Transactions');
+          (navigation as any).navigate('Giao dịch');
         }
         break;
       case 'earn':
-        (navigation as any).navigate('Tasks');
+        (navigation as any).navigate('Nhiệm vụ');
         break;
       case 'diversify':
         (navigation as any).navigate('Marketplace');
@@ -202,7 +202,7 @@ export default function ExpenseManagementScreen() {
         <View style={[styles.summaryCard, styles.spendingCard]}>
           <View style={styles.summaryCardHeader}>
             <Ionicons name="arrow-up-circle" size={24} color="#EF4444" />
-            <Text style={styles.summaryCardLabel}>Total Expense</Text>
+            <Text style={styles.summaryCardLabel}>Tổng chi phí</Text>
           </View>
           <Text style={styles.summaryCardAmount}>
             {Math.round(summary.totalSpending).toLocaleString('vi-VN')} xu
@@ -216,7 +216,7 @@ export default function ExpenseManagementScreen() {
         <View style={[styles.summaryCard, styles.earningCard]}>
           <View style={styles.summaryCardHeader}>
             <Ionicons name="arrow-down-circle" size={24} color="#10B981" />
-            <Text style={styles.summaryCardLabel}>Total Income</Text>
+            <Text style={styles.summaryCardLabel}>Tổng thu nhập</Text>
           </View>
           <Text style={styles.summaryCardAmount}>
             {Math.round(summary.totalEarnings).toLocaleString('vi-VN')} xu
@@ -236,7 +236,7 @@ export default function ExpenseManagementScreen() {
               size={24}
               color={summary.netAmount >= 0 ? '#10B981' : '#EF4444'}
             />
-            <Text style={styles.summaryCardLabel}>Net Balance</Text>
+            <Text style={styles.summaryCardLabel}>Số dư ròng</Text>
           </View>
           <Text
             style={[
@@ -275,7 +275,7 @@ export default function ExpenseManagementScreen() {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Budget Progress</Text>
+          <Text style={styles.sectionTitle}>Tiến độ ngân sách</Text>
           <TouchableOpacity onPress={() => handleSetBudget()}>
             <Ionicons name="settings-outline" size={20} color="#0ea5e9" />
           </TouchableOpacity>
@@ -305,13 +305,13 @@ export default function ExpenseManagementScreen() {
           </View>
           <View style={styles.budgetDetails}>
             <View style={styles.budgetDetailItem}>
-              <Text style={styles.budgetDetailLabel}>Spent</Text>
+              <Text style={styles.budgetDetailLabel}>Đã tiêu</Text>
               <Text style={[styles.budgetDetailValue, { color: '#EF4444' }]}>
                 {Math.round(spent).toLocaleString('vi-VN')} xu
               </Text>
             </View>
             <View style={styles.budgetDetailItem}>
-              <Text style={styles.budgetDetailLabel}>Remaining</Text>
+              <Text style={styles.budgetDetailLabel}>Còn lại</Text>
               <Text style={[styles.budgetDetailValue, { color: remaining > 0 ? '#10B981' : '#EF4444' }]}>
                 {Math.round(remaining).toLocaleString('vi-VN')} xu
               </Text>
@@ -333,7 +333,7 @@ export default function ExpenseManagementScreen() {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Savings Goals</Text>
+          <Text style={styles.sectionTitle}>Mục tiêu tiết kiệm</Text>
           <TouchableOpacity onPress={handleCreateSavingsGoal}>
             <Ionicons name="add-circle-outline" size={24} color="#0ea5e9" />
           </TouchableOpacity>
@@ -365,7 +365,7 @@ export default function ExpenseManagementScreen() {
                 </Text>
                 {goal.target_date && (
                   <Text style={styles.savingsGoalDate}>
-                    Target: {new Date(goal.target_date).toLocaleDateString('en-US')}
+                    Mục tiêu: {new Date(goal.target_date).toLocaleDateString('vi-VN')}
                   </Text>
                 )}
               </View>
@@ -384,14 +384,14 @@ export default function ExpenseManagementScreen() {
       return (
         <View style={styles.emptyContainer}>
           <Ionicons name="pie-chart-outline" size={48} color="#475569" />
-          <Text style={styles.emptyText}>No spending data available</Text>
+          <Text style={styles.emptyText}>Không có dữ liệu chi tiêu</Text>
         </View>
       );
     }
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Top Expense Categories</Text>
+        <Text style={styles.sectionTitle}>Hạng mục chi tiêu hàng đầu</Text>
         {stats.topCategories.map((category, index) => (
           <View key={category.category} style={styles.categoryItem}>
             <View style={styles.categoryHeader}>
@@ -451,7 +451,7 @@ export default function ExpenseManagementScreen() {
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Daily Expense Trend (Last 7 Days)</Text>
+        <Text style={styles.sectionTitle}>Xu hướng chi tiêu (7 ngày qua)</Text>
         <View style={styles.trendContainer}>
           {last7Days.map((day, index) => {
             const date = new Date(day.date);
@@ -496,11 +496,11 @@ export default function ExpenseManagementScreen() {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Category Details</Text>
+          <Text style={styles.sectionTitle}>Danh mục Details</Text>
           <TouchableOpacity
-            onPress={() => (navigation as any).navigate('Transactions')}
+            onPress={() => (navigation as any).navigate('Giao dịch')}
           >
-            <Text style={styles.seeAllText}>See All</Text>
+            <Text style={styles.seeAllText}>Xem tất cả</Text>
           </TouchableOpacity>
         </View>
         {categories.slice(0, 5).map(([category, data]) => (
@@ -509,7 +509,7 @@ export default function ExpenseManagementScreen() {
             style={styles.breakdownItem}
             onPress={() => {
               // Navigate to transactions filtered by category
-              (navigation as any).navigate('Transactions', { category });
+              (navigation as any).navigate('Giao dịch', { category });
             }}
           >
             <View style={styles.breakdownInfo}>
@@ -627,7 +627,7 @@ export default function ExpenseManagementScreen() {
         <View style={styles.sectionHeader}>
           <View style={styles.aiHeader}>
             <Ionicons name="sparkles" size={24} color="#38BDF8" />
-            <Text style={styles.sectionTitle}>AI Analytics & Recommendations</Text>
+            <Text style={styles.sectionTitle}>Phân tích AI & Đề xuất</Text>
           </View>
         </View>
 
@@ -640,7 +640,7 @@ export default function ExpenseManagementScreen() {
                 size={20}
                 color={prediction.trend === 'increasing' ? '#EF4444' : prediction.trend === 'decreasing' ? '#10B981' : '#64748B'}
               />
-              <Text style={styles.predictionTitle}>Expense Forecast (Next 7 Days)</Text>
+              <Text style={styles.predictionTitle}>Dự báo chi tiêu (7 ngày tới)</Text>
             </View>
             <Text style={styles.predictionAmount}>
               {Math.round(prediction.predictedAmount).toLocaleString('vi-VN')} xu
@@ -721,10 +721,10 @@ export default function ExpenseManagementScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Expense Management</Text>
+        <Text style={styles.headerTitle}>Quản lý chi tiêu</Text>
         <View style={styles.placeholder} />
       </View>
-      <ScrollView
+      <ScrollView keyboardShouldPersistTaps="handled"
         style={styles.container}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38BDF8" />
@@ -736,17 +736,17 @@ export default function ExpenseManagementScreen() {
         {/* Loading State */}
         {isLoading && !stats && (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading expense data...</Text>
+            <Text style={styles.loadingText}>Đang tải dữ liệu chi tiêu...</Text>
           </View>
         )}
 
         {/* Summary Cards */}
         {renderSummary()}
 
-        {/* Budget Progress */}
+        {/* Tiến độ ngân sách */}
         {renderBudgetProgress()}
 
-        {/* Savings Goals */}
+        {/* Mục tiêu tiết kiệm */}
         {renderSavingsGoals()}
 
         {/* Top Categories */}
@@ -755,14 +755,14 @@ export default function ExpenseManagementScreen() {
         {/* Daily Trend */}
         {renderDailyTrend()}
 
-        {/* Category Breakdown */}
+        {/* Danh mục Breakdown */}
         {renderCategoryBreakdown()}
 
         {/* AI Insights & Recommendations */}
         {renderAIInsights()}
       </ScrollView>
 
-      {/* Set Budget Modal */}
+      {/* Đặt ngân sách Modal */}
       <Modal
         visible={showBudgetModal}
         transparent
@@ -779,17 +779,17 @@ export default function ExpenseManagementScreen() {
               <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={styles.modalContent}>
                   <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Set Budget</Text>
+                    <Text style={styles.modalTitle}>Đặt ngân sách</Text>
                     <TouchableOpacity onPress={() => setShowBudgetModal(false)}>
                       <Ionicons name="close" size={24} color="#94A3B8" />
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.modalLabel}>Budget Amount (xu)</Text>
+                  <Text style={styles.modalLabel}>Số tiền ngân sách (xu)</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={budgetAmount}
                     onChangeText={setBudgetAmount}
-                    placeholder="Enter budget amount"
+                    placeholder="Nhập budget amount"
                     keyboardType="numeric"
                   />
                   <Text style={styles.modalHint}>
@@ -802,13 +802,13 @@ export default function ExpenseManagementScreen() {
                       if (amount > 0) {
                         setBudgetMutation.mutate(amount);
                       } else {
-                        Alert.alert('Error', 'Please enter a valid amount');
+                        Alert.alert('Lỗi', 'Please enter a valid amount');
                       }
                     }}
                     disabled={setBudgetMutation.isPending}
                   >
                     <Text style={styles.modalButtonText}>
-                      {setBudgetMutation.isPending ? 'Setting...' : 'Set Budget'}
+                      {setBudgetMutation.isPending ? 'Setting...' : 'Đặt ngân sách'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -818,7 +818,7 @@ export default function ExpenseManagementScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Create Savings Goal Modal */}
+      {/* Tạo mục tiêu tiết kiệm Modal */}
       <Modal
         visible={showSavingsGoalModal}
         transparent
@@ -835,29 +835,29 @@ export default function ExpenseManagementScreen() {
               <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={styles.modalContent}>
                   <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Create Savings Goal</Text>
+                    <Text style={styles.modalTitle}>Tạo mục tiêu tiết kiệm</Text>
                     <TouchableOpacity onPress={() => setShowSavingsGoalModal(false)}>
                       <Ionicons name="close" size={24} color="#94A3B8" />
                     </TouchableOpacity>
                   </View>
 
                   <View style={styles.modalBody}>
-                    <Text style={styles.modalLabel}>Goal Title</Text>
+                    <Text style={styles.modalLabel}>Tên mục tiêu</Text>
                     <TextInput
                       style={styles.modalInput}
                       value={savingsGoalTitle}
                       onChangeText={setSavingsGoalTitle}
-                      placeholder="e.g., Save for new phone"
+                      placeholder="VD: Tiết kiệm mua điện thoại mới"
                       placeholderTextColor="#64748B"
                       returnKeyType="next"
                     />
 
-                    <Text style={styles.modalLabel}>Target Amount (xu)</Text>
+                    <Text style={styles.modalLabel}>Số tiền mục tiêu (xu)</Text>
                     <TextInput
                       style={styles.modalInput}
                       value={savingsGoalAmount}
                       onChangeText={setSavingsGoalAmount}
-                      placeholder="Enter target amount"
+                      placeholder="Nhập target amount"
                       placeholderTextColor="#64748B"
                       keyboardType="numeric"
                       returnKeyType="done"
@@ -869,7 +869,7 @@ export default function ExpenseManagementScreen() {
                             targetAmount: amount,
                           });
                         } else {
-                          Alert.alert('Error', 'Please fill in all fields');
+                          Alert.alert('Lỗi', 'Please fill in all fields');
                         }
                       }}
                     />
@@ -884,7 +884,7 @@ export default function ExpenseManagementScreen() {
                             targetAmount: amount,
                           });
                         } else {
-                          Alert.alert('Error', 'Please fill in all fields');
+                          Alert.alert('Lỗi', 'Please fill in all fields');
                         }
                       }}
                       disabled={createSavingsGoalMutation.isPending}

@@ -106,7 +106,7 @@ export default function PurchaseHistoryScreen() {
         </View>
 
         <View style={styles.cardFooter}>
-          <Text style={styles.totalLabel}>Total Price</Text>
+          <Text style={styles.totalLabel}>Tổng tiền</Text>
           <View style={styles.priceContainer}>
             <Ionicons name="logo-bitcoin" size={14} color="#F59E0B" />
             <Text style={styles.totalAmount}>{item.totalAmount.toLocaleString()}</Text>
@@ -124,12 +124,12 @@ export default function PurchaseHistoryScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Purchase History</Text>
+        <Text style={styles.headerTitle}>Lịch sử mua hàng</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
       <View style={styles.container}>
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           data={purchases}
           renderItem={renderPurchase}
           keyExtractor={(item) => item.id}
@@ -138,7 +138,7 @@ export default function PurchaseHistoryScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="receipt-outline" size={64} color="#334155" />
-              <Text style={styles.emptyText}>No purchase history found</Text>
+              <Text style={styles.emptyText}>Không có lịch sử mua hàng</Text>
             </View>
           }
         />

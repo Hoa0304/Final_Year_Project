@@ -81,12 +81,12 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Welcome back,</Text>
+          <Text style={styles.greeting}>Chào mừng quay trở lại,</Text>
           <Text style={styles.name}>{user?.fullName || user?.email}</Text>
         </View>
         <TouchableOpacity
           style={styles.notificationButton}
-          onPress={() => (navigation as any).navigate('Notifications')}
+          onPress={() => (navigation as any).navigate('Thông báo')}
           activeOpacity={0.7}
         >
           <Ionicons name="notifications-outline" size={22} color="#F8FAFC" />
@@ -100,7 +100,7 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
+      <ScrollView keyboardShouldPersistTaps="handled"
         style={styles.container}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -121,19 +121,19 @@ export default function DashboardScreen() {
           style={styles.balanceCard}
         >
           <View style={styles.balanceCardHeader}>
-            <Text style={styles.balanceLabel}>Shopee Coins Balance</Text>
-          <Ionicons name="wallet-outline" size={20} color="rgba(255, 255, 255, 0.8)" />
-        </View>
-        <Text style={styles.balanceAmount}>{Math.round(balance || 0).toLocaleString('en-US')} coins</Text>
+            <Text style={styles.balanceLabel}>Số dư Xu</Text>
+            <Ionicons name="wallet-outline" size={20} color="rgba(255, 255, 255, 0.8)" />
+          </View>
+          <Text style={styles.balanceAmount}>{Math.round(balance || 0).toLocaleString('en-US')} xu</Text>
 
           <View style={styles.balanceActions}>
             <TouchableOpacity
               style={styles.viewTransactionsButton}
-              onPress={() => (navigation as any).navigate('Transactions')}
+              onPress={() => (navigation as any).navigate('Giao dịch')}
               activeOpacity={0.8}
             >
               <Ionicons name="list-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.viewTransactionsText}>Transactions</Text>
+              <Text style={styles.viewTransactionsText}>Giao dịch</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.viewTransactionsButton, styles.expenseManagementButton]}
@@ -141,14 +141,14 @@ export default function DashboardScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="analytics-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.viewTransactionsText}>Expenses</Text>
+              <Text style={styles.viewTransactionsText}>Chi phí</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>Thao tác nhanh</Text>
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.actionCard}
@@ -158,17 +158,17 @@ export default function DashboardScreen() {
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
                 <Ionicons name="storefront" size={24} color="#6366F1" />
               </View>
-              <Text style={styles.actionText}>Marketplace</Text>
+              <Text style={styles.actionText}>Chợ</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => (navigation as any).navigate('Tasks')}
+              onPress={() => (navigation as any).navigate('Nhiệm vụ')}
               activeOpacity={0.8}
             >
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
                 <Ionicons name="checkmark-circle" size={24} color="#10B981" />
               </View>
-              <Text style={styles.actionText}>Tasks</Text>
+              <Text style={styles.actionText}>Nhiệm vụ</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
@@ -178,7 +178,7 @@ export default function DashboardScreen() {
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
                 <Ionicons name="chatbubbles" size={24} color="#F59E0B" />
               </View>
-              <Text style={styles.actionText}>AI Assistant</Text>
+              <Text style={styles.actionText}>Trợ lý AI</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
@@ -188,7 +188,7 @@ export default function DashboardScreen() {
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
                 <Ionicons name="people" size={24} color="#8B5CF6" />
               </View>
-              <Text style={styles.actionText}>Discussions</Text>
+              <Text style={styles.actionText}>Thảo luận</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -196,7 +196,7 @@ export default function DashboardScreen() {
         {/* AI Recommendations */}
         {spendingRecs && spendingRecs.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>💡 Spending Recommendations</Text>
+            <Text style={styles.sectionTitle}>💡 Gợi ý chi tiêu</Text>
             {spendingRecs.slice(0, 2).map((rec, index) => (
               <TouchableOpacity
                 key={index}
@@ -208,10 +208,10 @@ export default function DashboardScreen() {
                   } else if (rec.actionType === 'stock' && rec.actionId) {
                     (navigation as any).navigate('Marketplace');
                   } else if (rec.actionType === 'task' && rec.actionId) {
-                    (navigation as any).navigate('Tasks');
+                    (navigation as any).navigate('Nhiệm vụ');
                   } else {
                     if (rec.actionType === 'task') {
-                      (navigation as any).navigate('Tasks');
+                      (navigation as any).navigate('Nhiệm vụ');
                     } else if (rec.actionType === 'product') {
                       (navigation as any).navigate('Marketplace');
                     } else if (rec.actionType === 'stock') {
@@ -222,7 +222,7 @@ export default function DashboardScreen() {
               >
                 <Text style={styles.recommendationTitle}>{rec.title}</Text>
                 <Text style={styles.recommendationDesc}>{rec.description}</Text>
-                <Text style={styles.confidenceText}>Confidence: {(rec.confidence * 100).toFixed(0)}%</Text>
+                <Text style={styles.confidenceText}>Độ tin cậy: {(rec.confidence * 100).toFixed(0)}%</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -231,9 +231,9 @@ export default function DashboardScreen() {
         {/* AI Item Suggestions based on Transaction Labels */}
         {itemSuggestions && itemSuggestions.suggestions && itemSuggestions.suggestions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🤖 AI Suggestions for You</Text>
+            <Text style={styles.sectionTitle}>🤖 Trợ lý AI gợi ý cho bạn</Text>
             <Text style={styles.sectionSubtitle}>
-              Based on your transaction history and purchase patterns
+              Dựa trên lịch sử giao dịch và thói quen mua sắm của bạn
             </Text>
             {itemSuggestions.suggestions.map((suggestion, index) => (
               <TouchableOpacity
@@ -249,12 +249,12 @@ export default function DashboardScreen() {
                     <Text style={styles.recommendationTitle}>{suggestion.productName}</Text>
                     <Text style={styles.recommendationDesc}>{suggestion.reason}</Text>
                     <Text style={styles.productPriceText}>
-                      {suggestion.productPrice.toLocaleString('en-US')} VND
+                      {suggestion.productPrice.toLocaleString('en-US')} VNĐ
                     </Text>
                   </View>
                   <View style={styles.suggestionMeta}>
                     <Text style={styles.confidenceText}>
-                      {(suggestion.confidence * 100).toFixed(0)}% match
+                      Phù hợp {(suggestion.confidence * 100).toFixed(0)}%
                     </Text>
                   </View>
                 </View>
@@ -262,8 +262,8 @@ export default function DashboardScreen() {
             ))}
             {itemSuggestions.basedOn && (
               <Text style={styles.suggestionFooter}>
-                Based on {itemSuggestions.basedOn.transactionCount} transactions and{' '}
-                {itemSuggestions.basedOn.purchaseCount} purchases
+                Dựa trên {itemSuggestions.basedOn.transactionCount} giao dịch và{' '}
+                {itemSuggestions.basedOn.purchaseCount} lượt mua
               </Text>
             )}
           </View>
@@ -271,15 +271,15 @@ export default function DashboardScreen() {
 
 
 
-        {/* Recent Transactions */}
+        {/* Recent Giao dịch */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            <Text style={styles.sectionTitle}>Giao dịch gần đây</Text>
             <TouchableOpacity
-              onPress={() => (navigation as any).navigate('Transactions')}
+              onPress={() => (navigation as any).navigate('Giao dịch')}
               activeOpacity={0.7}
             >
-              <Text style={styles.seeAllText}>See All</Text>
+              <Text style={styles.seeAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
           {transactions && transactions.length > 0 ? (
@@ -300,12 +300,12 @@ export default function DashboardScreen() {
                   ]}
                 >
                   {transaction.type === 'spend' || transaction.type === 'revoke' ? '-' : '+'}
-                  {Math.round(transaction.amount).toLocaleString('en-US')} coins
+                  {Math.round(transaction.amount).toLocaleString('en-US')} xu
                 </Text>
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>No transactions yet</Text>
+            <Text style={styles.emptyText}>Chưa có giao dịch nào</Text>
           )}
         </View>
       </ScrollView>
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 13,
     color: '#94A3B8',
-    marginTop: -8,
+    marginTop: 8,
     marginBottom: 16,
   },
   seeAllText: {

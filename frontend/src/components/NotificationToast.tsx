@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ interface NotificationToastProps {
 export default function NotificationToast({ onPress, onDismiss }: NotificationToastProps) {
   const [visibleNotification, setVisibleNotification] = useState<Notification | null>(null);
   const [slideAnim] = useState(new Animated.Value(-200));
-  const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
+  const shownIdsRef = useRef<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function NotificationToast({ onPress, onDismiss }: NotificationTo
     // Find the latest unread notification that we haven't shown yet
     const latestUnread = sortedNotifications.find((notif) => {
       const isUnread = isNotificationUnread(notif);
-      const isNew = notif.id !== lastNotificationId;
+      const isNew = !shownIdsRef.current.has(notif.id);
       const isRecent = new Date().getTime() - new Date(notif.created_at).getTime() < 60000; // Within last minute
       return isUnread && isNew && isRecent;
     });
@@ -77,9 +77,9 @@ export default function NotificationToast({ onPress, onDismiss }: NotificationTo
       console.log('📬 Showing notification toast:', latestUnread.title, latestUnread.id);
       
       setVisibleNotification(latestUnread);
-      setLastNotificationId(latestUnread.id);
+      shownIdsRef.current.add(latestUnread.id);
       
-      // Reset animation
+      // Đặt lại animation
       slideAnim.setValue(-200);
       
       // Animate in
@@ -97,7 +97,7 @@ export default function NotificationToast({ onPress, onDismiss }: NotificationTo
 
       return () => clearTimeout(timer);
     }
-  }, [notifications, lastNotificationId, visibleNotification, mounted, slideAnim]);
+  }, [notifications, visibleNotification, mounted, slideAnim]);
 
   const handleDismiss = () => {
     Animated.timing(slideAnim, {

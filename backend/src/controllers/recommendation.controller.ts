@@ -125,10 +125,17 @@ export async function getMLRecommendations(req: AuthRequest, res: Response) {
     // Calculate ratings for products
     if (products && products.length > 0) {
       const productIds = products.map(p => p.id);
-      const { data: allRatings } = await supabase
-        .from('product_ratings')
-        .select('product_id, rating')
-        .in('product_id', productIds);
+      // Get all ratings for these products using chunks to avoid URI too long
+      let allRatings: any[] = [];
+      const chunkSize = 50;
+      for (let i = 0; i < productIds.length; i += chunkSize) {
+        const chunk = productIds.slice(i, i + chunkSize);
+        const { data } = await supabase
+          .from('product_ratings')
+          .select('product_id, rating')
+          .in('product_id', chunk);
+        if (data) allRatings = allRatings.concat(data);
+      }
 
       const ratingsMap = new Map<string, { total: number; count: number }>();
       allRatings?.forEach((rating) => {

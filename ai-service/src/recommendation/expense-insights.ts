@@ -52,12 +52,15 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     dailyTrend,
   } = input;
 
+  const periodMap = { day: 'ngày', week: 'tuần', month: 'tháng', year: 'năm' };
+  const pName = periodMap[period] || period;
+
   // 1. Negative Net Amount Warning
   if (netAmount < 0) {
     insights.push({
       type: 'warning',
-      title: '⚠️ Spending Exceeds Earnings',
-      message: `You're spending ${Math.abs(netAmount).toFixed(2)} coins more than you earn this ${period}. Consider reducing expenses or earning more.`,
+      title: '⚠️ Chi tiêu vượt thu nhập',
+      message: `Bạn đang chi tiêu nhiều hơn ${Math.abs(netAmount).toFixed(2)} xu so với thu nhập trong ${pName} này. Hãy cân nhắc cắt giảm chi tiêu hoặc tăng thu nhập.`,
       priority: 'high',
       actionType: 'reduce',
       amount: Math.abs(netAmount),
@@ -70,8 +73,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
   if (spendingRate > 0.9 && totalEarnings > 0) {
     insights.push({
       type: 'alert',
-      title: '🚨 High Spending Rate',
-      message: `You're spending ${(spendingRate * 100).toFixed(0)}% of your earnings. Consider saving more for future purchases.`,
+      title: '🚨 Tỷ lệ chi tiêu cao',
+      message: `Bạn đang chi tiêu ${(spendingRate * 100).toFixed(0)}% thu nhập của mình. Hãy cân nhắc tiết kiệm thêm cho các khoản mua sắm trong tương lai.`,
       priority: 'high',
       actionType: 'save',
       confidence: 0.9,
@@ -87,8 +90,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     if (topCategoryPercentage > 60 && totalSpending > 0) {
       insights.push({
         type: 'suggestion',
-        title: '💡 Diversify Your Spending',
-        message: `${topCategory[0]} accounts for ${topCategoryPercentage.toFixed(0)}% of your spending. Try exploring other categories for better balance.`,
+        title: '💡 Đa dạng hóa chi tiêu',
+        message: `Danh mục ${topCategory[0]} chiếm ${topCategoryPercentage.toFixed(0)}% chi tiêu của bạn. Hãy thử khám phá các danh mục khác để cân bằng hơn.`,
         priority: 'medium',
         actionType: 'diversify',
         category: topCategory[0],
@@ -101,8 +104,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
   if (balance < 50 && totalSpending > 0) {
     insights.push({
       type: 'alert',
-      title: '💰 Low Balance Warning',
-      message: `Your balance is low (${balance.toFixed(2)} coins). Consider completing tasks to earn more coins.`,
+      title: '💰 Cảnh báo số dư thấp',
+      message: `Số dư của bạn đang ở mức thấp (${balance.toFixed(2)} xu). Hãy cân nhắc làm thêm nhiệm vụ để kiếm thêm xu.`,
       priority: 'high',
       actionType: 'earn',
       confidence: 0.9,
@@ -122,8 +125,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
       if (trendChange > 30) {
         insights.push({
           type: 'warning',
-          title: '📈 Spending Trend Increasing',
-          message: `Your spending has increased by ${trendChange.toFixed(0)}% compared to the previous week. Monitor your expenses closely.`,
+          title: '📈 Xu hướng chi tiêu tăng',
+          message: `Chi tiêu của bạn đã tăng ${trendChange.toFixed(0)}% so với tuần trước. Hãy theo dõi sát sao các khoản chi phí của mình.`,
           priority: 'medium',
           actionType: 'reduce',
           confidence: 0.85,
@@ -131,8 +134,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
       } else if (trendChange < -20) {
         insights.push({
           type: 'insight',
-          title: '✅ Spending Trend Decreasing',
-          message: `Great! Your spending has decreased by ${Math.abs(trendChange).toFixed(0)}% compared to the previous week. Keep it up!`,
+          title: '✅ Xu hướng chi tiêu giảm',
+          message: `Tuyệt vời! Chi tiêu của bạn đã giảm ${Math.abs(trendChange).toFixed(0)}% so với tuần trước. Tiếp tục duy trì nhé!`,
           priority: 'low',
           actionType: 'save',
           confidence: 0.85,
@@ -147,8 +150,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     if (totalSpending > recommendedBudget) {
       insights.push({
         type: 'suggestion',
-        title: '💼 Budget Recommendation',
-        message: `Consider setting a budget of ${recommendedBudget.toFixed(2)} coins (70% of earnings) to maintain healthy spending habits.`,
+        title: '💼 Đề xuất ngân sách',
+        message: `Hãy cân nhắc đặt ngân sách ở mức ${recommendedBudget.toFixed(2)} xu (70% thu nhập) để duy trì thói quen chi tiêu lành mạnh.`,
         priority: 'medium',
         actionType: 'budget',
         amount: recommendedBudget,
@@ -173,8 +176,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
       if (largeTransactions.length > 0) {
         insights.push({
           type: 'insight',
-          title: '🔍 Unusual Spending Detected',
-          message: `You have ${largeTransactions.length} unusually large transaction(s). Review them to ensure they're necessary.`,
+          title: '🔍 Phát hiện chi tiêu bất thường',
+          message: `Bạn có ${largeTransactions.length} giao dịch lớn bất thường. Hãy kiểm tra lại xem chúng có thực sự cần thiết không.`,
           priority: 'medium',
           actionType: 'reduce',
           confidence: 0.7,
@@ -187,8 +190,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
   if (netAmount > 0 && netAmount > 100) {
     insights.push({
       type: 'tip',
-      title: '💎 Savings Opportunity',
-      message: `You have ${netAmount.toFixed(2)} coins saved this ${period}. Consider saving for bigger purchases.`,
+      title: '💎 Cơ hội tiết kiệm',
+      message: `Bạn đã tiết kiệm được ${netAmount.toFixed(2)} xu trong ${pName} này. Hãy cân nhắc tiết kiệm cho các khoản mua sắm lớn hơn.`,
       priority: 'low',
       actionType: 'save',
       confidence: 0.8,
@@ -202,8 +205,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     if (categoryPercentage > 40 && category === 'Shopping') {
       insights.push({
         type: 'suggestion',
-        title: '🛒 Shopping Category High',
-        message: `Shopping accounts for ${categoryPercentage.toFixed(0)}% of your spending. Consider if all purchases are necessary.`,
+        title: '🛒 Chi tiêu Mua sắm cao',
+        message: `Mua sắm chiếm ${categoryPercentage.toFixed(0)}% tổng chi tiêu của bạn. Hãy cân nhắc xem tất cả các khoản mua này có thực sự cần thiết không.`,
         priority: 'medium',
         actionType: 'reduce',
         category: category,
@@ -218,8 +221,8 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     if (earningSpendingRatio < 0.5) {
       insights.push({
         type: 'insight',
-        title: '🌟 Excellent Savings Rate',
-        message: `You're saving ${((1 - earningSpendingRatio) * 100).toFixed(0)}% of your earnings. Excellent financial discipline!`,
+        title: '🌟 Tỷ lệ tiết kiệm xuất sắc',
+        message: `Bạn đang tiết kiệm được ${((1 - earningSpendingRatio) * 100).toFixed(0)}% thu nhập. Kỷ luật tài chính quá tuyệt vời!`,
         priority: 'low',
         actionType: 'save',
         confidence: 0.9,

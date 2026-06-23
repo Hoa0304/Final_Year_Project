@@ -87,8 +87,8 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
     const recommendedProduct = sortedProducts[0];
 
     recommendations.push({
-      title: `Affordable Product: ${recommendedProduct.name}`,
-      description: `This product fits your budget (${recommendedProduct.price} coins). Great value for your virtual currency!`,
+      title: `Sản phẩm vừa túi tiền: ${recommendedProduct.name}`,
+      description: `Sản phẩm này phù hợp với ngân sách của bạn (${recommendedProduct.price} xu). Rất đáng để trải nghiệm!`,
       actionType: 'product',
       actionId: recommendedProduct.id,
       confidence: 0.8
@@ -104,8 +104,8 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
     if (midRangeProducts.length > 0) {
       const popularProduct = midRangeProducts[Math.floor(Math.random() * midRangeProducts.length)];
       recommendations.push({
-        title: `Popular Choice: ${popularProduct.name}`,
-        description: `A popular product that many users enjoy. Price: ${popularProduct.price} coins.`,
+        title: `Lựa chọn phổ biến: ${popularProduct.name}`,
+        description: `Sản phẩm được nhiều người yêu thích. Giá: ${popularProduct.price} xu.`,
         actionType: 'product',
         actionId: popularProduct.id,
         confidence: 0.7
@@ -136,8 +136,8 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
     if (diverseProducts.length > 0) {
       const diverseProduct = diverseProducts[0];
       recommendations.push({
-        title: `Try Something New: ${diverseProduct.name}`,
-        description: `Explore a different category! This product offers variety in your spending.`,
+        title: `Thử nghiệm mới: ${diverseProduct.name}`,
+        description: `Khám phá một danh mục mới! Sản phẩm này mang lại sự đa dạng cho chi tiêu của bạn.`,
         actionType: 'product',
         actionId: diverseProduct.id,
         confidence: 0.65
@@ -152,8 +152,8 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
       const targetProduct = expensiveProducts[0];
       const needed = targetProduct.price - balance;
       recommendations.push({
-        title: `Save for ${targetProduct.name}`,
-        description: `You're close! Save ${needed.toFixed(2)} more coins to afford this product.`,
+        title: `Tiết kiệm mua ${targetProduct.name}`,
+        description: `Sắp đủ rồi! Tiết kiệm thêm ${needed.toFixed(2)} xu nữa để có thể mua sản phẩm này.`,
         actionType: 'product',
         actionId: targetProduct.id,
         confidence: 0.6

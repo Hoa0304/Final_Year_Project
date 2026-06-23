@@ -79,23 +79,6 @@ export async function momoWebhook(req: Request, res: Response) {
   }
 }
 
-/**
- * Get available coin packages
- */
-export async function getCoinPackages(req: Request, res: Response) {
-  try {
-    const { data: packages, error } = await supabase
-      .from('coin_packages')
-      .select('*')
-      .eq('is_active', true)
-      .order('price_vnd', { ascending: true });
-
-    if (error) throw error;
-    res.json({ packages });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch packages' });
-  }
-}
 
 /**
  * Get available vendor VIP packages

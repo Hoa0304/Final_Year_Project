@@ -31,11 +31,11 @@ export default function TopUpScreen({ navigation }: any) {
       if (data.url) {
         Linking.openURL(data.url);
       } else {
-        Alert.alert('Error', 'Unable to create payment link');
+        Alert.alert('Lỗi', 'Unable to create payment link');
       }
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Transaction failed');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Transaction failed');
     },
   });
 
@@ -57,14 +57,14 @@ export default function TopUpScreen({ navigation }: any) {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#F8FAFC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Top Up Coins</Text>
+        <Text style={styles.headerTitle}>Nạp Xu</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Method Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Method</Text>
+          <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
 
           <TouchableOpacity
             style={[styles.methodCard, selectedMethod === 'vnpay' && styles.methodCardSelected, { marginBottom: 12 }]}
@@ -74,7 +74,7 @@ export default function TopUpScreen({ navigation }: any) {
             <View style={[styles.methodIconContainer, { backgroundColor: 'rgba(99, 102, 241, 0.1)' }]}>
               <Ionicons name="card-outline" size={22} color="#6366F1" />
             </View>
-            <Text style={styles.methodName}>VNPay (ATM Card / QR)</Text>
+            <Text style={styles.methodName}>VNPay (Thẻ ATM / QR)</Text>
             {selectedMethod === 'vnpay' ? (
               <Ionicons name="checkmark-circle" size={22} color="#6366F1" />
             ) : (
@@ -90,7 +90,7 @@ export default function TopUpScreen({ navigation }: any) {
             <View style={[styles.methodIconContainer, { backgroundColor: 'rgba(236, 72, 153, 0.1)' }]}>
               <Ionicons name="wallet-outline" size={22} color="#EC4899" />
             </View>
-            <Text style={styles.methodName}>MoMo Wallet</Text>
+            <Text style={styles.methodName}>Ví MoMo</Text>
             {selectedMethod === 'momo' ? (
               <Ionicons name="checkmark-circle" size={22} color="#EC4899" />
             ) : (
@@ -101,19 +101,19 @@ export default function TopUpScreen({ navigation }: any) {
 
         {/* Packages Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Coin Packages</Text>
+          <Text style={styles.sectionTitle}>Các gói Xu</Text>
 
           {isLoading ? (
             <ActivityIndicator size="large" color="#6366F1" style={{ marginTop: 40 }} />
           ) : packages?.length === 0 ? (
-            <Text style={styles.emptyText}>No coin packages available at this time.</Text>
+            <Text style={styles.emptyText}>Hiện chưa có gói Xu nào.</Text>
           ) : (
             packages?.map((pkg) => (
               <View key={pkg.id} style={styles.packageCard}>
                 <View style={styles.packageInfo}>
                   <View style={styles.coinHeader}>
                     <Ionicons name="logo-bitcoin" size={24} color="#F59E0B" />
-                    <Text style={styles.coinAmount}>{Math.round(pkg.coins).toLocaleString('en-US')} coins</Text>
+                    <Text style={styles.coinAmount}>{Math.round(pkg.coins).toLocaleString('en-US')} xu</Text>
                   </View>
                   <Text style={styles.packageName}>{pkg.name}</Text>
                   {pkg.description && (
@@ -137,7 +137,7 @@ export default function TopUpScreen({ navigation }: any) {
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
                       <Text style={styles.buyButtonText}>
-                        {Math.round(pkg.price_vnd).toLocaleString('en-US')} VND
+                        {Math.round(pkg.price_vnd).toLocaleString('en-US')} VNĐ
                       </Text>
                     )}
                   </LinearGradient>

@@ -131,7 +131,7 @@ export async function updateOrderStatus(
 }
 
 /**
- * Mock VND payment (dev only)
+ * Mock VNĐ payment (dev only)
  */
 export async function mockVndPayment(orderId: string): Promise<any> {
   const response = await api.post('/orders/mock-vnd-payment', { orderId });
@@ -159,12 +159,12 @@ export async function getEthRate(): Promise<{ rate: number; source: string }> {
  */
 export function getStatusLabel(status: OrderStatus): string {
   const labels: Record<OrderStatus, string> = {
-    pending_payment: 'Pending Payment',
-    processing: 'Processing',
-    shipped: 'Shipped',
-    out_for_delivery: 'Out for Delivery',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
+    pending_payment: 'Chờ thanh toán',
+    processing: 'Đang xử lý',
+    shipped: 'Đã gửi hàng',
+    out_for_delivery: 'Đang giao hàng',
+    delivered: 'Đã giao',
+    cancelled: 'Đã huỷ',
   };
   return labels[status] || status;
 }

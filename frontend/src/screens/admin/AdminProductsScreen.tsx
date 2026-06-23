@@ -35,6 +35,8 @@ interface Product {
   is_active: boolean;
   status?: string;
   created_at: string;
+  vendor?: { email: string, full_name: string };
+  created_by?: string;
 }
 
 export default function AdminProductsScreen({ route }: any) {
@@ -71,10 +73,10 @@ export default function AdminProductsScreen({ route }: any) {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
       setModalVisible(false);
       resetForm();
-      Alert.alert('Success', 'Product created successfully');
+      Alert.alert('Thành công', 'Product created successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to create product');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to create product');
     },
   });
 
@@ -87,10 +89,10 @@ export default function AdminProductsScreen({ route }: any) {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
       setModalVisible(false);
       resetForm();
-      Alert.alert('Success', 'Product updated successfully');
+      Alert.alert('Thành công', 'Product updated successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update product');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update product');
     },
   });
 
@@ -101,10 +103,10 @@ export default function AdminProductsScreen({ route }: any) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
-      Alert.alert('Success', 'Product deleted successfully');
+      Alert.alert('Thành công', 'Product deleted successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to delete product');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to delete product');
     },
   });
 
@@ -115,10 +117,10 @@ export default function AdminProductsScreen({ route }: any) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
-      Alert.alert('Success', 'Product status updated');
+      Alert.alert('Thành công', 'Product status updated');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update status');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update status');
     },
   });
 
@@ -154,7 +156,7 @@ export default function AdminProductsScreen({ route }: any) {
 
   const handleSave = () => {
     if (!formData.name || !formData.price) {
-      Alert.alert('Error', 'Name and price are required');
+      Alert.alert('Lỗi', 'Name and price are required');
       return;
     }
 
@@ -197,7 +199,7 @@ export default function AdminProductsScreen({ route }: any) {
     const statusText =
       item.status === 'pending_review' ? 'Pending' :
         item.status === 'approved' ? 'Approved' :
-          item.status === 'rejected' ? 'Rejected' : (item.status || 'Active');
+          item.status === 'rejected' ? 'Rejected' : (item.status || 'Hoạt động');
 
     return (
       <View style={styles.productCard}>
@@ -212,8 +214,11 @@ export default function AdminProductsScreen({ route }: any) {
         </View>
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.productPrice}>{Math.round(item.price).toLocaleString('en-US')} VND</Text>
-          <Text style={styles.productStock}>Stock: <Text style={styles.stockValue}>{item.stock_quantity}</Text></Text>
+          <Text style={styles.productVendor} numberOfLines={1}>
+            By: {item.vendor ? item.vendor.full_name || item.vendor.email : 'Hệ thống Admin'}
+          </Text>
+          <Text style={styles.productPrice}>{Math.round(item.price).toLocaleString('en-US')} VNĐ</Text>
+          <Text style={styles.productStock}>Kho: <Text style={styles.stockValue}>{item.stock_quantity}</Text></Text>
 
           <View style={styles.badgeRow}>
             {item.category && (
@@ -294,7 +299,7 @@ export default function AdminProductsScreen({ route }: any) {
       <StatusBar barStyle="light-content" />
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{isModeration ? 'Approve Products' : 'Manage Products'}</Text>
+          <Text style={styles.headerTitle}>{isModeration ? 'Approve Products' : 'Quản lý Products'}</Text>
           {!isModeration && (
             <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
               <Ionicons name="add" size={24} color="#020617" />
@@ -305,10 +310,10 @@ export default function AdminProductsScreen({ route }: any) {
         {isLoading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#6366F1" />
-            <Text style={{ color: '#94A3B8', marginTop: 12 }}>Loading list...</Text>
+            <Text style={{ color: '#94A3B8', marginTop: 12 }}>Đang tải danh sách...</Text>
           </View>
         ) : (
-          <FlatList
+          <FlatList keyboardShouldPersistTaps="handled"
             data={displayedProducts}
             keyExtractor={(item) => item.id}
             renderItem={renderProduct}
@@ -316,7 +321,7 @@ export default function AdminProductsScreen({ route }: any) {
             ListEmptyComponent={
               <View style={styles.centerContainer}>
                 <Ionicons name="cube-outline" size={64} color="#334155" />
-                <Text style={styles.emptyText}>No products found</Text>
+                <Text style={styles.emptyText}>Không có sản phẩm nào</Text>
               </View>
             }
           />
@@ -346,7 +351,7 @@ export default function AdminProductsScreen({ route }: any) {
                     >
                       <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>
-                          {editingProduct ? 'Edit Product' : 'Create Product'}
+                          {editingProduct ? 'Sửa sản phẩm' : 'Tạo sản phẩm'}
                         </Text>
                         <TouchableOpacity
                           onPress={() => {
@@ -359,10 +364,10 @@ export default function AdminProductsScreen({ route }: any) {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Product Name *</Text>
+                        <Text style={styles.label}>Tên sản phẩm *</Text>
                         <TextInput
                           style={styles.input}
-                          placeholder="Enter product name"
+                          placeholder="Nhập product name"
                           placeholderTextColor="#64748B"
                           value={formData.name}
                           onChangeText={(text) => setFormData({ ...formData, name: text })}
@@ -371,10 +376,10 @@ export default function AdminProductsScreen({ route }: any) {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Description</Text>
+                        <Text style={styles.label}>Mô tả</Text>
                         <TextInput
                           style={[styles.input, styles.textArea]}
-                          placeholder="Product description"
+                          placeholder="Mô tả sản phẩm"
                           placeholderTextColor="#64748B"
                           value={formData.description}
                           onChangeText={(text) => setFormData({ ...formData, description: text })}
@@ -387,10 +392,10 @@ export default function AdminProductsScreen({ route }: any) {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Price (VND) *</Text>
+                        <Text style={styles.label}>Giá (VNĐ) *</Text>
                         <TextInput
                           style={styles.input}
-                          placeholder="Enter price"
+                          placeholder="Nhập price"
                           placeholderTextColor="#64748B"
                           value={formData.price}
                           onChangeText={(text) => setFormData({ ...formData, price: text })}
@@ -401,10 +406,10 @@ export default function AdminProductsScreen({ route }: any) {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Stock Quantity</Text>
+                        <Text style={styles.label}>Số lượng trong kho</Text>
                         <TextInput
                           style={styles.input}
-                          placeholder="Enter quantity"
+                          placeholder="Nhập quantity"
                           placeholderTextColor="#64748B"
                           value={formData.stockQuantity}
                           onChangeText={(text) => setFormData({ ...formData, stockQuantity: text })}
@@ -415,10 +420,10 @@ export default function AdminProductsScreen({ route }: any) {
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Category</Text>
+                        <Text style={styles.label}>Danh mục</Text>
                         <TextInput
                           style={styles.input}
-                          placeholder="e.g. Electronics, Fashion..."
+                          placeholder="VD: Điện tử, Thời trang..."
                           placeholderTextColor="#64748B"
                           value={formData.category}
                           onChangeText={(text) => setFormData({ ...formData, category: text })}
@@ -429,7 +434,7 @@ export default function AdminProductsScreen({ route }: any) {
 
                       <ImageUploadPicker
                         label="Image"
-                        placeholder="Enter URL or upload from device"
+                        placeholder="Nhập URL or upload from device"
                         value={formData.imageUrl}
                         onChange={(url) => setFormData({ ...formData, imageUrl: url })}
                         folder="products"
@@ -444,8 +449,8 @@ export default function AdminProductsScreen({ route }: any) {
                           {createMutation.isPending || updateMutation.isPending
                             ? 'Saving...'
                             : editingProduct
-                              ? 'Update'
-                              : 'Save Product'}
+                              ? 'Cập nhật'
+                              : 'Lưu sản phẩm'}
                         </Text>
                       </TouchableOpacity>
                     </ScrollView>
@@ -540,6 +545,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#F59E0B',
+    marginBottom: 4,
+  },
+  productVendor: {
+    fontSize: 12,
+    color: '#64748B',
     marginBottom: 4,
   },
   currency: {

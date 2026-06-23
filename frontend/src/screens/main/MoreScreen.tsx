@@ -33,7 +33,7 @@ export default function MoreScreen() {
       icon: 'sparkles',
       screen: 'Chat',
       color: '#007AFF',
-      description: 'Chat with AI assistant',
+      description: 'Trò chuyện với trợ lý AI',
     },
     {
       id: 'social',
@@ -41,7 +41,7 @@ export default function MoreScreen() {
       icon: 'people',
       screen: 'Social',
       color: '#34C759',
-      description: 'Community discussions',
+      description: 'Thảo luận cộng đồng',
     },
     {
       id: 'messages',
@@ -49,23 +49,23 @@ export default function MoreScreen() {
       icon: 'chatbubbles',
       screen: 'Messages',
       color: '#FF9500',
-      description: 'Direct messages',
+      description: 'Tin nhắn trực tiếp',
     },
     {
       id: 'tasks',
-      title: 'Tasks',
+      title: 'Nhiệm vụ',
       icon: 'checkmark-circle',
-      screen: 'Tasks',
+      screen: 'Nhiệm vụ',
       color: '#34C759',
-      description: 'Complete tasks & earn rewards',
+      description: 'Hoàn thành nhiệm vụ & nhận thưởng',
     },
     {
       id: 'notifications',
-      title: 'Notifications',
+      title: 'Thông báo',
       icon: 'notifications',
-      screen: 'Notifications',
+      screen: 'Thông báo',
       color: '#FF3B30',
-      description: 'View all notifications',
+      description: 'Xem tất cả thông báo',
     },
     {
       id: 'expense',
@@ -73,7 +73,7 @@ export default function MoreScreen() {
       icon: 'wallet',
       screen: 'ExpenseManagement',
       color: '#5856D6',
-      description: 'Track expenses & budgets',
+      description: 'Theo dõi chi phí & ngân sách',
     },
   ];
 
@@ -87,12 +87,12 @@ export default function MoreScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>More</Text>
+        <Text style={styles.headerTitle}>Khác</Text>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Communication</Text>
+          <Text style={styles.sectionTitle}>Giao tiếp</Text>
           <View style={styles.menuGrid}>
             {menuItems.slice(0, 3).map((item) => (
               <TouchableOpacity
@@ -113,7 +113,7 @@ export default function MoreScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Activities</Text>
+          <Text style={styles.sectionTitle}>Hoạt động</Text>
           <View style={styles.menuGrid}>
             {menuItems.slice(3, 4).map((item) => (
               <TouchableOpacity
@@ -134,7 +134,7 @@ export default function MoreScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tools & Settings</Text>
+          <Text style={styles.sectionTitle}>Công cụ & Cài đặt</Text>
           <View style={styles.menuList}>
             {menuItems.slice(4).map((item) => (
               <TouchableOpacity

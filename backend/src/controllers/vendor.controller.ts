@@ -349,9 +349,9 @@ export async function getVendorAnalytics(req: AuthRequest, res: Response) {
     const allOrders = orders || [];
     const deliveredOrders = allOrders.filter(o => o.status === 'delivered');
     const totalRevenueCoins = deliveredOrders
-      .reduce((sum, o) => sum + (o.price_coins || 0), 0); // total coins offset applied by buyers
+      .reduce((sum, o) => sum + (o.price_coins || 0), 0);
     const totalRevenueVnd = deliveredOrders
-      .reduce((sum, o) => sum + (o.original_price_coins || 0), 0); // gross sales value in VND
+      .reduce((sum, o) => sum + (o.price_vnd || 0), 0);
 
     // Active subscription
     const { data: subscription } = await supabase
@@ -399,8 +399,8 @@ export async function getAdminVendorStats(req: AuthRequest, res: Response) {
     // Get all vendors
     const { data: vendors } = await supabase
       .from('users')
-      .select('id, full_name, email, created_at')
-      .eq('role', 'vendor');
+      .select('id, full_name, email, created_at, role')
+      .in('role', ['vendor', 'user']);
 
     if (!vendors) return res.json({ vendors: [] });
 
@@ -421,7 +421,7 @@ export async function getAdminVendorStats(req: AuthRequest, res: Response) {
         const allOrders = orders || [];
         const delivered = allOrders.filter(o => o.status === 'delivered');
         const revenueCoins = delivered.reduce((s, o) => s + (o.price_coins || 0), 0);
-        const revenueVnd = delivered.reduce((s, o) => s + (o.original_price_coins || 0), 0);
+        const revenueVnd = delivered.reduce((s, o) => s + (o.price_vnd || 0), 0);
 
         const { data: subscription } = await supabase
           .from('vendor_subscriptions')
@@ -431,13 +431,16 @@ export async function getAdminVendorStats(req: AuthRequest, res: Response) {
           .single();
 
         return {
-          ...vendor,
+          id: vendor.id,
+          full_name: vendor.full_name,
+          email: vendor.email,
+          role: vendor.role,
           totalProducts: totalProducts || 0,
           totalOrders: allOrders.length,
           deliveredOrders: delivered.length,
           revenueCoins,
           revenueVnd,
-          subscriptionPlan: (subscription as any)?.vendor_packages?.name || 'Free',
+          subscriptionPlan: (subscription as any)?.vendor_packages?.name || 'N/A'
         };
       })
     );

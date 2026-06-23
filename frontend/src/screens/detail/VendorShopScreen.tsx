@@ -59,15 +59,15 @@ export default function VendorShopScreen() {
           <View style={styles.priceContainer}>
             {hasDiscount ? (
               <>
-                <Text style={styles.productPriceOriginal}>{Math.round(item.price).toLocaleString('en-US')} VND</Text>
-                <Text style={styles.productPrice}>{Math.round(discountedPrice).toLocaleString('en-US')} VND</Text>
+                <Text style={styles.productPriceOriginal}>{Math.round(item.price).toLocaleString('en-US')} VNĐ</Text>
+                <Text style={styles.productPrice}>{Math.round(discountedPrice).toLocaleString('en-US')} VNĐ</Text>
               </>
             ) : (
-              <Text style={styles.productPrice}>{Math.round(item.price).toLocaleString('en-US')} VND</Text>
+              <Text style={styles.productPrice}>{Math.round(item.price).toLocaleString('en-US')} VNĐ</Text>
             )}
           </View>
           {item.stock_quantity === 0 && (
-            <Text style={styles.outOfStock}>Out of Stock</Text>
+            <Text style={styles.outOfStock}>Hết hàng</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -81,7 +81,7 @@ export default function VendorShopScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text>Loading vendor shop...</Text>
+          <Text>Đang tải cửa hàng...</Text>
         </View>
       </SafeAreaView>
     );
@@ -92,7 +92,7 @@ export default function VendorShopScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
-          <Text style={styles.errorText}>Vendor not found</Text>
+          <Text style={styles.errorText}>Người bán not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -119,7 +119,7 @@ export default function VendorShopScreen() {
         )}
       </View>
 
-      <FlatList
+      <FlatList keyboardShouldPersistTaps="handled"
         key="products-list"
         data={vendorInfo.products}
         renderItem={renderProduct}
@@ -137,7 +137,7 @@ export default function VendorShopScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="cube-outline" size={64} color="#334155" />
-            <Text style={styles.emptyText}>No products available yet</Text>
+            <Text style={styles.emptyText}>Chưa có sản phẩm nào</Text>
           </View>
         }
       />

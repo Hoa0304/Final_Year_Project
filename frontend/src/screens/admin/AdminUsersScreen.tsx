@@ -56,10 +56,10 @@ export default function AdminUsersScreen() {
       setAmount('');
       setDescription('');
       setSelectedUser(null);
-      Alert.alert('Success', data.message || 'Coins granted/revoked successfully');
+      Alert.alert('Thành công', data.message || 'Coins granted/revoked successfully');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to grant/revoke coins');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to grant/revoke xu');
     },
   });
 
@@ -74,7 +74,7 @@ export default function AdminUsersScreen() {
     if (!selectedUser) return;
 
     if (!amount || parseFloat(amount) === 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      Alert.alert('Lỗi', 'Please enter a valid amount');
       return;
     }
 
@@ -94,7 +94,7 @@ export default function AdminUsersScreen() {
         <Text style={styles.userEmail}>{item.email}</Text>
         {item.full_name && <Text style={styles.userName}>{item.full_name}</Text>}
         <View style={styles.userDetails}>
-          <Text style={styles.userBalance}>Balance: {Math.round(item.virtual_balance).toLocaleString('en-US')} coins</Text>
+          <Text style={styles.userBalance}>Balance: {Math.round(item.virtual_balance).toLocaleString('en-US')} xu</Text>
           <View style={[styles.roleBadge, item.role === 'admin' && styles.adminBadge, item.role === 'vendor' && styles.vendorBadge]}>
             <Text style={styles.roleText}>{item.role.toUpperCase()}</Text>
           </View>
@@ -105,7 +105,7 @@ export default function AdminUsersScreen() {
         onPress={() => openGrantModal(item)}
       >
         <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-        <Text style={styles.grantButtonText}>Manage</Text>
+        <Text style={styles.grantButtonText}>Quản lý</Text>
       </TouchableOpacity>
     </View>
   );
@@ -114,22 +114,22 @@ export default function AdminUsersScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Users Management</Text>
+          <Text style={styles.headerTitle}>Quản lý người dùng</Text>
         </View>
 
         {isLoading ? (
           <View style={styles.centerContainer}>
-            <Text>Loading...</Text>
+            <Text>Đang tải...</Text>
           </View>
         ) : (
-          <FlatList
+          <FlatList keyboardShouldPersistTaps="handled"
             data={response?.users || []}
             keyExtractor={(item) => item.id}
             renderItem={renderUser}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.centerContainer}>
-                <Text style={styles.emptyText}>No users found</Text>
+                <Text style={styles.emptyText}>Không tìm thấy người dùng</Text>
               </View>
             }
           />
@@ -158,7 +158,7 @@ export default function AdminUsersScreen() {
                       showsVerticalScrollIndicator={false}
                     >
                       <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Grant/Revoke Coins</Text>
+                        <Text style={styles.modalTitle}>Tặng/Thu hồi Xu</Text>
                         <TouchableOpacity
                           onPress={() => {
                             Keyboard.dismiss();
@@ -173,17 +173,17 @@ export default function AdminUsersScreen() {
                         <>
                           <Text style={styles.userInfoText}>User: {selectedUser.email}</Text>
                           <Text style={styles.userInfoText}>
-                            Current Balance: {Math.round(selectedUser.virtual_balance).toLocaleString('en-US')} coins
+                            Current Balance: {Math.round(selectedUser.virtual_balance).toLocaleString('en-US')} xu
                           </Text>
                         </>
                       )}
 
                       <Text style={styles.inputLabel}>
-                        Amount (positive to grant, negative to revoke)
+                        Số lượng (+ để tặng, - để thu hồi)
                       </Text>
                       <TextInput
                         style={styles.input}
-                        placeholder="e.g., 100 or -50"
+                        placeholder="VD: 100 hoặc -50"
                         placeholderTextColor="#000"
                         value={amount}
                         onChangeText={setAmount}
@@ -192,10 +192,10 @@ export default function AdminUsersScreen() {
                         onSubmitEditing={Keyboard.dismiss}
                       />
 
-                      <Text style={styles.inputLabel}>Description (Optional)</Text>
+                      <Text style={styles.inputLabel}>Mô tả (Tuỳ chọn)</Text>
                       <TextInput
                         style={[styles.input, styles.textArea]}
-                        placeholder="Reason for grant/revoke"
+                        placeholder="Lý do for grant/revoke"
                         placeholderTextColor="#000"
                         value={description}
                         onChangeText={setDescription}
