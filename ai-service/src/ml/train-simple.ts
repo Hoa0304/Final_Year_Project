@@ -1,7 +1,7 @@
 /**
- * Simple Training Script - Works with minimal data
+ * Script huấn luyện đơn giản - Hoạt động với dữ liệu tối thiểu
  * 
- * This script trains models even with minimal data for initial setup
+ * Script này huấn luyện các mô hình ngay cả với dữ liệu tối thiểu cho thiết lập ban đầu
  */
 
 import { ContentBasedModel } from './content-based';
@@ -18,7 +18,7 @@ async function fetchTrainingData(): Promise<TrainingData> {
   console.log(`Backend URL: ${BACKEND_URL}`);
   
   try {
-    // Try to fetch data, but don't fail if endpoints don't exist yet
+    // Cố gắng tải dữ liệu, nhưng không lỗi nếu các endpoint chưa tồn tại
     const [productsRes, purchasesRes, ratingsRes, usersRes] = await Promise.all([
       axios.get(`${BACKEND_URL}/api/products?limit=1000`, { timeout: 5000 }).catch((err) => {
         console.log(`⚠️  Products endpoint failed: ${err.message}`);
@@ -45,7 +45,7 @@ async function fetchTrainingData(): Promise<TrainingData> {
 
     console.log(`✅ Fetched: ${products.length} products, ${purchases.length} purchases, ${ratings.length} ratings, ${users.length} users`);
 
-    // If no data, create sample data for initial training
+    // Nếu không có dữ liệu, tạo dữ liệu mẫu để huấn luyện ban đầu
     if (products.length === 0 && purchases.length === 0 && ratings.length === 0) {
       console.log('📝 No data found. Creating sample data for initial training...');
       return createSampleData();
@@ -66,7 +66,7 @@ async function fetchTrainingData(): Promise<TrainingData> {
 }
 
 /**
- * Create sample data for initial training when no real data exists
+ * Tạo dữ liệu mẫu cho huấn luyện ban đầu khi không có dữ liệu thực
  */
 function createSampleData(): TrainingData {
   const sampleProducts: Product[] = [

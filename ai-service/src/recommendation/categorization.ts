@@ -1,8 +1,8 @@
 /**
- * Transaction Categorization Engine
+ * Công cụ phân loại giao dịch
  * 
- * This module provides AI-based categorization for transactions.
- * Uses rule-based logic that can be extended with machine learning models.
+ * Mô-đun này cung cấp tính năng phân loại giao dịch dựa trên AI.
+ * Sử dụng logic dựa trên quy tắc có thể được mở rộng với các mô hình học máy.
  */
 
 interface Transaction {
@@ -26,7 +26,7 @@ interface CategorizationResult {
   confidence: number;
 }
 
-// Category keywords mapping (English & Vietnamese)
+// Ánh xạ từ khóa danh mục (tiếng Anh và tiếng Việt)
 const categoryKeywords: { [key: string]: string[] } = {
   'Shopping': ['product', 'purchase', 'buy', 'order', 'item', 'cart', 'shop', 'store', 'mua sắm', 'quần áo', 'thời trang', 'giày dép', 'mỹ phẩm', 'đồ gia dụng'],
   'Electronics': ['laptop', 'phone', 'computer', 'tablet', 'headphone', 'earphone', 'speaker', 'camera', 'tv', 'monitor', 'điện tử', 'điện thoại', 'máy tính', 'tai nghe'],
@@ -41,7 +41,7 @@ const categoryKeywords: { [key: string]: string[] } = {
 };
 
 /**
- * Categorize a transaction based on its content and user history
+ * Phân loại một giao dịch dựa trên nội dung của nó và lịch sử người dùng
  */
 export function categorizeTransaction(
   transaction: Transaction,
@@ -51,19 +51,19 @@ export function categorizeTransaction(
   const referenceType = (transaction.reference_type || '').toLowerCase();
   const transactionType = transaction.type.toLowerCase();
 
-  // Analyze user's historical categories for similar transactions
+  // Phân tích các danh mục lịch sử của người dùng cho các giao dịch tương tự
   const similarTransactions = userHistory.filter(t => {
     const tDesc = (t.description || '').toLowerCase();
     const tType = t.type.toLowerCase();
     
-    // Check for similar keywords or transaction types
+    // Kiểm tra các từ khóa hoặc loại giao dịch tương tự
     return (
       (tDesc && description && (tDesc.includes(description.split(' ')[0]) || description.includes(tDesc.split(' ')[0]))) ||
       tType === transactionType
     );
   });
 
-  // Get most common category from similar transactions
+  // Lấy danh mục phổ biến nhất từ các giao dịch tương tự
   const categoryFrequency: { [key: string]: number } = {};
   similarTransactions.forEach(t => {
     if (t.category) {
@@ -74,10 +74,10 @@ export function categorizeTransaction(
   const mostCommonCategory = Object.entries(categoryFrequency)
     .sort((a, b) => b[1] - a[1])[0]?.[0];
 
-  // Score categories based on keywords
+  // Chấm điểm các danh mục dựa trên từ khóa
   const categoryScores: { [key: string]: number } = {};
 
-  // Check description keywords
+  // Kiểm tra từ khóa trong mô tả
   Object.entries(categoryKeywords).forEach(([category, keywords]) => {
     keywords.forEach(keyword => {
       if (description.includes(keyword)) {
@@ -86,14 +86,14 @@ export function categorizeTransaction(
     });
   });
 
-  // Check reference_type
+  // Kiểm tra reference_type (loại tham chiếu)
   if (referenceType === 'order') {
     if (transaction.productCategory) {
       const cat = transaction.productCategory.toLowerCase();
       let matchedMaster = Object.keys(categoryKeywords).find(k => k.toLowerCase() === cat);
       
       if (!matchedMaster) {
-        // Search inside keywords if exact master category name didn't match
+        // Tìm kiếm trong các từ khóa nếu tên danh mục chính xác không khớp
         matchedMaster = Object.entries(categoryKeywords).find(([_, keywords]) => 
           keywords.some(kw => cat.includes(kw) || kw.includes(cat))
         )?.[0];
@@ -115,7 +115,7 @@ export function categorizeTransaction(
     categoryScores['Reward'] = (categoryScores['Reward'] || 0) + 5;
   }
 
-  // Check transaction type
+  // Kiểm tra loại giao dịch
   switch (transactionType) {
     case 'spend':
       categoryScores['Shopping'] = (categoryScores['Shopping'] || 0) + 3;
@@ -130,12 +130,12 @@ export function categorizeTransaction(
       break;
   }
 
-  // Boost score if it matches user's historical pattern
+  // Tăng điểm nếu khớp với mẫu lịch sử của người dùng
   if (mostCommonCategory && categoryScores[mostCommonCategory]) {
     categoryScores[mostCommonCategory] += 2;
   }
 
-  // Find category with highest score
+  // Tìm danh mục có điểm cao nhất
   const sortedCategories = Object.entries(categoryScores)
     .sort((a, b) => b[1] - a[1]);
 
@@ -147,7 +147,7 @@ export function categorizeTransaction(
     const maxScore = sortedCategories[0][1];
     const secondScore = sortedCategories[1]?.[1] || 0;
     
-    // Calculate confidence based on score difference
+    // Tính toán độ tin cậy dựa trên sự khác biệt điểm số
     if (maxScore >= 5) {
       confidence = Math.min(0.95, 0.7 + (maxScore - secondScore) * 0.05);
     } else if (maxScore >= 3) {
@@ -156,12 +156,12 @@ export function categorizeTransaction(
       confidence = 0.55;
     }
 
-    // Increase confidence if it matches user history
+    // Tăng độ tin cậy nếu khớp với lịch sử người dùng
     if (category === mostCommonCategory && similarTransactions.length >= 2) {
       confidence = Math.min(0.95, confidence + 0.1);
     }
   } else if (mostCommonCategory) {
-    // Fallback to user's most common category
+    // Dự phòng sang danh mục phổ biến nhất của người dùng
     category = mostCommonCategory;
     confidence = 0.6;
   }

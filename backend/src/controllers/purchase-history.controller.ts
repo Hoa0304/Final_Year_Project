@@ -17,7 +17,9 @@ export async function getPurchaseHistory(req: AuthRequest, res: Response) {
         user_id,
         product_id,
         quantity,
-        total_amount,
+        original_price_coins,
+        price_vnd,
+        price_coins,
         status,
         created_at,
         products (
@@ -46,7 +48,7 @@ export async function getPurchaseHistory(req: AuthRequest, res: Response) {
       productCategory: o.products?.category,
       productPrice: o.products?.price || 0,
       quantity: o.quantity,
-      totalAmount: o.total_amount,
+      totalAmount: o.original_price_coins || ((o.price_vnd || 0) + (o.price_coins || 0)) || 0,
       status: o.status,
       purchasedAt: o.created_at
     })) || [];
@@ -84,7 +86,9 @@ export async function getAllPurchaseHistory(req: AuthRequest, res: Response) {
         user_id,
         product_id,
         quantity,
-        total_amount,
+        original_price_coins,
+        price_vnd,
+        price_coins,
         created_at,
         products (
           id,
@@ -104,7 +108,7 @@ export async function getAllPurchaseHistory(req: AuthRequest, res: Response) {
       user_id: order.user_id,
       product_id: order.product_id,
       quantity: order.quantity,
-      total_amount: parseFloat(order.total_amount.toString()),
+      total_amount: parseFloat((order.original_price_coins || (order.price_vnd || 0) + (order.price_coins || 0) || 0).toString()),
       created_at: order.created_at,
     })) || [];
 

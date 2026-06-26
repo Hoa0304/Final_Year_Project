@@ -1,8 +1,8 @@
 /**
- * Expense Insights Engine
+ * Công cụ phân tích chi tiêu
  * 
- * This module provides AI-based expense insights, recommendations, and alerts
- * for intelligent expense management.
+ * Mô-đun này cung cấp các phân tích, khuyến nghị và cảnh báo chi tiêu dựa trên AI
+ * để quản lý chi tiêu thông minh.
  */
 
 interface Transaction {
@@ -37,7 +37,7 @@ export interface ExpenseInsight {
 }
 
 /**
- * Generate expense insights and recommendations
+ * Đưa ra phân tích chi tiêu và khuyến nghị
  */
 export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[] {
   const insights: ExpenseInsight[] = [];
@@ -55,7 +55,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
   const periodMap = { day: 'ngày', week: 'tuần', month: 'tháng', year: 'năm' };
   const pName = periodMap[period] || period;
 
-  // 1. Negative Net Amount Warning
+  // 1. Cảnh báo số dư ròng âm
   if (netAmount < 0) {
     insights.push({
       type: 'warning',
@@ -68,7 +68,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     });
   }
 
-  // 2. High Spending Rate Alert
+  // 2. Cảnh báo tỷ lệ chi tiêu cao
   const spendingRate = totalSpending / Math.max(totalEarnings, 1);
   if (spendingRate > 0.9 && totalEarnings > 0) {
     insights.push({
@@ -81,7 +81,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     });
   }
 
-  // 3. Category Concentration Warning
+  // 3. Cảnh báo tập trung chi tiêu vào một danh mục
   const categories = Object.entries(categoryBreakdown);
   if (categories.length > 0) {
     const topCategory = categories.sort((a, b) => b[1].amount - a[1].amount)[0];
@@ -100,7 +100,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     }
   }
 
-  // 4. Low Balance Alert
+  // 4. Cảnh báo số dư thấp
   if (balance < 50 && totalSpending > 0) {
     insights.push({
       type: 'alert',
@@ -112,7 +112,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     });
   }
 
-  // 5. Spending Trend Analysis
+  // 5. Phân tích xu hướng chi tiêu
   if (dailyTrend.length >= 7) {
     const recent7Days = dailyTrend.slice(-7);
     const earlier7Days = dailyTrend.slice(-14, -7);
@@ -144,9 +144,9 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     }
   }
 
-  // 6. Budget Recommendation
+  // 6. Đề xuất ngân sách
   if (totalEarnings > 0) {
-    const recommendedBudget = totalEarnings * 0.7; // 70% of earnings
+    const recommendedBudget = totalEarnings * 0.7; // 70% thu nhập
     if (totalSpending > recommendedBudget) {
       insights.push({
         type: 'suggestion',
@@ -160,7 +160,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     }
   }
 
-  // 7. Unusual Spending Pattern Detection
+  // 7. Phát hiện mẫu chi tiêu bất thường
   if (recentTransactions.length >= 5) {
     const amounts = recentTransactions
       .filter(t => t.type === 'spend')
@@ -171,7 +171,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
       const variance = amounts.reduce((sum, a) => sum + Math.pow(a - avgAmount, 2), 0) / amounts.length;
       const stdDev = Math.sqrt(variance);
       
-      // Check for unusually large transactions
+      // Kiểm tra các giao dịch lớn bất thường
       const largeTransactions = amounts.filter(a => a > avgAmount + 2 * stdDev);
       if (largeTransactions.length > 0) {
         insights.push({
@@ -186,7 +186,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     }
   }
 
-  // 8. Savings Opportunity
+  // 8. Cơ hội tiết kiệm
   if (netAmount > 0 && netAmount > 100) {
     insights.push({
       type: 'tip',
@@ -198,7 +198,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     });
   }
 
-  // 9. Category-Specific Tips
+  // 9. Mẹo cụ thể theo danh mục
   categories.forEach(([category, data]) => {
     const categoryPercentage = (data.amount / totalSpending) * 100;
     
@@ -215,7 +215,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     }
   });
 
-  // 10. Earning vs Spending Balance
+  // 10. Cân bằng Thu nhập và Chi tiêu
   if (totalEarnings > 0) {
     const earningSpendingRatio = totalSpending / totalEarnings;
     if (earningSpendingRatio < 0.5) {
@@ -230,7 +230,7 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
     }
   }
 
-  // Sort by priority and confidence
+  // Sắp xếp theo ưu tiên và độ tin cậy
   const priorityOrder = { high: 3, medium: 2, low: 1 };
   return insights
     .sort((a, b) => {
@@ -238,11 +238,11 @@ export function getExpenseInsights(input: ExpenseInsightsInput): ExpenseInsight[
       if (priorityDiff !== 0) return priorityDiff;
       return b.confidence - a.confidence;
     })
-    .slice(0, 8); // Return top 8 insights
+    .slice(0, 8); // Trả về top 8 phân tích
 }
 
 /**
- * Predict future spending based on historical data
+ * Dự đoán chi tiêu trong tương lai dựa trên dữ liệu lịch sử
  */
 export function predictFutureSpending(
   dailyTrend: Array<{ date: string; amount: number }>,
@@ -256,8 +256,8 @@ export function predictFutureSpending(
     };
   }
 
-  // Simple linear regression for trend
-  const recentData = dailyTrend.slice(-14); // Use last 14 days
+  // Hồi quy tuyến tính đơn giản cho xu hướng
+  const recentData = dailyTrend.slice(-14); // Sử dụng 14 ngày qua
   const n = recentData.length;
   
   let sumX = 0;
@@ -277,11 +277,11 @@ export function predictFutureSpending(
   const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   const intercept = (sumY - slope * sumX) / n;
   
-  // Predict next period
+  // Dự đoán kỳ tiếp theo
   const predictedAmount = (slope * n + intercept) * days;
   const avgAmount = sumY / n;
   
-  // Determine trend
+  // Xác định xu hướng
   let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
   if (slope > avgAmount * 0.1) {
     trend = 'increasing';
@@ -289,7 +289,7 @@ export function predictFutureSpending(
     trend = 'decreasing';
   }
 
-  // Confidence based on data consistency
+  // Độ tin cậy dựa trên tính nhất quán của dữ liệu
   const variance = recentData.reduce((sum, p) => {
     const expected = slope * recentData.indexOf(p) + intercept;
     return sum + Math.pow(p.amount - expected, 2);

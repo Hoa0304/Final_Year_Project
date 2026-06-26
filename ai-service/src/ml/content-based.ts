@@ -1,8 +1,8 @@
 /**
- * Content-Based Filtering Model
+ * Mô hình lọc dựa trên nội dung
  * 
- * Recommends products based on similarity to products user has liked/purchased.
- * Uses TF-IDF for text features and cosine similarity for matching.
+ * Đề xuất sản phẩm dựa trên độ tương đồng với các sản phẩm người dùng đã thích/mua.
+ * Sử dụng TF-IDF cho các đặc trưng văn bản và độ tương đồng cosine để so khớp.
  */
 
 import { Matrix } from 'ml-matrix';
@@ -33,25 +33,25 @@ export class ContentBasedModel {
   }
 
   /**
-   * Extract features from products
+   * Trích xuất các đặc trưng từ sản phẩm
    */
   extractFeatures(products: Product[]): Map<string, ContentFeatures> {
     const features = new Map<string, ContentFeatures>();
 
-    // Calculate price ranges
+    // Tính toán khoảng giá
     const prices = products.map(p => p.price).filter(p => p > 0);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const priceRange = maxPrice - minPrice;
 
     products.forEach(product => {
-      // Extract keywords from description
+      // Trích xuất từ khóa từ mô tả
       const description = (product.description || product.name || '').toLowerCase();
       const tokenizer = new natural.WordTokenizer();
       const tokens = tokenizer.tokenize(description) || [];
       const keywords = tokens.filter(token => token.length > 2);
 
-      // Determine price range
+      // Xác định khoảng giá
       let priceRangeCategory: 'low' | 'medium' | 'high' = 'medium';
       if (priceRange > 0) {
         const pricePercentile = (product.price - minPrice) / priceRange;
@@ -77,26 +77,26 @@ export class ContentBasedModel {
   }
 
   /**
-   * Build TF-IDF vectors for products
+   * Xây dựng vector TF-IDF cho sản phẩm
    */
   buildTFIDFVectors(products: Product[]): void {
-    // Add all product descriptions to TF-IDF
+    // Thêm tất cả mô tả sản phẩm vào TF-IDF
     products.forEach(product => {
       const text = `${product.name} ${product.description || ''} ${product.category || ''}`.toLowerCase();
       this.tfidf.addDocument(text);
     });
 
-    // Create vectors for each product
+    // Tạo vector cho mỗi sản phẩm
     products.forEach((product, index) => {
       const vector: number[] = [];
       const text = `${product.name} ${product.description || ''} ${product.category || ''}`.toLowerCase();
       
-      // Get TF-IDF scores
+      // Lấy điểm số TF-IDF
       this.tfidf.listTerms(index).forEach(term => {
         vector.push(term.tfidf);
       });
 
-      // Normalize vector
+      // Chuẩn hóa vector
       const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
       const normalizedVector = magnitude > 0 
         ? vector.map(val => val / magnitude)
@@ -107,7 +107,7 @@ export class ContentBasedModel {
   }
 
   /**
-   * Calculate cosine similarity between two vectors
+   * Tính toán độ tương đồng cosine giữa hai vector
    */
   cosineSimilarity(vec1: number[], vec2: number[]): number {
     if (vec1.length !== vec2.length) return 0;
@@ -130,7 +130,7 @@ export class ContentBasedModel {
   }
 
   /**
-   * Calculate feature similarity between two products
+   * Tính toán độ tương đồng đặc trưng giữa hai sản phẩm
    */
   featureSimilarity(features1: ContentFeatures, features2: ContentFeatures): number {
     let similarity = 0;
@@ -139,30 +139,30 @@ export class ContentBasedModel {
     const f1 = features1.features;
     const f2 = features2.features;
 
-    // Category similarity
+    // Độ tương đồng danh mục
     if (f1.category === f2.category) {
       similarity += this.featureWeights.category;
     }
     totalWeight += this.featureWeights.category;
 
-    // Price similarity (inverse distance)
+    // Độ tương đồng giá cả (khoảng cách nghịch đảo)
     const priceDiff = Math.abs(f1.price - f2.price);
     const maxPrice = Math.max(f1.price, f2.price);
     const priceSimilarity = maxPrice > 0 ? 1 - (priceDiff / maxPrice) : 0;
     similarity += priceSimilarity * this.featureWeights.price;
     totalWeight += this.featureWeights.price;
 
-    // Description similarity (TF-IDF)
+    // Độ tương đồng mô tả (TF-IDF)
     const vec1 = this.productVectors.get(features1.productId) || [];
     const vec2 = this.productVectors.get(features2.productId) || [];
     const descSimilarity = this.cosineSimilarity(vec1, vec2);
     similarity += descSimilarity * this.featureWeights.description;
     totalWeight += this.featureWeights.description;
 
-    // Rating similarity
+    // Độ tương đồng xếp hạng
     if (f1.averageRating && f2.averageRating) {
       const ratingDiff = Math.abs(f1.averageRating - f2.averageRating);
-      const ratingSimilarity = 1 - (ratingDiff / 5); // Max rating is 5
+      const ratingSimilarity = 1 - (ratingDiff / 5); // Xếp hạng tối đa là 5
       similarity += ratingSimilarity * this.featureWeights.rating;
     }
     totalWeight += this.featureWeights.rating;
@@ -171,7 +171,7 @@ export class ContentBasedModel {
   }
 
   /**
-   * Train the model
+   * Huấn luyện mô hình
    */
   train(products: Product[]): void {
     this.productFeatures = this.extractFeatures(products);
@@ -179,7 +179,7 @@ export class ContentBasedModel {
   }
 
   /**
-   * Get recommendations for a user
+   * Nhận đề xuất cho người dùng
    */
   recommend(
     userProfile: UserProfile,
@@ -191,23 +191,23 @@ export class ContentBasedModel {
       userProfile.purchaseHistory.map(p => p.product_id)
     );
 
-    // Get user's preferred products
+    // Lấy các sản phẩm người dùng ưa thích
     const userProducts = allProducts.filter(p => userProductIds.has(p.id));
 
     if (userProducts.length === 0) {
-      // Cold start: recommend popular products
+      // Khởi động nguội: đề xuất sản phẩm phổ biến
       return allProducts
         .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
         .slice(0, topN)
         .map(p => ({
           productId: p.id,
           score: 0.5,
-          reason: 'Popular product',
+          reason: 'Sản phẩm phổ biến',
           model: 'content-based' as const,
         }));
     }
 
-    // Calculate similarity scores
+    // Tính toán điểm số tương đồng
     const candidateProducts = allProducts.filter(p => !userProductIds.has(p.id));
 
     candidateProducts.forEach(candidate => {
@@ -230,20 +230,20 @@ export class ContentBasedModel {
         recommendations.push({
           productId: candidate.id,
           score: avgSimilarity,
-          reason: `Similar to products you've purchased`,
+          reason: `Tương tự như các sản phẩm bạn đã mua`,
           model: 'content-based',
         });
       }
     });
 
-    // Sort by score and return top N
+    // Sắp xếp theo điểm số và trả về top N
     return recommendations
       .sort((a, b) => b.score - a.score)
       .slice(0, topN);
   }
 
   /**
-   * Get model state for saving
+   * Lấy trạng thái mô hình để lưu
    */
   getState(): any {
     return {
@@ -254,7 +254,7 @@ export class ContentBasedModel {
   }
 
   /**
-   * Load model state
+   * Tải trạng thái mô hình
    */
   loadState(state: any): void {
     this.productFeatures = new Map(state.productFeatures);

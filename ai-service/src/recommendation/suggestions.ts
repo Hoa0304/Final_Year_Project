@@ -1,8 +1,8 @@
 /**
- * Item Suggestion Engine
+ * Công cụ gợi ý sản phẩm
  * 
- * This module provides AI-based item suggestions based on transaction labels
- * and purchase history.
+ * Mô-đun này cung cấp gợi ý sản phẩm dựa trên AI dựa trên nhãn giao dịch
+ * và lịch sử mua sắm.
  */
 
 interface Transaction {
@@ -44,13 +44,13 @@ interface SuggestionsInput {
 }
 
 /**
- * Generate item suggestions based on transaction labels and purchase history
+ * Đưa ra gợi ý sản phẩm dựa trên nhãn giao dịch và lịch sử mua sắm
  */
 export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
   const { transactions, purchaseHistory, availableProducts } = input;
   const suggestions: Suggestion[] = [];
 
-  // Analyze transaction categories
+  // Phân tích các danh mục giao dịch
   const categoryFrequency: { [key: string]: number } = {};
   const categorySpending: { [key: string]: number } = {};
 
@@ -61,27 +61,27 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
     }
   });
 
-  // Get top categories
+  // Lấy các danh mục hàng đầu
   const topCategories = Object.entries(categoryFrequency)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
     .map(([category]) => category);
 
-  // Get recently purchased product IDs to avoid suggesting them
+  // Lấy ID sản phẩm đã mua gần đây để tránh gợi ý chúng
   const recentProductIds = new Set(
     purchaseHistory
       .slice(0, 10)
       .map(p => p.product_id)
   );
 
-  // Filter available products (exclude recently purchased)
+  // Lọc các sản phẩm có sẵn (loại trừ những sản phẩm mua gần đây)
   const candidateProducts = availableProducts.filter(p => !recentProductIds.has(p.id));
 
-  // Suggestion 1: Products from top spending categories
+  // Gợi ý 1: Sản phẩm từ các danh mục chi tiêu cao nhất
   topCategories.forEach(category => {
     const categoryProducts = candidateProducts.filter(p => p.category === category);
     if (categoryProducts.length > 0) {
-      // Sort by price (prefer mid-range)
+      // Sắp xếp theo giá (ưu tiên tầm trung)
       const sortedProducts = [...categoryProducts].sort((a, b) => {
         const avgSpending = categorySpending[category] / categoryFrequency[category];
         const aDiff = Math.abs(a.price - avgSpending);
@@ -102,9 +102,9 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
     }
   });
 
-  // Suggestion 2: Similar products to frequently purchased items
+  // Gợi ý 2: Sản phẩm tương tự các mặt hàng thường xuyên được mua
   if (purchaseHistory.length > 0) {
-    // Get most frequently purchased category
+    // Lấy danh mục được mua thường xuyên nhất
     const purchaseCategories: { [key: string]: number } = {};
     purchaseHistory.forEach(p => {
       const product = availableProducts.find(ap => ap.id === p.product_id);
@@ -137,7 +137,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
     }
   }
 
-  // Suggestion 3: Popular products in user's price range
+  // Gợi ý 3: Sản phẩm phổ biến trong phạm vi giá của người dùng
   const avgSpending = transactions
     .filter(t => t.type === 'spend')
     .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) / 
@@ -150,7 +150,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
 
     if (priceRangeProducts.length > 0) {
       const popularProduct = priceRangeProducts
-        .sort((a, b) => b.price - a.price)[0]; // Prefer higher priced items in range
+        .sort((a, b) => b.price - a.price)[0]; // Ưu tiên các mặt hàng có giá cao hơn trong phạm vi
 
       if (!suggestions.find(s => s.productId === popularProduct.id)) {
         suggestions.push({
@@ -166,7 +166,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
     }
   }
 
-  // Suggestion 4: Explore new categories (categories user hasn't purchased from)
+  // Gợi ý 4: Khám phá danh mục mới (danh mục người dùng chưa từng mua)
   const purchasedCategories = new Set(
     purchaseHistory
       .map(p => {
@@ -200,7 +200,7 @@ export function getItemSuggestions(input: SuggestionsInput): Suggestion[] {
     }
   });
 
-  // Sort by confidence and return top suggestions
+  // Sắp xếp theo độ tin cậy và trả về các gợi ý hàng đầu
   return suggestions
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 10);

@@ -1,7 +1,7 @@
 /**
- * Model Storage and Versioning
+ * Lưu trữ và quản lý phiên bản mô hình
  * 
- * Handles saving, loading, and versioning of ML models.
+ * Xử lý việc lưu, tải và quản lý phiên bản của các mô hình ML.
  */
 
 import * as fs from 'fs';
@@ -23,7 +23,7 @@ export class ModelStorage {
   }
 
   /**
-   * Save model to disk
+   * Lưu mô hình vào đĩa
    */
   saveModel(
     modelType: 'content-based' | 'collaborative' | 'hybrid',
@@ -42,7 +42,7 @@ export class ModelStorage {
 
     fs.writeFileSync(filepath, JSON.stringify(modelData, null, 2));
     
-    // Update latest model reference
+    // Cập nhật tham chiếu mô hình mới nhất
     const latestPath = path.join(this.modelsDir, `${modelType}_latest.json`);
     fs.writeFileSync(latestPath, JSON.stringify(modelData, null, 2));
 
@@ -50,7 +50,7 @@ export class ModelStorage {
   }
 
   /**
-   * Load latest model
+   * Tải mô hình mới nhất
    */
   loadLatestModel(modelType: 'content-based' | 'collaborative' | 'hybrid'): {
     metadata: ModelMetadata;
@@ -70,7 +70,7 @@ export class ModelStorage {
   }
 
   /**
-   * Load specific model version
+   * Tải phiên bản mô hình cụ thể
    */
   loadModel(
     modelType: 'content-based' | 'collaborative' | 'hybrid',
@@ -98,7 +98,7 @@ export class ModelStorage {
   }
 
   /**
-   * List all model versions
+   * Liệt kê tất cả các phiên bản mô hình
    */
   listModels(modelType?: 'content-based' | 'collaborative' | 'hybrid'): ModelMetadata[] {
     const files = fs.readdirSync(this.modelsDir);
@@ -124,7 +124,7 @@ export class ModelStorage {
   }
 
   /**
-   * Delete old model versions (keep only last N)
+   * Xóa các phiên bản mô hình cũ (chỉ giữ lại N phiên bản gần nhất)
    */
   cleanupOldModels(
     modelType: 'content-based' | 'collaborative' | 'hybrid',

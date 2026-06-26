@@ -1,7 +1,7 @@
 /**
- * Hybrid Recommendation System
+ * Hệ thống đề xuất lai
  * 
- * Combines Content-Based and Collaborative Filtering for better recommendations.
+ * Kết hợp Lọc dựa trên nội dung và Lọc cộng tác để có các đề xuất tốt hơn.
  */
 
 import { ContentBasedModel } from './content-based';
@@ -29,7 +29,7 @@ export class HybridRecommender {
   }
 
   /**
-   * Train both models
+   * Huấn luyện cả hai mô hình
    */
   train(data: TrainingData): void {
     console.log('Training Content-Based model...');
@@ -42,7 +42,7 @@ export class HybridRecommender {
   }
 
   /**
-   * Get hybrid recommendations
+   * Nhận các đề xuất lai
    */
   recommend(
     userId: string,
@@ -50,62 +50,62 @@ export class HybridRecommender {
     allProducts: Product[],
     topN: number = 10
   ): Recommendation[] {
-    // Get recommendations from both models
+    // Lấy đề xuất từ cả hai mô hình
     const contentRecs = this.contentBased.recommend(userProfile, allProducts, topN * 2);
     const collaborativeRecs = this.collaborative.hybridRecommend(userId, allProducts, topN * 2);
 
-    // Combine recommendations
+    // Kết hợp các đề xuất
     const combined = new Map<string, Recommendation>();
 
-    // Add content-based recommendations
+    // Thêm các đề xuất dựa trên nội dung
     contentRecs.forEach(rec => {
       const score = rec.score * this.weights.contentBased;
       combined.set(rec.productId, {
         ...rec,
         score,
         model: 'hybrid',
-        reason: 'Based on product similarity',
+        reason: 'Dựa trên độ tương đồng của sản phẩm',
       });
     });
 
-    // Add collaborative recommendations
+    // Thêm các đề xuất lọc cộng tác
     collaborativeRecs.forEach(rec => {
       const existing = combined.get(rec.productId);
       if (existing) {
-        // Combine scores
+        // Kết hợp điểm số
         existing.score = existing.score + (rec.score * this.weights.collaborative);
-        existing.reason = 'Combined: product similarity + user preferences';
+        existing.reason = 'Kết hợp: độ tương đồng sản phẩm + sở thích người dùng';
       } else {
         combined.set(rec.productId, {
           ...rec,
           score: rec.score * this.weights.collaborative,
           model: 'hybrid',
-          reason: 'Users with similar preferences liked this',
+          reason: 'Những người dùng có sở thích tương tự đã thích sản phẩm này',
         });
       }
     });
 
-    // Handle cold start: if no recommendations, use content-based only
+    // Xử lý khởi động nguội: nếu không có đề xuất, chỉ sử dụng dựa trên nội dung
     if (combined.size === 0) {
       if (contentRecs.length > 0) {
         return contentRecs.slice(0, topN);
       }
-      // If still no recommendations, return empty array (will be handled by fallback)
+      // Nếu vẫn không có đề xuất, trả về mảng rỗng (sẽ được xử lý bởi dự phòng)
       return [];
     }
 
-    // Sort by combined score and return top N
+    // Sắp xếp theo điểm kết hợp và trả về top N
     return Array.from(combined.values())
       .sort((a, b) => b.score - a.score)
       .slice(0, topN)
       .map(rec => ({
         ...rec,
-        score: Math.min(1.0, rec.score), // Normalize to 0-1
+        score: Math.min(1.0, rec.score), // Chuẩn hóa về 0-1
       }));
   }
 
   /**
-   * Get recommendations with model breakdown
+   * Nhận đề xuất kèm theo chi tiết mô hình
    */
   recommendWithBreakdown(
     userId: string,
@@ -132,7 +132,7 @@ export class HybridRecommender {
   }
 
   /**
-   * Get model state for saving
+   * Lấy trạng thái mô hình để lưu
    */
   getState(): any {
     return {
@@ -143,7 +143,7 @@ export class HybridRecommender {
   }
 
   /**
-   * Load model state
+   * Tải trạng thái mô hình
    */
   loadState(state: any): void {
     this.contentBased.loadState(state.contentBased);

@@ -13,36 +13,36 @@ import axios from 'axios';
 import cron from 'node-cron';
 import { exec } from 'child_process';
 
-// Load environment variables
+// Tải các biến môi trường
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3003;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 
-// Training state
+// Trạng thái huấn luyện
 let isTraining = false;
 let lastTrainTime: string | null = null;
 
-// Initialize ML models
+// Khởi tạo các mô hình ML
 const modelStorage = new ModelStorage();
 let hybridModel: HybridRecommender | null = null;
 let contentModel: ContentBasedModel | null = null;
 let collaborativeModel: CollaborativeFilteringModel | null = null;
 
-// Load ML models on startup
+// Tải các mô hình ML khi khởi động
 async function loadMLModels() {
   try {
     console.log('Loading ML models...');
     
-    // Try to load hybrid model (preferred)
+    // Cố gắng tải mô hình lai (ưu tiên)
     const hybridData = modelStorage.loadLatestModel('hybrid');
     if (hybridData) {
       hybridModel = new HybridRecommender();
       hybridModel.loadState(hybridData.state);
       console.log('✅ Hybrid model loaded');
     } else {
-      // Fallback to individual models
+      // Dự phòng sang các mô hình riêng lẻ
       const contentData = modelStorage.loadLatestModel('content-based');
       if (contentData) {
         contentModel = new ContentBasedModel();
@@ -68,7 +68,7 @@ async function loadMLModels() {
 
 loadMLModels();
 
-// Middleware
+// Middleware (Phần mềm trung gian)
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   credentials: true
@@ -76,7 +76,7 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Health check
+// Kiểm tra trạng thái hệ thống (Health check)
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -92,7 +92,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Spending recommendations endpoint
+// Endpoint đề xuất chi tiêu
 app.post('/recommendations/spending', async (req, res) => {
   try {
     const { userId, balance, recentTransactions, availableProducts } = req.body;
@@ -114,7 +114,7 @@ app.post('/recommendations/spending', async (req, res) => {
   }
 });
 
-// Transaction categorization endpoint
+// Endpoint phân loại giao dịch
 app.post('/categorize-transaction', async (req, res) => {
   try {
     const { transaction, userHistory } = req.body;
@@ -132,7 +132,7 @@ app.post('/categorize-transaction', async (req, res) => {
   }
 });
 
-// Item suggestions endpoint
+// Endpoint gợi ý sản phẩm
 app.post('/suggestions/items', async (req, res) => {
   try {
     const { userId, transactions, purchaseHistory, availableProducts } = req.body;
@@ -154,7 +154,7 @@ app.post('/suggestions/items', async (req, res) => {
   }
 });
 
-// Expense insights endpoint
+// Endpoint thông tin chi tiêu
 app.post('/insights/expense', async (req, res) => {
   try {
     const {
@@ -181,7 +181,7 @@ app.post('/insights/expense', async (req, res) => {
       dailyTrend: dailyTrend || [],
     });
 
-    // Get spending prediction
+    // Lấy dự đoán chi tiêu
     const prediction = predictFutureSpending(dailyTrend || [], 7);
 
     res.json({
@@ -195,9 +195,9 @@ app.post('/insights/expense', async (req, res) => {
   }
 });
 
-// ========== ML MODEL ENDPOINTS ==========
+// ========== CÁC ENDPOINT MÔ HÌNH ML ==========
 
-// ML-based product recommendations
+// Đề xuất sản phẩm dựa trên ML
 app.post('/ml/recommendations', async (req, res) => {
   try {
     const { userId, modelType = 'hybrid', topN = 10 } = req.body;
@@ -206,17 +206,17 @@ app.post('/ml/recommendations', async (req, res) => {
       return res.status(400).json({ error: 'userId is required' });
     }
 
-    // Get products from request body (passed by backend) or fetch from API
+    // Lấy sản phẩm từ nội dung yêu cầu (do backend truyền) hoặc tải từ API
     const productsFromBody = req.body.products;
     console.log('Products from body:', productsFromBody ? `${productsFromBody.length} products` : 'none');
     
-    // Fetch user data and other data
+    // Tải dữ liệu người dùng và dữ liệu khác
     const [userRes, productsRes, purchasesRes, ratingsRes] = await Promise.all([
       axios.get(`${BACKEND_URL}/api/users/${userId}`).catch((err) => {
         console.log('Failed to fetch user:', err.message);
         return null;
       }),
-      // Only fetch products if not provided in request body
+      // Chỉ tải sản phẩm nếu không được cung cấp trong nội dung yêu cầu
       productsFromBody && Array.isArray(productsFromBody) && productsFromBody.length > 0
         ? Promise.resolve({ data: { products: productsFromBody } })
         : axios.get(`${BACKEND_URL}/api/products?limit=1000`).catch((err) => {
@@ -235,7 +235,7 @@ app.post('/ml/recommendations', async (req, res) => {
     ]);
 
     const user = userRes?.data?.user;
-    // Use products from body if available, otherwise use fetched products
+    // Sử dụng sản phẩm từ nội dung yêu cầu nếu có, nếu không thì sử dụng sản phẩm đã tải
     const products = (productsFromBody && Array.isArray(productsFromBody) && productsFromBody.length > 0)
       ? productsFromBody
       : (productsRes.data.products || []);
@@ -256,7 +256,7 @@ app.post('/ml/recommendations', async (req, res) => {
       return res.json({ recommendations: [], source: 'ml-model', model: modelType });
     }
 
-    // Build user profile
+    // Xây dựng hồ sơ người dùng
     const userProfile = {
       userId: userId,
       preferences: {
@@ -272,7 +272,7 @@ app.post('/ml/recommendations', async (req, res) => {
 
     let recommendations: any[] = [];
 
-    // Use appropriate model
+    // Sử dụng mô hình phù hợp
     if (modelType === 'hybrid' && hybridModel) {
       console.log('Using hybrid model');
       recommendations = hybridModel.recommend(userId, userProfile, products, topN);
@@ -287,7 +287,7 @@ app.post('/ml/recommendations', async (req, res) => {
       console.log(`Collaborative model returned ${recommendations.length} recommendations`);
     } else {
       console.log('No ML models available, using rule-based fallback');
-      // Fallback to rule-based
+      // Dự phòng sang hệ thống dựa trên quy tắc
       const ruleBasedRecs = getSpendingRecommendations({
         userId,
         balance: user?.virtual_balance || 0,
@@ -305,7 +305,7 @@ app.post('/ml/recommendations', async (req, res) => {
       console.log(`Rule-based returned ${recommendations.length} recommendations`);
     }
 
-    // If no recommendations from ML models, fallback to popular products
+    // Nếu không có đề xuất từ mô hình ML, dự phòng sang các sản phẩm phổ biến
     if (recommendations.length === 0 && products.length > 0) {
       console.log('⚠️ No ML recommendations, falling back to popular products');
       console.log(`Available products: ${products.length}`);
@@ -317,15 +317,15 @@ app.post('/ml/recommendations', async (req, res) => {
         totalRatings: (products[0] as any).totalRatings,
       } : 'none');
       
-      // Sort by rating if available, otherwise by price (cheapest first for new users)
+      // Sắp xếp theo xếp hạng nếu có, nếu không thì theo giá (rẻ nhất trước cho người dùng mới)
       const sortedProducts = [...products].sort((a: any, b: any) => {
-        // Try to get rating from product (may be in different format)
+        // Cố gắng lấy xếp hạng từ sản phẩm (có thể ở định dạng khác)
         const ratingA = a.averageRating || a.rating || 0;
         const ratingB = b.averageRating || b.rating || 0;
         const totalA = a.totalRatings || a.total_ratings || 0;
         const totalB = b.totalRatings || b.total_ratings || 0;
         
-        // If both have ratings, sort by rating
+        // Nếu cả hai đều có xếp hạng, sắp xếp theo xếp hạng
         if (ratingA > 0 || ratingB > 0) {
           if (ratingA !== ratingB) {
             return ratingB - ratingA;
@@ -333,7 +333,7 @@ app.post('/ml/recommendations', async (req, res) => {
           return totalB - totalA;
         }
         
-        // Otherwise, sort by price (cheapest first for new users)
+        // Nếu không, sắp xếp theo giá (rẻ nhất trước cho người dùng mới)
         return (a.price || 0) - (b.price || 0);
       });
       
@@ -369,7 +369,7 @@ app.post('/ml/recommendations', async (req, res) => {
   }
 });
 
-// Function to run training
+// Hàm chạy quá trình huấn luyện
 async function runTraining(modelType: string = 'all') {
   if (isTraining) {
     console.log('⚠️ Training already in progress, skipping...');
@@ -394,7 +394,7 @@ async function runTraining(modelType: string = 'all') {
       console.log('✅ Training completed successfully');
       lastTrainTime = new Date().toISOString();
       
-      // Reload models after training
+      // Tải lại mô hình sau khi huấn luyện
       loadMLModels();
     });
   } catch (error) {
@@ -403,7 +403,7 @@ async function runTraining(modelType: string = 'all') {
   }
 }
 
-// Train ML models endpoint
+// Endpoint huấn luyện các mô hình ML
 app.post('/ml/train', async (req, res) => {
   try {
     const { modelType = 'all' } = req.body;
@@ -428,9 +428,9 @@ app.post('/ml/train', async (req, res) => {
   }
 });
 
-// ========== SCHEDULED TASKS (CRON) ==========
+// ========== CÁC TÁC VỤ ĐƯỢC LÊN LỊCH (CRON) ==========
 
-// Run full training every day at 2:00 AM
+// Chạy huấn luyện đầy đủ mỗi ngày vào lúc 2:00 sáng
 cron.schedule('0 2 * * *', () => {
   console.log('⏰ Scheduled training triggered (2:00 AM)');
   runTraining('all');
@@ -438,7 +438,7 @@ cron.schedule('0 2 * * *', () => {
 
 console.log('📅 Scheduled training set for 2:00 AM daily');
 
-// List available models
+// Liệt kê các mô hình có sẵn
 app.get('/ml/models', (req, res) => {
   try {
     const models = modelStorage.listModels();
@@ -449,7 +449,7 @@ app.get('/ml/models', (req, res) => {
   }
 });
 
-// Get model info
+// Lấy thông tin mô hình
 app.get('/ml/models/:modelType', (req, res) => {
   try {
     const { modelType } = req.params;
@@ -466,7 +466,7 @@ app.get('/ml/models/:modelType', (req, res) => {
   }
 });
 
-// Error handling
+// Xử lý lỗi
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
   res.status(err.status || 500).json({
@@ -477,7 +477,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// 404 handler
+// Trình xử lý 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });

@@ -1,11 +1,11 @@
 /**
- * Training Script for ML Models
+ * Script huấn luyện cho các Mô hình ML
  * 
- * Usage:
- *   npm run train                    # Train all models
- *   npm run train:content            # Train content-based only
- *   npm run train:collaborative       # Train collaborative only
- *   npm run train:hybrid             # Train hybrid only
+ * Cách sử dụng:
+ *   npm run train                    # Huấn luyện tất cả các mô hình
+ *   npm run train:content            # Chỉ huấn luyện mô hình dựa trên nội dung
+ *   npm run train:collaborative       # Chỉ huấn luyện mô hình lọc cộng tác
+ *   npm run train:hybrid             # Chỉ huấn luyện mô hình lai
  */
 
 import axios from 'axios';
@@ -15,25 +15,25 @@ import { HybridRecommender } from './hybrid-recommender';
 import { ModelStorage } from './model-storage';
 import { TrainingData, ModelMetadata } from './types';
 
-// Get backend API URL from environment or use default
+// Lấy URL API backend từ môi trường hoặc sử dụng mặc định
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 
 async function fetchTrainingData(): Promise<TrainingData> {
   console.log('Fetching training data from backend...');
   
   try {
-    // For training, we need admin token or public endpoints
-    // For now, use a dummy admin token or make endpoints public for training
-    // In production, use a service account token
+    // Để huấn luyện, chúng ta cần token admin hoặc các endpoint công khai
+    // Hiện tại, sử dụng token admin giả hoặc làm cho các endpoint công khai để huấn luyện
+    // Trong môi trường sản xuất, sử dụng token của tài khoản dịch vụ
     
-    const adminToken = process.env.ADMIN_TOKEN || ''; // Set in .env for training
+    const adminToken = process.env.ADMIN_TOKEN || ''; // Thiết lập trong .env để huấn luyện
     
     const headers: any = {};
     if (adminToken) {
       headers.Authorization = `Bearer ${adminToken}`;
     }
 
-    // Fetch all necessary data
+    // Tải tất cả dữ liệu cần thiết
     const [productsRes, purchasesRes, ratingsRes, usersRes] = await Promise.all([
       axios.get(`${BACKEND_URL}/api/products?limit=1000`, { headers }),
       axios.get(`${BACKEND_URL}/api/purchase-history/all`, { headers }).catch(() => ({ data: { purchases: [] } })),
@@ -45,12 +45,12 @@ async function fetchTrainingData(): Promise<TrainingData> {
       products: productsRes.data.products || [],
       purchases: purchasesRes.data.purchases || [],
       ratings: ratingsRes.data.ratings || [],
-      interactions: [], // Can be added later
+      interactions: [], // Có thể thêm sau
       users: usersRes.data.users || [],
     };
   } catch (error: any) {
     console.error('Error fetching training data:', error.message);
-    // Return empty data instead of throwing to allow training with minimal data
+    // Trả về dữ liệu trống thay vì ném lỗi để cho phép huấn luyện với dữ liệu tối thiểu
     return {
       products: [],
       purchases: [],

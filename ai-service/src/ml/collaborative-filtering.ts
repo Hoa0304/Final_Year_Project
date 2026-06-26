@@ -1,18 +1,18 @@
 /**
- * Collaborative Filtering Model
+ * Mô hình lọc cộng tác
  * 
- * Recommends products based on similar users' preferences.
- * Implements both User-Based and Item-Based Collaborative Filtering.
+ * Đề xuất sản phẩm dựa trên sở thích của những người dùng tương tự.
+ * Triển khai cả Lọc cộng tác dựa trên người dùng và dựa trên mặt hàng.
  */
 
 import { Matrix } from 'ml-matrix';
 import { Product, UserProfile, Purchase, Rating, Recommendation, TrainingData } from './types';
 
 export class CollaborativeFilteringModel {
-  private userItemMatrix: Map<string, Map<string, number>>; // userId -> productId -> rating/score
-  private itemItemMatrix: Map<string, Map<string, number>>; // productId -> productId -> similarity
-  private userUserMatrix: Map<string, Map<string, number>>; // userId -> userId -> similarity
-  private minInteractions: number = 2; // Minimum interactions for similarity calculation
+  private userItemMatrix: Map<string, Map<string, number>>; // userId -> productId -> xếp hạng/điểm
+  private itemItemMatrix: Map<string, Map<string, number>>; // productId -> productId -> độ tương đồng
+  private userUserMatrix: Map<string, Map<string, number>>; // userId -> userId -> độ tương đồng
+  private minInteractions: number = 2; // Số lượng tương tác tối thiểu để tính toán độ tương đồng
 
   constructor() {
     this.userItemMatrix = new Map();
@@ -21,17 +21,17 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Build user-item interaction matrix
+   * Xây dựng ma trận tương tác người dùng - mặt hàng
    */
   buildUserItemMatrix(data: TrainingData): void {
     this.userItemMatrix.clear();
 
-    // Initialize matrix
+    // Khởi tạo ma trận
     data.users.forEach(user => {
       this.userItemMatrix.set(user.id, new Map());
     });
 
-    // Add purchases (weight: 1.0)
+    // Thêm lượt mua hàng (trọng số: 1.0)
     data.purchases.forEach(purchase => {
       const userMap = this.userItemMatrix.get(purchase.user_id);
       if (userMap) {
@@ -40,17 +40,17 @@ export class CollaborativeFilteringModel {
       }
     });
 
-    // Add ratings (weight: rating / 5)
+    // Thêm xếp hạng (trọng số: rating / 5)
     data.ratings.forEach(rating => {
       const userMap = this.userItemMatrix.get(rating.user_id);
       if (userMap) {
         const currentScore = userMap.get(rating.product_id) || 0;
-        const ratingScore = rating.rating / 5.0; // Normalize to 0-1
+        const ratingScore = rating.rating / 5.0; // Chuẩn hóa về 0-1
         userMap.set(rating.product_id, Math.max(currentScore, ratingScore));
       }
     });
 
-    // Normalize scores per user
+    // Chuẩn hóa điểm số cho mỗi người dùng
     this.userItemMatrix.forEach((itemMap, userId) => {
       const maxScore = Math.max(...Array.from(itemMap.values()), 1);
       itemMap.forEach((score, productId) => {
@@ -60,11 +60,11 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Calculate cosine similarity between two vectors
+   * Tính toán độ tương đồng cosine giữa hai vector
    */
   cosineSimilarity(vec1: Map<string, number>, vec2: Map<string, number>): number {
     const allKeys = new Set([...vec1.keys(), ...vec2.keys()]);
-    
+
     let dotProduct = 0;
     let magnitude1 = 0;
     let magnitude2 = 0;
@@ -85,24 +85,24 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Build item-item similarity matrix (Item-Based CF)
+   * Xây dựng ma trận độ tương đồng mặt hàng - mặt hàng (Lọc cộng tác dựa trên mặt hàng)
    */
   buildItemItemMatrix(data: TrainingData): void {
     this.itemItemMatrix.clear();
     const products = data.products;
 
-    // Initialize matrix
+    // Khởi tạo ma trận
     products.forEach(product => {
       this.itemItemMatrix.set(product.id, new Map());
     });
 
-    // Calculate similarity between all pairs of products
+    // Tính toán độ tương đồng giữa tất cả các cặp sản phẩm
     for (let i = 0; i < products.length; i++) {
       for (let j = i + 1; j < products.length; j++) {
         const product1 = products[i];
         const product2 = products[j];
 
-        // Get users who interacted with both products
+        // Lấy người dùng đã tương tác với cả hai sản phẩm
         const users1 = new Set<string>();
         const users2 = new Set<string>();
 
@@ -111,7 +111,7 @@ export class CollaborativeFilteringModel {
           if (itemMap.has(product2.id)) users2.add(userId);
         });
 
-        // Calculate similarity if enough common users
+        // Tính độ tương đồng nếu có đủ người dùng chung
         const commonUsers = new Set([...users1].filter(u => users2.has(u)));
         if (commonUsers.size >= this.minInteractions) {
           const vec1 = new Map<string, number>();
@@ -138,18 +138,18 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Build user-user similarity matrix (User-Based CF)
+   * Xây dựng ma trận độ tương đồng người dùng - người dùng (Lọc cộng tác dựa trên người dùng)
    */
   buildUserUserMatrix(data: TrainingData): void {
     this.userUserMatrix.clear();
     const users = data.users;
 
-    // Initialize matrix
+    // Khởi tạo ma trận
     users.forEach(user => {
       this.userUserMatrix.set(user.id, new Map());
     });
 
-    // Calculate similarity between all pairs of users
+    // Tính toán độ tương đồng giữa tất cả các cặp người dùng
     for (let i = 0; i < users.length; i++) {
       for (let j = i + 1; j < users.length; j++) {
         const user1 = users[i];
@@ -158,7 +158,7 @@ export class CollaborativeFilteringModel {
         const vec1 = this.userItemMatrix.get(user1.id) || new Map();
         const vec2 = this.userItemMatrix.get(user2.id) || new Map();
 
-        // Calculate similarity if both users have interactions
+        // Tính độ tương đồng nếu cả hai người dùng đều có tương tác
         if (vec1.size >= this.minInteractions && vec2.size >= this.minInteractions) {
           const similarity = this.cosineSimilarity(vec1, vec2);
           if (similarity > 0) {
@@ -173,7 +173,7 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Item-Based Collaborative Filtering
+   * Lọc cộng tác dựa trên mặt hàng
    */
   itemBasedRecommend(
     userId: string,
@@ -184,16 +184,16 @@ export class CollaborativeFilteringModel {
     const recommendations: Recommendation[] = [];
 
     if (userItems.size === 0) {
-      return []; // Cold start problem
+      return []; // Vấn đề khởi động nguội
     }
 
-    // For each product user hasn't interacted with
+    // Đối với mỗi sản phẩm người dùng chưa tương tác
     allProducts.forEach(product => {
       if (!userItems.has(product.id)) {
         let score = 0;
         let totalSimilarity = 0;
 
-        // Sum up similarities with products user has interacted with
+        // Tổng hợp độ tương đồng với các sản phẩm người dùng đã tương tác
         userItems.forEach((rating, interactedProductId) => {
           const itemSimilarities = this.itemItemMatrix.get(interactedProductId);
           if (itemSimilarities) {
@@ -208,7 +208,7 @@ export class CollaborativeFilteringModel {
           recommendations.push({
             productId: product.id,
             score: finalScore,
-            reason: 'Users with similar preferences also liked this',
+            reason: 'Những người dùng có sở thích tương tự cũng thích cái này',
             model: 'collaborative',
           });
         }
@@ -221,7 +221,7 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * User-Based Collaborative Filtering
+   * Lọc cộng tác dựa trên người dùng
    */
   userBasedRecommend(
     userId: string,
@@ -233,20 +233,20 @@ export class CollaborativeFilteringModel {
     const recommendations: Recommendation[] = [];
 
     if (userSimilarities.size === 0 || userItems.size === 0) {
-      return []; // Cold start problem
+      return []; // Vấn đề khởi động nguội
     }
 
-    // Get top similar users
+    // Lấy top người dùng tương tự
     const topSimilarUsers = Array.from(userSimilarities.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10);
 
-    // Calculate scores for products
+    // Tính điểm cho các sản phẩm
     const productScores = new Map<string, { score: number; totalSimilarity: number }>();
 
     topSimilarUsers.forEach(([similarUserId, similarity]) => {
       const similarUserItems = this.userItemMatrix.get(similarUserId) || new Map();
-      
+
       similarUserItems.forEach((rating, productId) => {
         if (!userItems.has(productId)) {
           const current = productScores.get(productId) || { score: 0, totalSimilarity: 0 };
@@ -257,13 +257,13 @@ export class CollaborativeFilteringModel {
       });
     });
 
-    // Convert to recommendations
+    // Chuyển đổi thành đề xuất
     productScores.forEach((value, productId) => {
       if (value.totalSimilarity > 0) {
         recommendations.push({
           productId,
           score: value.score / value.totalSimilarity,
-          reason: 'Similar users liked this',
+          reason: 'Những người dùng tương tự đã thích cái này',
           model: 'collaborative',
         });
       }
@@ -275,7 +275,7 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Hybrid recommendation (combines item-based and user-based)
+   * Đề xuất lai (kết hợp dựa trên mặt hàng và dựa trên người dùng)
    */
   hybridRecommend(
     userId: string,
@@ -285,7 +285,7 @@ export class CollaborativeFilteringModel {
     const itemBased = this.itemBasedRecommend(userId, allProducts, topN * 2);
     const userBased = this.userBasedRecommend(userId, allProducts, topN * 2);
 
-    // Combine and deduplicate
+    // Kết hợp và loại bỏ trùng lặp
     const combined = new Map<string, Recommendation>();
 
     itemBased.forEach(rec => {
@@ -301,7 +301,7 @@ export class CollaborativeFilteringModel {
       const existing = combined.get(rec.productId);
       if (existing) {
         existing.score = (existing.score + rec.score) / 2;
-        existing.reason = 'Combined collaborative filtering';
+        existing.reason = 'Lọc cộng tác kết hợp';
       } else {
         combined.set(rec.productId, { ...rec });
       }
@@ -313,7 +313,7 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Train the model
+   * Huấn luyện mô hình
    */
   train(data: TrainingData): void {
     this.buildUserItemMatrix(data);
@@ -322,7 +322,7 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Get model state for saving
+   * Lấy trạng thái mô hình để lưu
    */
   getState(): any {
     return {
@@ -333,7 +333,7 @@ export class CollaborativeFilteringModel {
   }
 
   /**
-   * Load model state
+   * Tải trạng thái mô hình
    */
   loadState(state: any): void {
     this.userItemMatrix = new Map(

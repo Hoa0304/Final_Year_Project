@@ -1,5 +1,5 @@
 /**
- * ML Model Types and Interfaces
+ * Các Kiểu và Giao diện của Mô hình ML
  */
 
 export interface Product {

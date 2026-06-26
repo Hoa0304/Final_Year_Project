@@ -1,8 +1,8 @@
 /**
- * AI Recommendation Engine
+ * Công cụ đề xuất AI
  * 
- * This module provides recommendation algorithms for spending and investing.
- * Uses rule-based logic that can be extended with machine learning models.
+ * Mô-đun này cung cấp các thuật toán đề xuất cho chi tiêu và đầu tư.
+ * Sử dụng logic dựa trên quy tắc có thể được mở rộng với các mô hình học máy.
  */
 
 interface SpendingRecommendationInput {
@@ -47,28 +47,28 @@ interface CategorizeTransactionOutput {
 }
 
 /**
- * Generate spending recommendations based on user behavior and balance
+ * Đưa ra đề xuất chi tiêu dựa trên hành vi người dùng và số dư
  * 
- * Algorithm:
- * 1. Analyze spending patterns from transaction history
- * 2. Recommend products within budget (balance * 0.3)
- * 3. Suggest products from categories user hasn't explored
- * 4. Recommend popular/trending products
+ * Thuật toán:
+ * 1. Phân tích các mẫu chi tiêu từ lịch sử giao dịch
+ * 2. Đề xuất các sản phẩm trong phạm vi ngân sách (số dư * 0.3)
+ * 3. Đề xuất sản phẩm từ các danh mục người dùng chưa khám phá
+ * 4. Đề xuất các sản phẩm phổ biến/đang thịnh hành
  */
 export function getSpendingRecommendations(input: SpendingRecommendationInput): Recommendation[] {
   const { balance, recentTransactions, availableProducts } = input;
   const recommendations: Recommendation[] = [];
 
-  // Budget constraint: recommend products within 30% of balance
+  // Ràng buộc ngân sách: đề xuất sản phẩm trong phạm vi 30% số dư
   const maxRecommendationPrice = balance * 0.3;
 
-  // Analyze spending patterns
+  // Phân tích các mẫu chi tiêu
   const spendingByCategory = new Map<string, number>();
   const recentSpending = recentTransactions
     .filter(t => t.type === 'spend')
     .slice(0, 10);
 
-  // Get categories from product names/descriptions (simplified)
+  // Lấy các danh mục từ tên/mô tả sản phẩm (đơn giản hóa)
   const categoryMap: { [key: string]: string } = {
     'laptop': 'Electronics',
     'phone': 'Electronics',
@@ -77,12 +77,12 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
     'book': 'Education'
   };
 
-  // Filter affordable products
+  // Lọc các sản phẩm giá cả phải chăng
   const affordableProducts = availableProducts.filter(p => p.price <= maxRecommendationPrice && p.price > 0);
 
-  // Recommendation 1: Products within budget
+  // Đề xuất 1: Sản phẩm trong phạm vi ngân sách
   if (affordableProducts.length > 0) {
-    // Sort by price (ascending) to recommend cheaper options first
+    // Sắp xếp theo giá (tăng dần) để đề xuất các tùy chọn rẻ hơn trước
     const sortedProducts = [...affordableProducts].sort((a, b) => a.price - b.price);
     const recommendedProduct = sortedProducts[0];
 
@@ -95,7 +95,7 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
     });
   }
 
-  // Recommendation 2: Popular products (mid-range price)
+  // Đề xuất 2: Sản phẩm phổ biến (giá tầm trung)
   if (affordableProducts.length > 1) {
     const midRangeProducts = affordableProducts.filter(p => 
       p.price >= balance * 0.1 && p.price <= balance * 0.2
@@ -113,7 +113,7 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
     }
   }
 
-  // Recommendation 3: Diversify spending (different category)
+  // Đề xuất 3: Đa dạng hóa chi tiêu (danh mục khác)
   if (recentSpending.length > 0 && affordableProducts.length > 0) {
     const recentCategories = new Set(
       recentSpending
@@ -127,7 +127,7 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
         .filter((c): c is string => c !== null)
     );
 
-    // Find products from different categories
+    // Tìm sản phẩm từ các danh mục khác nhau
     const diverseProducts = affordableProducts.filter(p => {
       const productCategory = categoryMap[p.name.toLowerCase()] || p.category || 'Other';
       return !recentCategories.has(productCategory);
@@ -145,7 +145,7 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
     }
   }
 
-  // Recommendation 4: Save for bigger purchase
+  // Đề xuất 4: Tiết kiệm cho việc mua sắm lớn hơn
   if (balance < 100 && affordableProducts.some(p => p.price > balance)) {
     const expensiveProducts = affordableProducts.filter(p => p.price > balance * 0.5);
     if (expensiveProducts.length > 0) {
@@ -163,7 +163,7 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
 
 
 
-  // Sort by confidence and return top 5
+  // Sắp xếp theo độ tin cậy và trả về top 5
   return recommendations
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 5);
@@ -172,18 +172,18 @@ export function getSpendingRecommendations(input: SpendingRecommendationInput): 
 
 
 /**
- * Categorize a transaction using AI/ML logic
+ * Phân loại một giao dịch bằng logic AI/ML
  * 
- * Algorithm:
- * 1. Use product category if available (highest confidence)
- * 2. Analyze description keywords
- * 3. Consider user's historical labeling patterns
- * 4. Fallback to 'other' category
+ * Thuật toán:
+ * 1. Sử dụng danh mục sản phẩm nếu có (độ tin cậy cao nhất)
+ * 2. Phân tích từ khóa mô tả
+ * 3. Xem xét các mẫu ghi nhãn lịch sử của người dùng
+ * 4. Dự phòng sang danh mục 'khác'
  */
 export function categorizeTransaction(input: CategorizeTransactionInput): CategorizeTransactionOutput {
   const { description, productCategory, productName, userHistory } = input;
   
-  // Highest confidence: use product category directly
+  // Độ tin cậy cao nhất: sử dụng trực tiếp danh mục sản phẩm
   if (productCategory) {
     return {
       label: productCategory.toLowerCase(),
@@ -191,12 +191,12 @@ export function categorizeTransaction(input: CategorizeTransactionInput): Catego
     };
   }
 
-  // Keyword-based categorization from description
+  // Phân loại dựa trên từ khóa từ mô tả
   const desc = (description || '').toLowerCase();
   const name = (productName || '').toLowerCase();
   const combined = `${desc} ${name}`;
 
-  // Category mapping with keywords
+  // Ánh xạ danh mục với các từ khóa
   const categoryKeywords: { [key: string]: string[] } = {
     'electronics': ['laptop', 'phone', 'smartphone', 'headphone', 'earphone', 'tablet', 'computer', 'electronic', 'device', 'gadget'],
     'groceries': ['food', 'grocery', 'restaurant', 'meal', 'snack', 'beverage', 'drink', 'coffee', 'tea'],
@@ -210,7 +210,7 @@ export function categorizeTransaction(input: CategorizeTransactionInput): Catego
     'other': []
   };
 
-  // Find matching category
+  // Tìm danh mục khớp
   let bestMatch = { label: 'other', confidence: 0.3, matchCount: 0 };
   
   for (const [category, keywords] of Object.entries(categoryKeywords)) {
@@ -227,7 +227,7 @@ export function categorizeTransaction(input: CategorizeTransactionInput): Catego
     }
   }
 
-  // Boost confidence if user has history of this label
+  // Tăng độ tin cậy nếu người dùng có lịch sử với nhãn này
   if (userHistory && bestMatch.label !== 'other') {
     const userLabelCount = userHistory.find(h => h.label === bestMatch.label)?.count || 0;
     if (userLabelCount > 0) {
