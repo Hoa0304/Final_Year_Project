@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../config/api';
 import { getProducts, Product } from '../../services/product.service';
+import { translateCategory } from '../../utils/category.utils';
 
 // Mock empty types and functions for removed features (games, stocks) to maintain compile compatibility
 interface Game {
@@ -638,7 +639,7 @@ export default function AdminTasksScreen() {
                                                   {product.name}
                                                 </Text>
                                                 {product.category && (
-                                                  <Text style={styles.pickerOptionSubtext}>{product.category}</Text>
+                                                  <Text style={styles.pickerOptionSubtext}>{translateCategory(product.category)}</Text>
                                                 )}
                                               </View>
                                               {formData.validationRuleProductId === product.id && (

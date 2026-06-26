@@ -117,9 +117,9 @@ export default function CheckoutScreen() {
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
-      Alert.alert('Thành công', 'Your order has been placed successfully!', [
+      Alert.alert('Thành công', 'Đặt hàng thành công!', [
         {
-          text: 'View Order',
+          text: 'Xem đơn hàng',
           onPress: () => {
             if (data.length === 1) {
               navigation.replace('OrderTracking', { orderId: data[0].id });
@@ -131,7 +131,7 @@ export default function CheckoutScreen() {
       ]);
     },
     onError: (error: any) => {
-      Alert.alert('Order Error', error?.response?.data?.error || 'Unable to place order. Please try again.');
+      Alert.alert('Lỗi Đặt Hàng', error?.response?.data?.error || 'Không thể đặt hàng. Vui lòng thử lại.');
     },
   });
 
@@ -139,7 +139,7 @@ export default function CheckoutScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Không có sản phẩm nào for checkout</Text>
+          <Text style={styles.errorText}>Không có sản phẩm nào để thanh toán</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
             <Text style={styles.backLinkText}>Quay lại</Text>
           </TouchableOpacity>
@@ -207,7 +207,7 @@ export default function CheckoutScreen() {
               >
                 <Ionicons name="add" size={20} color={quantity >= (product.stock_quantity || 99) ? '#475569' : '#fff'} />
               </TouchableOpacity>
-              <Text style={styles.stockHint}>{product.stock_quantity || 0} products available</Text>
+              <Text style={styles.stockHint}>{product.stock_quantity || 0} sản phẩm có sẵn</Text>
             </View>
           </View>
         )}
@@ -238,7 +238,7 @@ export default function CheckoutScreen() {
               <View style={styles.coinSavingInfo}>
                 <Ionicons name="checkmark-circle-outline" size={16} color="#10B981" />
                 <Text style={styles.coinSavingText}>
-                  Used {maxCoinsToUse.toLocaleString('en-US')} xu to save {maxCoinsToUse.toLocaleString('en-US')} VNĐ
+                  Đã dùng {maxCoinsToUse.toLocaleString('en-US')} xu để giảm {maxCoinsToUse.toLocaleString('en-US')} VNĐ
                 </Text>
               </View>
             )}

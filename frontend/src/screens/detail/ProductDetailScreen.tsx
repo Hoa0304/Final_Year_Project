@@ -33,6 +33,7 @@ import {
 } from '../../services/product.service';
 import { addToCart } from '../../services/shopping-cart.service';
 import { calculateDiscountedPrice, calculateDiscountAmount } from '../../utils/price.utils';
+import { translateCategory } from '../../utils/category.utils';
 import StarRating from '../../components/StarRating';
 
 export default function ProductDetailScreen() {
@@ -286,7 +287,7 @@ export default function ProductDetailScreen() {
           <View style={styles.content}>
             <Text style={styles.name}>{product.name}</Text>
             {product.category && (
-              <Text style={styles.category}>{product.category}</Text>
+              <Text style={styles.category}>{translateCategory(product.category)}</Text>
             )}
             <View style={styles.priceContainer}>
               {product.hasDiscount && product.discountedPrice ? (

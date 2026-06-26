@@ -1,0 +1,57 @@
+[
+  {
+    "id": "4f7ec3fe-8170-4fae-b81e-bbf1837f1215",
+    "title": "Complete Profile",
+    "description": "Fill out your complete profile information",
+    "reward_amount": 50,
+    "is_active": true,
+    "created_by": null,
+    "created_at": "2026-06-08T08:01:00.891108+00:00",
+    "updated_at": "2026-06-08T08:01:02.034688+00:00",
+    "validation_rule": null
+  },
+  {
+    "id": "65c9ac0e-7399-4a47-8c77-15056f62f480",
+    "title": "First Purchase",
+    "description": "Make your first product purchase",
+    "reward_amount": 100,
+    "is_active": true,
+    "created_by": null,
+    "created_at": "2026-06-08T08:01:00.891108+00:00",
+    "updated_at": "2026-06-08T08:01:02.034688+00:00",
+    "validation_rule": null
+  },
+  {
+    "id": "d69c3885-5cb8-466a-b0e1-f46b51e68a46",
+    "title": "Daily Login",
+    "description": "Login to the app today",
+    "reward_amount": 10,
+    "is_active": true,
+    "created_by": null,
+    "created_at": "2026-06-08T08:01:00.891108+00:00",
+    "updated_at": "2026-06-08T08:01:02.034688+00:00",
+    "validation_rule": null
+  },
+  {
+    "id": "335e7d3f-91ce-450f-bd78-6c905761bddd",
+    "title": "Stock Trader",
+    "description": "Make your first stock purchase",
+    "reward_amount": 150,
+    "is_active": true,
+    "created_by": null,
+    "created_at": "2026-06-08T08:01:00.891108+00:00",
+    "updated_at": "2026-06-08T08:01:02.034688+00:00",
+    "validation_rule": null
+  },
+  {
+    "id": "849a6bf0-a4e3-4d83-a7b6-1edd094c2940",
+    "title": "Task Master",
+    "description": "Complete 5 tasks",
+    "reward_amount": 200,
+    "is_active": true,
+    "created_by": null,
+    "created_at": "2026-06-08T08:01:00.891108+00:00",
+    "updated_at": "2026-06-08T08:01:02.034688+00:00",
+    "validation_rule": null
+  }
+]

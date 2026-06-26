@@ -73,15 +73,15 @@ export default function AdminDashboardScreen() {
   const totalTasks = tasksData?.tasks?.length || 0;
   const activeTasks = tasksData?.tasks?.filter((t: any) => t.is_active)?.length || 0;
 
-  // Mock data for charts
+  // Real data for charts from backend stats
   const revenueData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [{ data: [120, 150, 180, 220, 170, 250, 310] }],
+    labels: stats?.revenueLabels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [{ data: stats?.revenueData || [0, 0, 0, 0, 0, 0, 0] }],
   };
 
   const usersData = {
     labels: ['Người bán', 'Client'],
-    datasets: [{ data: [35, 120] }],
+    datasets: [{ data: [stats?.vendorCount || 0, stats?.clientCount || 0] }],
   };
 
   const chartConfig = {

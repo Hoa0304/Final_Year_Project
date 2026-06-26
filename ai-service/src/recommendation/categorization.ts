@@ -10,6 +10,8 @@ interface Transaction {
   amount: number;
   description?: string;
   reference_type?: string;
+  productCategory?: string;
+  productName?: string;
 }
 
 interface UserHistory {
@@ -24,18 +26,18 @@ interface CategorizationResult {
   confidence: number;
 }
 
-// Category keywords mapping
+// Category keywords mapping (English & Vietnamese)
 const categoryKeywords: { [key: string]: string[] } = {
-  'Shopping': ['product', 'purchase', 'buy', 'order', 'item', 'cart', 'shop', 'store'],
-  'Electronics': ['laptop', 'phone', 'computer', 'tablet', 'headphone', 'earphone', 'speaker', 'camera', 'tv', 'monitor'],
-  'Entertainment': ['game', 'play', 'movie', 'music', 'streaming', 'subscription', 'ticket', 'event'],
-  'Earnings': ['task', 'reward', 'bonus', 'earn', 'win', 'prize', 'completion'],
-  'Investment': ['stock', 'share', 'trade', 'invest', 'portfolio', 'dividend', 'profit', 'loss'],
-  'Food': ['food', 'restaurant', 'meal', 'grocery', 'cafe', 'dining', 'snack', 'drink'],
-  'Transportation': ['taxi', 'uber', 'bus', 'train', 'flight', 'gas', 'fuel', 'parking'],
-  'Bills': ['bill', 'utility', 'electric', 'water', 'internet', 'phone', 'subscription'],
-  'Reward': ['grant', 'admin', 'bonus', 'gift', 'promotion'],
-  'Other': []
+  'Shopping': ['product', 'purchase', 'buy', 'order', 'item', 'cart', 'shop', 'store', 'mua sắm', 'quần áo', 'thời trang', 'giày dép', 'mỹ phẩm', 'đồ gia dụng'],
+  'Electronics': ['laptop', 'phone', 'computer', 'tablet', 'headphone', 'earphone', 'speaker', 'camera', 'tv', 'monitor', 'điện tử', 'điện thoại', 'máy tính', 'tai nghe'],
+  'Entertainment': ['game', 'play', 'movie', 'music', 'streaming', 'subscription', 'ticket', 'event', 'giải trí', 'phim', 'nhạc', 'vé', 'sự kiện'],
+  'Earnings': ['task', 'reward', 'bonus', 'earn', 'win', 'prize', 'completion', 'thu nhập', 'lương', 'thưởng', 'nhiệm vụ'],
+  'Investment': ['stock', 'share', 'trade', 'invest', 'portfolio', 'dividend', 'profit', 'loss', 'đầu tư', 'cổ phiếu', 'chứng khoán', 'lợi nhuận'],
+  'Food': ['food', 'restaurant', 'meal', 'grocery', 'cafe', 'dining', 'snack', 'drink', 'đồ ăn', 'thức ăn', 'ẩm thực', 'ăn uống', 'cà phê', 'nước uống', 'nhà hàng'],
+  'Transportation': ['taxi', 'uber', 'bus', 'train', 'flight', 'gas', 'fuel', 'parking', 'di chuyển', 'đi lại', 'xe cộ', 'xăng', 'vé xe'],
+  'Bills': ['bill', 'utility', 'electric', 'water', 'internet', 'phone', 'subscription', 'hóa đơn', 'điện', 'nước', 'mạng'],
+  'Reward': ['grant', 'admin', 'bonus', 'gift', 'promotion', 'quà tặng', 'khuyến mãi'],
+  'Other': ['khác']
 };
 
 /**
@@ -86,7 +88,25 @@ export function categorizeTransaction(
 
   // Check reference_type
   if (referenceType === 'order') {
-    categoryScores['Shopping'] = (categoryScores['Shopping'] || 0) + 5;
+    if (transaction.productCategory) {
+      const cat = transaction.productCategory.toLowerCase();
+      let matchedMaster = Object.keys(categoryKeywords).find(k => k.toLowerCase() === cat);
+      
+      if (!matchedMaster) {
+        // Search inside keywords if exact master category name didn't match
+        matchedMaster = Object.entries(categoryKeywords).find(([_, keywords]) => 
+          keywords.some(kw => cat.includes(kw) || kw.includes(cat))
+        )?.[0];
+      }
+
+      if (matchedMaster) {
+        categoryScores[matchedMaster] = (categoryScores[matchedMaster] || 0) + 10;
+      } else {
+        categoryScores['Shopping'] = (categoryScores['Shopping'] || 0) + 5;
+      }
+    } else {
+      categoryScores['Shopping'] = (categoryScores['Shopping'] || 0) + 5;
+    }
   } else if (referenceType === 'task') {
     categoryScores['Earnings'] = (categoryScores['Earnings'] || 0) + 5;
   } else if (referenceType === 'stock') {

@@ -10,12 +10,26 @@ export async function getPurchaseHistory(req: AuthRequest, res: Response) {
     const userId = req.user!.userId;
     const { limit = 50, offset = 0 } = req.query;
 
-    // Use purchase_history view
-    const { data: purchases, error } = await supabase
-      .from('purchase_history')
-      .select('*')
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        user_id,
+        product_id,
+        quantity,
+        total_amount,
+        status,
+        created_at,
+        products (
+          id,
+          name,
+          image_url,
+          category,
+          price
+        )
+      `)
       .eq('user_id', userId)
-      .order('purchased_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
     if (error) {
@@ -23,18 +37,18 @@ export async function getPurchaseHistory(req: AuthRequest, res: Response) {
       return res.status(500).json({ error: 'Failed to fetch purchase history' });
     }
 
-    // Transform data from view
-    const history = purchases?.map((p: any) => ({
-      id: p.order_id,
-      productId: p.product_id,
-      productName: p.product_name,
-      productImageUrl: p.product_image,
-      productCategory: p.product_category,
-      productPrice: p.product_price_at_purchase,
-      quantity: p.quantity,
-      totalAmount: p.total_amount,
-      status: p.status,
-      purchasedAt: p.purchased_at
+    // Transform data
+    const history = orders?.map((o: any) => ({
+      id: o.id,
+      productId: o.product_id,
+      productName: o.products?.name || 'Unknown Product',
+      productImageUrl: o.products?.image_url,
+      productCategory: o.products?.category,
+      productPrice: o.products?.price || 0,
+      quantity: o.quantity,
+      totalAmount: o.total_amount,
+      status: o.status,
+      purchasedAt: o.created_at
     })) || [];
 
     res.json({ purchases: history });

@@ -241,7 +241,7 @@ const dictionary = {
   'Initializing conversation...': 'Đang khởi tạo cuộc trò chuyện...',
   'Welcome back,': 'Chào mừng quay trở lại,',
   'Shopee Coins Balance': 'Số dư Xu',
-  'Expenses': 'Chi phí',
+  'Expenses': 'Chi tiêu',
   'Tasks': 'Nhiệm vụ',
   'AI Assistant': 'Trợ lý AI',
   'Discussions': 'Thảo luận',
@@ -250,7 +250,7 @@ const dictionary = {
   'Based on your transaction history and purchase patterns': 'Dựa trên lịch sử giao dịch và thói quen mua sắm của bạn',
   'Recent Transactions': 'Giao dịch gần đây',
   'See All': 'Xem tất cả',
-  'Total Expense': 'Tổng chi phí',
+  'Total Expense': 'Tổng chi tiêu',
   'Total Income': 'Tổng thu nhập',
   'Net Balance': 'Số dư ròng',
   'Budget Progress': 'Tiến độ ngân sách',
@@ -287,24 +287,24 @@ const dictionary = {
 
 function processDirectory(dirPath) {
   const files = fs.readdirSync(dirPath);
-  
+
   for (const file of files) {
     const fullPath = path.join(dirPath, file);
     const stat = fs.statSync(fullPath);
-    
+
     if (stat.isDirectory()) {
       processDirectory(fullPath);
     } else if (fullPath.endsWith('.tsx') || fullPath.endsWith('.ts')) {
       let content = fs.readFileSync(fullPath, 'utf8');
       let originalContent = content;
-      
+
       for (const [eng, vie] of Object.entries(dictionary)) {
         // Find Exact Matches either bounded by tags, quotes, or newlines/spaces
         // E.g. >Total Orders< or >Total Orders\n or 'Total Orders'
         const regex = new RegExp(`(?<=[>'"\\n\\s])${eng}(?=[<'"\\n\\s,.;?!])`, 'g');
         content = content.replace(regex, vie);
       }
-      
+
       if (content !== originalContent) {
         fs.writeFileSync(fullPath, content, 'utf8');
         console.log(`Translated file: ${fullPath}`);

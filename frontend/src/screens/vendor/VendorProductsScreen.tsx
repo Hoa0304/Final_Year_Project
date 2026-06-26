@@ -26,6 +26,7 @@ import { setProductDiscount } from '../../services/product.service';
 import { validateDiscountPercentage, calculateDiscountedPrice } from '../../utils/price.utils';
 import { getVendorAnalytics } from '../../services/vendor.service';
 import ImageUploadPicker from '../../components/ImageUploadPicker';
+import { translateCategory } from '../../utils/category.utils';
 
 interface Product {
   id: string;
@@ -42,6 +43,17 @@ interface Product {
   hasDiscount?: boolean;
   status?: string;
 }
+
+const PRODUCT_CATEGORIES = [
+  'Thời trang',
+  'Điện tử',
+  'Đồ ăn',
+  'Thức uống',
+  'Mỹ phẩm',
+  'Đồ gia dụng',
+  'Giải trí',
+  'Khác'
+];
 
 export default function VendorProductsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -278,7 +290,7 @@ export default function VendorProductsScreen() {
           <Text style={styles.productStock}>Kho: <Text style={styles.stockValue}>{item.stock_quantity}</Text></Text>
 
           <View style={styles.statusRow}>
-            {item.category && <View style={styles.categoryBadge}><Text style={styles.categoryText}>{item.category}</Text></View>}
+            {item.category && <View style={styles.categoryBadge}><Text style={styles.categoryText}>{translateCategory(item.category)}</Text></View>}
             <View style={[styles.statusBadge, !item.is_active && styles.statusInactive]}>
               <Text style={[styles.statusText, !item.is_active && styles.statusTextInactive]}>
                 {item.is_active ? 'On Sale' : 'Hidden'}
@@ -426,14 +438,26 @@ export default function VendorProductsScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Danh mục</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="VD: Điện tử, Thời trang..."
-                    placeholderTextColor="#64748B"
-                    value={formData.category}
-                    onChangeText={(text) => setFormData({ ...formData, category: text })}
-                  />
+                  <Text style={styles.label}>Danh mục *</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                    {PRODUCT_CATEGORIES.map((cat) => (
+                      <TouchableOpacity
+                        key={cat}
+                        style={[
+                          styles.categoryChip,
+                          formData.category === cat && styles.categoryChipSelected
+                        ]}
+                        onPress={() => setFormData({ ...formData, category: cat })}
+                      >
+                        <Text style={[
+                          styles.categoryChipText,
+                          formData.category === cat && styles.categoryChipTextSelected
+                        ]}>
+                          {cat}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
 
                 <ImageUploadPicker
@@ -576,4 +600,8 @@ const styles = StyleSheet.create({
   discountPreview: { backgroundColor: '#1E293B', padding: 16, borderRadius: 12, marginBottom: 20, borderWidth: 1, borderColor: '#334155', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   discountPreviewLabel: { fontSize: 13, color: '#94A3B8' },
   discountPreviewPrice: { fontSize: 18, fontWeight: '800', color: '#F59E0B' },
+  categoryChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155' },
+  categoryChipSelected: { backgroundColor: '#10B98120', borderColor: '#10B981' },
+  categoryChipText: { color: '#94A3B8', fontSize: 14, fontWeight: '600' },
+  categoryChipTextSelected: { color: '#10B981' },
 });

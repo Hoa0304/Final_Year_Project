@@ -81,17 +81,31 @@ export async function getTasks(req: Request, res: Response) {
       console.log(`[getTasks] User authenticated, processing tasks with validation...`);
       const { data: userTasks } = await supabase
         .from('user_tasks')
-        .select('task_id, status')
+        .select('task_id, status, completed_at')
         .eq('user_id', userId);
 
-      const taskStatusMap = new Map(
-        userTasks?.map(ut => [ut.task_id, ut.status]) || []
+      const userTaskMap = new Map(
+        userTasks?.map(ut => [ut.task_id, ut]) || []
       );
 
       // Check validation for each task
       const tasksWithStatus = await Promise.all(
         tasks.map(async (task) => {
-          const userStatus = taskStatusMap.get(task.id) || 'pending';
+          const ut = userTaskMap.get(task.id);
+          let userStatus = ut?.status || 'pending';
+          
+          // Handle Daily check-in tasks
+          const titleLower = task.title.toLowerCase();
+          const isDaily = titleLower.includes('daily') || titleLower.includes('hàng ngày') || titleLower.includes('điểm danh');
+          
+          if (isDaily && ut?.completed_at) {
+            const completedDate = new Date(ut.completed_at).toDateString();
+            const today = new Date().toDateString();
+            if (completedDate !== today) {
+              userStatus = 'pending'; // Reset status if not completed today
+            }
+          }
+
           const isCompleted = userStatus === 'completed' || userStatus === 'claimed';
           
           // Get action type first (always determine what action is needed)
@@ -215,7 +229,13 @@ async function validateTaskRequirements(
   if (combined.includes('buy') || combined.includes('purchase') || combined.includes('shop') || combined.includes('mua') || combined.includes('đơn hàng')) {
     // Extract product name/keyword from task (e.g., "buy laptop" -> "laptop", "mua iPhone" -> "iphone")
     const productKeywordMatch = combined.match(/(?:buy|purchase|shop|mua)\s+(?:a|an|the|một)?\s*([a-z0-9]+(?:\s+[a-z0-9]+)*?)(?:\s+(?:product|item|products|items|sản phẩm|\d+))?/i);
-    const productKeyword = productKeywordMatch ? productKeywordMatch[1].trim().toLowerCase() : null;
+    let productKeyword = productKeywordMatch ? productKeywordMatch[1].trim().toLowerCase() : null;
+
+    // Ignore common verbs/adjectives that accidentally get matched
+    const ignoredKeywords = ['make', 'your', 'first', 'some', 'any', 'the', 'sản phẩm', 'product', 'item'];
+    if (productKeyword && ignoredKeywords.some(k => productKeyword === k || productKeyword?.startsWith(k + ' '))) {
+      productKeyword = null;
+    }
 
     // Extract number from task (e.g., "Buy 1 product" or "Mua 3 sản phẩm")
     const numberMatch = combined.match(/(?:buy|purchase|shop|mua).*?(\d+)/);
@@ -232,7 +252,7 @@ async function validateTaskRequirements(
         )
       `)
       .eq('user_id', userId)
-      .eq('status', 'completed')
+      .neq('status', 'cancelled')
       .gte('created_at', taskCreatedAt); // Only orders after task creation
 
     const { data: orders, error } = await query;
@@ -325,13 +345,25 @@ export async function completeTask(req: AuthRequest, res: Response) {
     // Check if task already completed
     const { data: existingUserTask } = await supabase
       .from('user_tasks')
-      .select('status')
+      .select('status, completed_at')
       .eq('user_id', userId)
       .eq('task_id', id)
       .single();
 
+    const titleLower = task.title.toLowerCase();
+    const isDaily = titleLower.includes('daily') || titleLower.includes('hàng ngày') || titleLower.includes('điểm danh');
+
     if (existingUserTask?.status === 'completed' || existingUserTask?.status === 'claimed') {
-      return res.status(400).json({ error: 'Task already completed' });
+      if (isDaily && existingUserTask.completed_at) {
+        const completedDate = new Date(existingUserTask.completed_at).toDateString();
+        const today = new Date().toDateString();
+        if (completedDate === today) {
+          return res.status(400).json({ error: 'Task already completed today' });
+        }
+        // If not today, we allow it to proceed and upsert will overwrite
+      } else {
+        return res.status(400).json({ error: 'Task already completed' });
+      }
     }
 
     // Validate task requirements (only count actions after task creation)
@@ -382,8 +414,8 @@ export async function completeTask(req: AuthRequest, res: Response) {
     try {
       const { sendNotification } = await import('../services/notification.service');
       await sendNotification(userId, {
-        title: 'Task Completed!',
-        message: `You completed "${task.title}" and earned ${task.reward_amount} coins!`,
+        title: 'Hoàn thành nhiệm vụ!',
+        message: `Bạn đã hoàn thành "${task.title}" và nhận được ${task.reward_amount} Xu!`,
         type: 'task_completed',
         priority: 'medium',
         data: {
@@ -444,7 +476,7 @@ async function validateTaskByRule(
           )
         `)
         .eq('user_id', userId)
-        .eq('status', 'completed')
+        .neq('status', 'cancelled')
         .gte('created_at', taskCreatedAt);
 
       const { data: orders, error } = await query;

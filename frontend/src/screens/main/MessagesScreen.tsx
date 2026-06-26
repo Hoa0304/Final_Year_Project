@@ -125,7 +125,7 @@ export default function MessagesScreen() {
       refetchConversations();
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to send message');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Không thể gửi tin nhắn');
     },
   });
 
@@ -144,7 +144,7 @@ export default function MessagesScreen() {
       queryClient.invalidateQueries({ queryKey: ['messagingConversations'] });
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to start conversation');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Không thể bắt đầu cuộc trò chuyện');
     },
   });
 
@@ -177,10 +177,10 @@ export default function MessagesScreen() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    if (diffInSeconds < 60) return 'just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 60) return 'vừa xong';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
     return date.toLocaleDateString('en-US');
   };
 
@@ -232,7 +232,7 @@ export default function MessagesScreen() {
           </View>
           {item.last_message && (
             <Text style={styles.conversationPreview} numberOfLines={1}>
-              {item.last_message.sender_id === user?.id ? 'You: ' : ''}
+              {item.last_message.sender_id === user?.id ? 'Bạn: ' : ''}
               {item.last_message.content}
             </Text>
           )}
@@ -442,7 +442,7 @@ export default function MessagesScreen() {
               <Ionicons name="search" size={18} color="#475569" style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Tìm kiếm users or sellers..."
+                placeholder="Tìm kiếm người dùng hoặc người bán..."
                 placeholderTextColor="#475569"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -473,7 +473,7 @@ export default function MessagesScreen() {
                       <Text style={styles.searchResultEmail}>{item.email}</Text>
                       {item.productCount !== undefined && item.productCount !== null && (
                         <Text style={styles.searchResultMeta}>
-                          {String(item.productCount)} products
+                          {String(item.productCount)} sản phẩm
                         </Text>
                       )}
                     </View>

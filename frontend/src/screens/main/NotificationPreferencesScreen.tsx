@@ -83,10 +83,10 @@ export default function NotificationPreferencesScreen() {
     mutationFn: updateNotificationPreferences,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
-      Alert.alert('Thành công', 'Preferences updated successfully');
+      Alert.alert('Thành công', 'Cập nhật thiết lập thành công');
     },
     onError: () => {
-      Alert.alert('Lỗi', 'Failed to update preferences');
+      Alert.alert('Lỗi', 'Lỗi cập nhật thiết lập');
     },
   });
 
@@ -142,7 +142,7 @@ export default function NotificationPreferencesScreen() {
         <View style={styles.preferenceHeader}>
           <View style={styles.preferenceTitleContainer}>
             <Text style={styles.preferenceTitle}>{NOTIFICATION_LABELS[type]}</Text>
-            {!enabled && <Text style={styles.disabledLabel}>(Disabled)</Text>}
+            {!enabled && <Text style={styles.disabledLabel}>(Đã tắt)</Text>}
           </View>
           <Switch
             value={enabled}
@@ -192,7 +192,7 @@ export default function NotificationPreferencesScreen() {
             ) : (
               <View style={styles.detailsContainer}>
                 <Text style={styles.detailText}>
-                  Max: {pref?.maxPerDay ?? 10}/day | Cooldown: {pref?.cooldownMinutes ?? 0} min
+                  Tối đa: {pref?.maxPerDay ?? 10}/ngày | Chờ: {pref?.cooldownMinutes ?? 0} phút
                 </Text>
                 <TouchableOpacity
                   style={styles.editButton}

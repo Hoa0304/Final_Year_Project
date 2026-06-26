@@ -33,28 +33,7 @@ type SortOption = 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'name_asc' 
 type ViewMode = 'grid' | 'list';
 type MarketplaceTab = 'all' | 'vendors';
 
-// Category translation map
-const CATEGORY_TRANSLATIONS: Record<string, string> = {
-  'Electronics': 'Điện tử',
-  'Clothing': 'Quần áo',
-  'Books': 'Sách',
-  'Home & Garden': 'Nhà cửa & Đời sống',
-  'Sports': 'Thể thao',
-  'Toys': 'Đồ chơi',
-  'Health & Beauty': 'Sức khỏe & Sắc đẹp',
-  'Automotive': 'Ô tô & Xe máy',
-  'Food & Grocery': 'Thực phẩm',
-  'Digital Services': 'Dịch vụ số',
-  'Software': 'Phần mềm',
-  'Courses': 'Khóa học',
-  'Fashion': 'Thời trang',
-  'Accessories': 'Phụ kiện',
-  'Gaming': 'Trò chơi',
-};
-
-function translateCategory(cat: string): string {
-  return CATEGORY_TRANSLATIONS[cat] || cat;
-}
+import { translateCategory } from '../../utils/category.utils';
 
 export default function MarketplaceScreen() {
   const navigation = useNavigation();
@@ -389,7 +368,7 @@ export default function MarketplaceScreen() {
           <Text style={styles.vendorName}>{item.full_name || item.email}</Text>
           <Text style={styles.vendorEmail}>{item.email}</Text>
           <Text style={styles.vendorProductCount}>
-            {item.productCount || 0} products
+            {item.productCount || 0} sản phẩm
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={20} color="#64748B" />
@@ -464,7 +443,7 @@ export default function MarketplaceScreen() {
             <Ionicons name="search" size={20} color="#64748B" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Tìm kiếm products..."
+              placeholder="Tìm kiếm sản phẩm..."
               placeholderTextColor="#64748B"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -505,7 +484,7 @@ export default function MarketplaceScreen() {
             <Ionicons name="search" size={20} color="#64748B" style={styles.searchVendorIcon} />
             <TextInput
               style={styles.searchVendorInput}
-              placeholder="Tìm kiếm vendors..."
+              placeholder="Tìm kiếm người bán..."
               placeholderTextColor="#475569"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -531,7 +510,7 @@ export default function MarketplaceScreen() {
               >
                 <Ionicons name="filter" size={18} color={activeFiltersCount > 0 ? '#fff' : '#64748B'} />
                 <Text style={[styles.actionButtonText, activeFiltersCount > 0 && styles.actionButtonTextActive]}>
-                  Filter
+                  Lọc
                   {activeFiltersCount > 0 && ` (${activeFiltersCount})`}
                 </Text>
               </TouchableOpacity>
@@ -628,8 +607,8 @@ export default function MarketplaceScreen() {
                               {vendor?.full_name || vendor?.email || 'Loading...'}
                             </Text>
                             <Text style={styles.vendorSectionProductCount}>
-                              {totalProductCount} {totalProductCount === 1 ? 'product' : 'products'}
-                              {vendorProducts.length < totalProductCount && ` (showing top ${vendorProducts.length})`}
+                              {totalProductCount} sản phẩm
+                              {vendorProducts.length < totalProductCount && ` (hiển thị ${vendorProducts.length} nổi bật)`}
                             </Text>
                           </View>
                         </View>
@@ -652,7 +631,7 @@ export default function MarketplaceScreen() {
                           onPress={() => (navigation as any).navigate('VendorShop', { vendorId })}
                         >
                           <Text style={styles.viewAllButtonText}>
-                            View Tất cả {totalProductCount} Products
+                            Xem tất cả {totalProductCount} sản phẩm
                           </Text>
                           <Ionicons name="arrow-forward" size={16} color="#6366F1" />
                         </TouchableOpacity>
@@ -729,7 +708,7 @@ export default function MarketplaceScreen() {
                               }
                               numberOfLines={1}
                             >
-                              {category}
+                              {translateCategory(category)}
                             </Text>
                           </TouchableOpacity>
                         );
@@ -762,7 +741,7 @@ export default function MarketplaceScreen() {
                         ) : recommendedProducts.length === 0 ? (
                           <View style={styles.recommendationsEmpty}>
                             <Text style={styles.recommendationsEmptyText}>
-                              {mlError ? 'Unable to load recommendations' : 'Không có gợi ý nào'}
+                              {mlError ? 'Không thể tải gợi ý' : 'Không có gợi ý nào'}
                             </Text>
                           </View>
                         ) : (
@@ -789,7 +768,7 @@ export default function MarketplaceScreen() {
                                     <View style={styles.recommendedProductScore}>
                                       <Ionicons name="star" size={12} color="#FF9500" />
                                       <Text style={styles.recommendedProductScoreText}>
-                                        {(rec.score * 100).toFixed(0)}% match
+                                        {(rec.score * 100).toFixed(0)}% phù hợp
                                       </Text>
                                     </View>
                                   )}

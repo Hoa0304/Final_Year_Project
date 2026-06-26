@@ -317,10 +317,10 @@ export async function purchaseProduct(req: AuthRequest, res: Response) {
     // Send notification
     try {
       const { sendNotification } = await import('../services/notification.service');
-      const notificationMessage = `Your order for ${quantity}x ${product.name} has been completed successfully!`;
+      const notificationMessage = `Đơn hàng của bạn cho ${quantity}x ${product.name} đã hoàn tất thành công!`;
       
       await sendNotification(userId, {
-        title: 'Order Completed',
+        title: 'Đơn hàng hoàn tất',
         message: notificationMessage,
         type: 'order_completed',
         priority: 'high',

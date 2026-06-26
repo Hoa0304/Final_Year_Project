@@ -78,7 +78,7 @@ export default function ChatScreen() {
     },
     onError: (error: any) => {
       setIsSending(false);
-      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to send message. Please try again.', [{ text: 'OK' }]);
+      Alert.alert('Lỗi', error.response?.data?.error || 'Không thể gửi tin nhắn. Vui lòng thử lại.', [{ text: 'OK' }]);
     },
   });
 
@@ -110,7 +110,7 @@ export default function ChatScreen() {
         id: 'temp-greeting',
         conversation_id: conversation.id,
         role: 'assistant',
-        content: `Hello! I am the HMall Trợ lý AI. I can help you with:\n\n• Expense & budget management\n• Product & voucher consultation\n• App usage guidelines\n• Financial & investment advice\n• And much more!\n\nHow can I help you today? 😊`,
+        content: `Xin chào! Tôi là Trợ lý AI của HMall. Tôi có thể giúp bạn:\n\n• Quản lý chi tiêu & ngân sách\n• Tư vấn sản phẩm & mã giảm giá\n• Hướng dẫn sử dụng ứng dụng\n• Lời khuyên tài chính\n• Và nhiều hơn nữa!\n\nHôm nay tôi có thể giúp gì cho bạn? 😊`,
         created_at: new Date().toISOString(),
       };
       setOptimisticGreeting(greetingMessage);
@@ -119,7 +119,7 @@ export default function ChatScreen() {
       }, 1000);
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to create conversation.', [{ text: 'OK' }]);
+      Alert.alert('Lỗi', error.response?.data?.error || 'Không thể tạo cuộc trò chuyện.', [{ text: 'OK' }]);
     },
   });
 
@@ -134,12 +134,12 @@ export default function ChatScreen() {
 
   const handleDeleteConversation = (conversationId: string) => {
     Alert.alert(
-      'Delete Conversation',
-      'Are you sure you want to delete this conversation?',
+      'Xóa cuộc trò chuyện',
+      'Bạn có chắc chắn muốn xóa cuộc trò chuyện này không?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => {
             deleteConversationMutation.mutate(conversationId);
@@ -205,11 +205,11 @@ export default function ChatScreen() {
   );
 
   const quickQuestions = [
-    'How to track expenses?',
-    'How to set a budget?',
-    'What is a voucher and how to use it?',
-    'Tips for saving money effectively?',
-    'How to manage tasks?',
+    'Làm sao để theo dõi chi tiêu?',
+    'Cách thiết lập ngân sách?',
+    'Mã giảm giá là gì và cách sử dụng?',
+    'Mẹo tiết kiệm tiền hiệu quả?',
+    'Cách hoàn thành nhiệm vụ?',
   ];
 
   return (

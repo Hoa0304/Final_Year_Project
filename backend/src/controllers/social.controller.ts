@@ -164,8 +164,8 @@ export async function createPost(req: AuthRequest, res: Response) {
       if (parentPost && parentPost.created_by !== userId) {
         await sendNotification(parentPost.created_by, {
           type: 'social_reply',
-          title: 'New Reply to Your Post',
-          message: `${req.user!.email} replied to your post`,
+          title: 'Có phản hồi mới cho bài viết của bạn',
+          message: `${req.user!.email} đã phản hồi bài viết của bạn`,
           priority: 'medium',
           data: {
             reference_type: 'discussion_post',
@@ -178,8 +178,8 @@ export async function createPost(req: AuthRequest, res: Response) {
       if (thread && thread.created_by !== userId) {
         await sendNotification(thread.created_by, {
           type: 'social_reply',
-          title: 'New Reply to Your Thread',
-          message: `${req.user!.email} replied to your thread`,
+          title: 'Có phản hồi mới cho chủ đề của bạn',
+          message: `${req.user!.email} đã phản hồi chủ đề của bạn`,
           priority: 'medium',
           data: {
             reference_type: 'discussion_thread',

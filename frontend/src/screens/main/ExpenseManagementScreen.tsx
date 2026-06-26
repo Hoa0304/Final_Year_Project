@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { translateCategory } from '../../utils/category.utils';
 import { getExpenseStatistics, getExpenseInsights, ExpenseInsight } from '../../services/transaction-label.service';
 import { getBudgetProgress, setUserBudget, getSavingsGoals, createSavingsGoal, BudgetProgress, SavingsGoal } from '../../services/budget.service';
 import { useNavigation } from '@react-navigation/native';
@@ -157,10 +158,10 @@ export default function ExpenseManagementScreen() {
    */
   function renderPeriodSelector() {
     const periods: { label: string; value: Period }[] = [
-      { label: 'Today', value: 'day' },
-      { label: 'This Week', value: 'week' },
-      { label: 'This Month', value: 'month' },
-      { label: 'This Year', value: 'year' },
+      { label: 'Hôm nay', value: 'day' },
+      { label: 'Tuần này', value: 'week' },
+      { label: 'Tháng này', value: 'month' },
+      { label: 'Năm nay', value: 'year' },
     ];
 
     return (
@@ -202,13 +203,13 @@ export default function ExpenseManagementScreen() {
         <View style={[styles.summaryCard, styles.spendingCard]}>
           <View style={styles.summaryCardHeader}>
             <Ionicons name="arrow-up-circle" size={24} color="#EF4444" />
-            <Text style={styles.summaryCardLabel}>Tổng chi phí</Text>
+            <Text style={styles.summaryCardLabel}>Tổng chi tiêu</Text>
           </View>
           <Text style={styles.summaryCardAmount}>
-            {Math.round(summary.totalSpending).toLocaleString('vi-VN')} xu
+            {Math.round(summary.totalSpending).toLocaleString('vi-VN')} VND
           </Text>
           <Text style={styles.summaryCardSubtext}>
-            {summary.transactionCount} transaction(s)
+            {summary.transactionCount} giao dịch
           </Text>
         </View>
 
@@ -219,7 +220,7 @@ export default function ExpenseManagementScreen() {
             <Text style={styles.summaryCardLabel}>Tổng thu nhập</Text>
           </View>
           <Text style={styles.summaryCardAmount}>
-            {Math.round(summary.totalEarnings).toLocaleString('vi-VN')} xu
+            {Math.round(summary.totalEarnings).toLocaleString('vi-VN')} VND
           </Text>
         </View>
 
@@ -247,7 +248,7 @@ export default function ExpenseManagementScreen() {
             ]}
           >
             {summary.netAmount >= 0 ? '+' : ''}
-            {Math.round(summary.netAmount).toLocaleString('vi-VN')} xu
+            {Math.round(summary.netAmount).toLocaleString('vi-VN')} VND
           </Text>
         </View>
       </View>
@@ -265,10 +266,10 @@ export default function ExpenseManagementScreen() {
     const isWarning = percentage >= 80;
 
     const typeMap: Record<string, string> = {
-      daily: 'Daily Budget',
-      weekly: 'Weekly Budget',
-      monthly: 'Monthly Budget',
-      yearly: 'Yearly Budget',
+      daily: 'Ngân sách hàng ngày',
+      weekly: 'Ngân sách hàng tuần',
+      monthly: 'Ngân sách hàng tháng',
+      yearly: 'Ngân sách hàng năm',
     };
     const budgetLabel = typeMap[budget.budget_type] || 'Budget';
 
@@ -286,7 +287,7 @@ export default function ExpenseManagementScreen() {
               <Text style={styles.budgetLabel}>
                 {budgetLabel}
               </Text>
-              <Text style={styles.budgetAmount}>{Math.round(budget.amount).toLocaleString('vi-VN')} xu</Text>
+              <Text style={styles.budgetAmount}>{Math.round(budget.amount).toLocaleString('vi-VN')} VND</Text>
             </View>
             <View style={[styles.budgetPercentageBadge, { backgroundColor: isOverBudget ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981' }]}>
               <Text style={styles.budgetPercentageText}>{percentage.toFixed(0)}%</Text>
@@ -307,13 +308,13 @@ export default function ExpenseManagementScreen() {
             <View style={styles.budgetDetailItem}>
               <Text style={styles.budgetDetailLabel}>Đã tiêu</Text>
               <Text style={[styles.budgetDetailValue, { color: '#EF4444' }]}>
-                {Math.round(spent).toLocaleString('vi-VN')} xu
+                {Math.round(spent).toLocaleString('vi-VN')} VND
               </Text>
             </View>
             <View style={styles.budgetDetailItem}>
               <Text style={styles.budgetDetailLabel}>Còn lại</Text>
               <Text style={[styles.budgetDetailValue, { color: remaining > 0 ? '#10B981' : '#EF4444' }]}>
-                {Math.round(remaining).toLocaleString('vi-VN')} xu
+                {Math.round(remaining).toLocaleString('vi-VN')} VND
               </Text>
             </View>
           </View>
@@ -361,7 +362,7 @@ export default function ExpenseManagementScreen() {
               </View>
               <View style={styles.savingsGoalAmounts}>
                 <Text style={styles.savingsGoalCurrent}>
-                  {Math.round(goal.current_amount).toLocaleString('vi-VN')} / {Math.round(goal.target_amount).toLocaleString('vi-VN')} xu
+                  {Math.round(goal.current_amount).toLocaleString('vi-VN')} / {Math.round(goal.target_amount).toLocaleString('vi-VN')} VND
                 </Text>
                 {goal.target_date && (
                   <Text style={styles.savingsGoalDate}>
@@ -399,12 +400,12 @@ export default function ExpenseManagementScreen() {
                 <Text style={styles.categoryRankText}>#{index + 1}</Text>
               </View>
               <View style={styles.categoryInfo}>
-                <Text style={styles.categoryName}>{category.category}</Text>
-                <Text style={styles.categoryCount}>{category.count} transactions</Text>
+                <Text style={styles.categoryName}>{translateCategory(category.category)}</Text>
+                <Text style={styles.categoryCount}>{category.count} giao dịch</Text>
               </View>
               <View style={styles.categoryAmountContainer}>
                 <Text style={styles.categoryAmount}>
-                  {Math.round(category.amount).toLocaleString('vi-VN')} xu
+                  {Math.round(category.amount).toLocaleString('vi-VN')} VND
                 </Text>
                 <Text style={styles.categoryPercentage}>
                   {category.percentage.toFixed(1)}%
@@ -496,7 +497,7 @@ export default function ExpenseManagementScreen() {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Danh mục Details</Text>
+          <Text style={styles.sectionTitle}>Chi tiết danh mục</Text>
           <TouchableOpacity
             onPress={() => (navigation as any).navigate('Giao dịch')}
           >
@@ -513,14 +514,14 @@ export default function ExpenseManagementScreen() {
             }}
           >
             <View style={styles.breakdownInfo}>
-              <Text style={styles.breakdownCategory}>{category}</Text>
+              <Text style={styles.breakdownCategory}>{translateCategory(category)}</Text>
               <Text style={styles.breakdownCount}>
-                {data.count} transactions
+                {data.count} giao dịch
               </Text>
             </View>
             <View style={styles.breakdownAmountContainer}>
               <Text style={styles.breakdownAmount}>
-                {Math.round(data.amount).toLocaleString('vi-VN')} xu
+                {Math.round(data.amount).toLocaleString('vi-VN')} VND
               </Text>
               <Ionicons name="chevron-forward" size={20} color="#64748B" />
             </View>
@@ -592,17 +593,17 @@ export default function ExpenseManagementScreen() {
   function getActionLabel(actionType?: string): string {
     switch (actionType) {
       case 'budget':
-        return 'set a budget';
+        return 'đặt ngân sách';
       case 'save':
-        return 'create a savings goal';
+        return 'tạo mục tiêu tiết kiệm';
       case 'reduce':
-        return 'view transaction history';
+        return 'xem lịch sử giao dịch';
       case 'earn':
-        return 'earn more xu';
+        return 'kiếm thêm VNĐ';
       case 'diversify':
-        return 'explore marketplace';
+        return 'khám phá chợ';
       default:
-        return 'take action';
+        return 'thực hiện';
     }
   }
 
@@ -643,10 +644,10 @@ export default function ExpenseManagementScreen() {
               <Text style={styles.predictionTitle}>Dự báo chi tiêu (7 ngày tới)</Text>
             </View>
             <Text style={styles.predictionAmount}>
-              {Math.round(prediction.predictedAmount).toLocaleString('vi-VN')} xu
+              {Math.round(prediction.predictedAmount).toLocaleString('vi-VN')} VND
             </Text>
             <Text style={styles.predictionTrend}>
-              Trend: {trendMap[prediction.trend] || prediction.trend} • Confidence: {(prediction.confidence * 100).toFixed(0)}%
+              Xu hướng: {trendMap[prediction.trend] || prediction.trend} • Độ tin cậy: {(prediction.confidence * 100).toFixed(0)}%
             </Text>
           </View>
         )}
@@ -686,14 +687,14 @@ export default function ExpenseManagementScreen() {
                   <Text style={styles.insightMessage}>{insight.message}</Text>
                   {insight.amount && (
                     <Text style={styles.insightAmount}>
-                      Amount: {Math.round(insight.amount).toLocaleString('vi-VN')} xu
+                      Số tiền: {Math.round(insight.amount).toLocaleString('vi-VN')} VND
                     </Text>
                   )}
                   {insight.actionType && (
                     <View style={styles.insightActionHint}>
                       <Ionicons name="arrow-forward-circle" size={16} color={getInsightColor(insight.type)} />
                       <Text style={[styles.insightActionText, { color: getInsightColor(insight.type) }]}>
-                        Tap to {getActionLabel(insight.actionType)}
+                        Chạm để {getActionLabel(insight.actionType)}
                       </Text>
                     </View>
                   )}
@@ -784,16 +785,16 @@ export default function ExpenseManagementScreen() {
                       <Ionicons name="close" size={24} color="#94A3B8" />
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.modalLabel}>Số tiền ngân sách (xu)</Text>
+                  <Text style={styles.modalLabel}>Số tiền ngân sách (VND)</Text>
                   <TextInput
                     style={styles.modalInput}
                     value={budgetAmount}
                     onChangeText={setBudgetAmount}
-                    placeholder="Nhập budget amount"
+                    placeholder="Nhập số tiền ngân sách"
                     keyboardType="numeric"
                   />
                   <Text style={styles.modalHint}>
-                    Period: {periodLabel}
+                    Chu kỳ: {periodLabel}
                   </Text>
                   <TouchableOpacity
                     style={[styles.modalButton, styles.modalButtonPrimary]}
@@ -808,7 +809,7 @@ export default function ExpenseManagementScreen() {
                     disabled={setBudgetMutation.isPending}
                   >
                     <Text style={styles.modalButtonText}>
-                      {setBudgetMutation.isPending ? 'Setting...' : 'Đặt ngân sách'}
+                      {setBudgetMutation.isPending ? 'Đang đặt...' : 'Đặt ngân sách'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -857,7 +858,7 @@ export default function ExpenseManagementScreen() {
                       style={styles.modalInput}
                       value={savingsGoalAmount}
                       onChangeText={setSavingsGoalAmount}
-                      placeholder="Nhập target amount"
+                      placeholder="Nhập số tiền mục tiêu"
                       placeholderTextColor="#64748B"
                       keyboardType="numeric"
                       returnKeyType="done"
@@ -890,7 +891,7 @@ export default function ExpenseManagementScreen() {
                       disabled={createSavingsGoalMutation.isPending}
                     >
                       <Text style={styles.modalButtonText}>
-                        {createSavingsGoalMutation.isPending ? 'Creating...' : 'Create Goal'}
+                        {createSavingsGoalMutation.isPending ? 'Đang tạo...' : 'Tạo mục tiêu'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -918,8 +919,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#0F172A',
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',

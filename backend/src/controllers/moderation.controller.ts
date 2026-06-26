@@ -72,10 +72,10 @@ export async function reviewProduct(req: AuthRequest, res: Response) {
     try {
       const { sendNotification } = await import('../services/notification.service');
       await sendNotification(product.created_by, {
-        title: status === 'approved' ? 'Product Approved' : 'Product Rejected',
+        title: status === 'approved' ? 'Sản phẩm đã được duyệt' : 'Sản phẩm bị từ chối',
         message: status === 'approved' 
-          ? `Your product "${product.name}" has been approved and is now live!` 
-          : `Your product "${product.name}" was rejected. Reason: ${reason || 'No reason provided'}`,
+          ? `Sản phẩm "${product.name}" của bạn đã được duyệt và đang hiển thị!` 
+          : `Sản phẩm "${product.name}" của bạn đã bị từ chối. Lý do: ${reason || 'Không có lý do'}`,
         type: 'product_review',
         priority: 'high',
         data: { productId: id, status }

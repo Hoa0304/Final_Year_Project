@@ -17,6 +17,7 @@ import { CommonActions } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTasks, completeTask, Task } from '../../services/task.service';
 import { Ionicons } from '@expo/vector-icons';
+import { translateTaskTitle, translateTaskDesc } from '../../utils/category.utils';
 
 export default function TasksScreen() {
   const navigation = useNavigation();
@@ -25,6 +26,7 @@ export default function TasksScreen() {
   const { data: tasks, isLoading, refetch } = useQuery({
     queryKey: ['tasks'],
     queryFn: getTasks,
+    refetchInterval: 5000,
   });
 
   const completeTaskMutation = useMutation({
@@ -33,20 +35,20 @@ export default function TasksScreen() {
       // Invalidate notifications to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
-      Alert.alert('Thành công', `You've earned ${Math.round(data.reward).toLocaleString('en-US')} Shopee Coins!`);
+      Alert.alert('Thành công', `Bạn đã nhận được ${Math.round(data.reward).toLocaleString('en-US')} Xu!`);
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to complete task');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Không thể hoàn thành nhiệm vụ');
     },
   });
 
   function handleCompleteTask(taskId: string) {
-    Alert.alert('Complete Task', 'Are you sure you want to complete this task?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Nhận thưởng', 'Bạn có chắc chắn muốn nhận thưởng cho nhiệm vụ này?', [
+      { text: 'Hủy', style: 'cancel' },
       {
-        text: 'Complete',
+        text: 'Nhận',
         onPress: () => completeTaskMutation.mutate(taskId),
       },
     ]);
@@ -64,18 +66,18 @@ export default function TasksScreen() {
         targetScreen = 'Marketplace';
         break;
       case 'games':
-        Alert.alert('Thông tin', 'The Games feature has been discontinued.');
+        Alert.alert('Thông tin', 'Tính năng Game đã ngừng hoạt động.');
         return;
       case 'stocks':
-        Alert.alert('Thông tin', 'The Stocks feature has been discontinued.');
+        Alert.alert('Thông tin', 'Tính năng Chứng khoán đã ngừng hoạt động.');
         return;
       case 'tasks':
         // Already on tasks screen, just scroll to top or show message
-        Alert.alert('Thông tin', 'Complete other tasks first to unlock this one!');
+        Alert.alert('Thông tin', 'Vui lòng hoàn thành các nhiệm vụ khác trước để mở khóa!');
         return;
       default:
         console.log('Unknown action type:', actionType);
-        Alert.alert('Lỗi', 'Unknown action type');
+        Alert.alert('Lỗi', 'Loại hành động không xác định');
         return;
     }
 
@@ -99,7 +101,7 @@ export default function TasksScreen() {
             (navigation as any).navigate('Main', { screen: targetScreen });
           } catch (nestedError) {
             console.error('Nested navigation error:', nestedError);
-            Alert.alert('Lỗi', `Unable to navigate to ${targetScreen}. Please use the bottom tabs.`);
+            Alert.alert('Lỗi', `Không thể chuyển đến ${targetScreen}. Vui lòng sử dụng thanh điều hướng.`);
           }
         }
       }
@@ -114,14 +116,14 @@ export default function TasksScreen() {
     return (
       <View style={styles.taskCard}>
         <View style={styles.taskHeader}>
-          <Text style={styles.taskTitle}>{item.title}</Text>
+          <Text style={styles.taskTitle}>{translateTaskTitle(item.title)}</Text>
           <View style={[styles.statusBadge, isCompleted && styles.statusBadgeCompleted]}>
             <Text style={[styles.statusText, isCompleted && styles.statusTextCompleted]}>
-              {isCompleted ? 'Completed' : 'Available'}
+              {isCompleted ? 'Đã hoàn thành' : 'Chưa hoàn thành'}
             </Text>
           </View>
         </View>
-        {item.description && <Text style={styles.taskDescription}>{item.description}</Text>}
+        {item.description && <Text style={styles.taskDescription}>{translateTaskDesc(item.description)}</Text>}
         <View style={styles.taskFooter}>
           <View style={styles.rewardContainer}>
             <Ionicons name="logo-bitcoin" size={18} color="#F59E0B" />
@@ -152,7 +154,7 @@ export default function TasksScreen() {
                   handleDoIt(actionType);
                 } else {
                   console.log('No actionType available for task:', item.title);
-                  Alert.alert('Information', 'This task does not have a direct link. Please perform the action manually.');
+                  Alert.alert('Thông tin', 'Nhiệm vụ này không có liên kết trực tiếp. Vui lòng tự thực hiện.');
                 }
               }}
             >

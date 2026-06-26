@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,14 +18,23 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCategorizedTransactions, updateTransactionLabel, categorizeTransaction, CategorizedTransaction, getTransactionCategories } from '../../services/transaction-label.service';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { translateCategory, translateTransactionType, CATEGORY_TRANSLATIONS } from '../../utils/category.utils';
 
-const CATEGORIES = ['Mua sắm', 'Điện tử', 'Giải trí', 'Thu nhập', 'Đầu tư', 'Ăn uống', 'Đi lại', 'Hóa đơn', 'Phần thưởng', 'Khác'];
+const CATEGORIES = Object.keys(CATEGORY_TRANSLATIONS).filter(k => k[0] === k[0].toUpperCase());
 
 export default function TransactionsScreen() {
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
+  const route = useRoute<any>();
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(route.params?.category);
   const [editingTransaction, setEditingTransaction] = useState<CategorizedTransaction | null>(null);
   const [newCategory, setNewCategory] = useState('');
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (route.params?.category !== undefined) {
+      setSelectedCategory(route.params.category);
+    }
+  }, [route.params?.category]);
 
   const { data: transactions, isLoading, refetch } = useQuery({
     queryKey: ['transactions', selectedCategory],
@@ -45,10 +54,10 @@ export default function TransactionsScreen() {
       queryClient.invalidateQueries({ queryKey: ['transactionCategories'] });
       setEditingTransaction(null);
       setNewCategory('');
-      Alert.alert('Thành công', 'Transaction label updated');
+      Alert.alert('Thành công', 'Đã cập nhật nhãn giao dịch');
     },
     onError: () => {
-      Alert.alert('Lỗi', 'Failed to update label');
+      Alert.alert('Lỗi', 'Không thể cập nhật nhãn');
     },
   });
 
@@ -56,7 +65,7 @@ export default function TransactionsScreen() {
     mutationFn: (transactionId: string) => categorizeTransaction(transactionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      Alert.alert('Thành công', 'Transaction categorized');
+      Alert.alert('Thành công', 'Giao dịch đã được phân loại');
     },
   });
 
@@ -102,12 +111,12 @@ export default function TransactionsScreen() {
         </View>
         <View style={styles.transactionInfo}>
           <Text style={styles.transactionDescription}>
-            {item.description || item.type}
+            {item.description || translateTransactionType(item.type)}
           </Text>
           <View style={styles.categoryRow}>
             {item.category ? (
               <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{item.category}</Text>
+                <Text style={styles.categoryText}>{translateCategory(item.category)}</Text>
                 {item.is_manual_label && (
                   <Ionicons name="create-outline" size={12} color="#007AFF" style={{ marginLeft: 4 }} />
                 )}
@@ -126,7 +135,7 @@ export default function TransactionsScreen() {
           </Text>
           <View style={styles.transactionMeta}>
             <Text style={styles.transactionBalance}>
-              Balance: {Math.round(item.balance_after).toLocaleString('en-US')} xu
+              Số dư: {Math.round(item.balance_after).toLocaleString('vi-VN')} VND
             </Text>
           </View>
         </View>
@@ -137,7 +146,7 @@ export default function TransactionsScreen() {
           ]}
         >
           {isNegative ? '-' : '+'}
-          {Math.round(item.amount).toLocaleString('en-US')}
+          {Math.round(item.amount).toLocaleString('vi-VN')} VND
         </Text>
       </TouchableOpacity>
     );
@@ -151,7 +160,7 @@ export default function TransactionsScreen() {
           <FlatList keyboardShouldPersistTaps="handled"
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={[{ label: 'Tất cả', value: undefined }, ...CATEGORIES.map(c => ({ label: c, value: c }))]}
+            data={[{ label: 'Tất cả', value: undefined }, ...CATEGORIES.map(c => ({ label: translateCategory(c), value: c }))]}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={[
@@ -166,7 +175,7 @@ export default function TransactionsScreen() {
                     selectedCategory === item.value && styles.filterChipTextActive,
                   ]}
                 >
-                  {item.label}
+                  {item.value === undefined ? 'Tất cả' : translateCategory(item.label)}
                 </Text>
               </TouchableOpacity>
             )}
@@ -199,9 +208,9 @@ export default function TransactionsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Danh mục</Text>
+            <Text style={styles.modalTitle}>Chỉnh sửa Danh mục</Text>
             <Text style={styles.modalDescription}>
-              {editingTransaction?.description || editingTransaction?.type}
+              {editingTransaction?.description || translateTransactionType(editingTransaction?.type)}
             </Text>
 
             <View style={styles.categoryGrid}>
@@ -220,7 +229,7 @@ export default function TransactionsScreen() {
                       newCategory === category && styles.categoryOptionTextActive,
                     ]}
                   >
-                    {category}
+                    {translateCategory(category)}
                   </Text>
                 </TouchableOpacity>
               ))}

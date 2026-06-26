@@ -126,13 +126,46 @@ export async function getUserStats(req: Request, res: Response) {
       .select('*', { count: 'exact', head: true })
       .eq('role', 'user');
 
+    // Calculate 7-day revenue
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const { data: recentTransactions } = await supabase
+      .from('transactions')
+      .select('amount, created_at')
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .order('created_at', { ascending: true });
+
+    const revenue7Days = Array(7).fill(0);
+    const labels7Days = Array(7).fill('');
+    
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      labels7Days[i] = d.toLocaleDateString('en-US', { weekday: 'short' });
+    }
+
+    if (recentTransactions) {
+      recentTransactions.forEach(tx => {
+        const txDate = new Date(tx.created_at);
+        const dayStr = txDate.toLocaleDateString('en-US', { weekday: 'short' });
+        const idx = labels7Days.indexOf(dayStr);
+        if (idx !== -1) {
+          revenue7Days[idx] += Number(tx.amount) || 0;
+        }
+      });
+    }
+
     res.json({
       totalUsers,
       totalTransactions,
       totalBalance,
       averageBalance: totalUsers ? totalBalance / totalUsers : 0,
       vendorCount: vendorCount || 0,
-      clientCount: clientCount || 0
+      clientCount: clientCount || 0,
+      revenueData: revenue7Days,
+      revenueLabels: labels7Days
     });
   } catch (error) {
     console.error('Get user stats error:', error);

@@ -19,6 +19,7 @@ import { getSpendingRecommendations } from '../../services/recommendation.servic
 import { getItemSuggestions } from '../../services/ai-suggestions.service';
 import { getUnreadCount } from '../../services/notification.service';
 import { useAuth } from '../../context/AuthContext';
+import { translateDescription } from '../../utils/category.utils';
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
@@ -141,7 +142,7 @@ export default function DashboardScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="analytics-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.viewTransactionsText}>Chi phí</Text>
+              <Text style={styles.viewTransactionsText}>Chi tiêu</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -286,7 +287,7 @@ export default function DashboardScreen() {
             transactions.map((transaction) => (
               <View key={transaction.id} style={styles.transactionItem}>
                 <View style={styles.transactionInfo}>
-                  <Text style={styles.transactionDesc}>{transaction.description || transaction.type}</Text>
+                  <Text style={styles.transactionDesc}>{translateDescription(transaction.description, transaction.type)}</Text>
                   <Text style={styles.transactionDate}>
                     {new Date(transaction.created_at).toLocaleDateString()}
                   </Text>

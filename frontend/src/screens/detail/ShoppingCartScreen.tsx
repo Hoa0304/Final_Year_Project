@@ -96,7 +96,7 @@ export default function ShoppingCartScreen() {
     mutationFn: clearCart,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      Alert.alert('Thành công', 'Cart cleared successfully');
+      Alert.alert('Thành công', 'Xóa giỏ hàng thành công');
     },
   });
 
@@ -117,7 +117,7 @@ export default function ShoppingCartScreen() {
 
     const stockQuantity = item.product?.stockQuantity || item.stockQuantity || 0;
     if (newQuantity > stockQuantity) {
-      Alert.alert('Lỗi', 'Insufficient stock');
+      Alert.alert('Lỗi', 'Không đủ hàng trong kho');
       return;
     }
     updateItemMutation.mutate({ itemId: item.id, quantity: newQuantity });
@@ -126,12 +126,12 @@ export default function ShoppingCartScreen() {
   function handleRemoveItem(item: CartItem) {
     const productName = item.product?.name || item.productName || 'this item';
     Alert.alert(
-      'Remove Product',
-      `Are you sure you want to remove ${productName} from the cart?`,
+      'Xóa sản phẩm',
+      `Bạn có chắc chắn muốn xóa ${productName} khỏi giỏ hàng không?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Remove',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => removeItemMutation.mutate(item.id),
         },
@@ -178,7 +178,7 @@ export default function ShoppingCartScreen() {
             <Ionicons name="storefront-outline" size={18} color="#818CF8" style={{ marginRight: 6 }} />
             <Text style={styles.vendorName} numberOfLines={1}>{vendorName}</Text>
           </View>
-          <Text style={styles.vendorItemCount}>{group.items.length} item(s)</Text>
+          <Text style={styles.vendorItemCount}>{group.items.length} sản phẩm</Text>
         </View>
 
         {/* Cart Items */}
@@ -263,7 +263,7 @@ export default function ShoppingCartScreen() {
             style={styles.checkoutVendorButtonGradient}
           >
             <Text style={styles.checkoutVendorButtonText}>
-              Checkout this group ({final.toLocaleString('en-US')} VND)
+              Thanh toán nhóm này ({final.toLocaleString('en-US')} VNĐ)
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -336,10 +336,10 @@ export default function ShoppingCartScreen() {
                   style={[styles.footerButton, styles.clearButton]}
                   onPress={() => {
                     Alert.alert(
-                      'Clear Cart',
-                      'Are you sure you want to remove all products from the cart?',
+                      'Xóa giỏ hàng',
+                      'Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng không?',
                       [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Hủy', style: 'cancel' },
                         {
                           text: 'Xóa tất cả',
                           style: 'destructive',

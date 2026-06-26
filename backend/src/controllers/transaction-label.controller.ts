@@ -50,7 +50,8 @@ export async function getCategorizedTransactions(req: AuthRequest, res: Response
     if (category) {
       filteredTransactions = filteredTransactions.filter((t: any) => {
         const txLabel = t.transaction_labels && t.transaction_labels.length > 0 ? t.transaction_labels[0].label : null;
-        return txLabel === category;
+        const computedCategory = txLabel || t.category || 'Uncategorized';
+        return computedCategory === category;
       });
     }
 
@@ -221,7 +222,9 @@ export async function categorizeTransaction(req: AuthRequest, res: Response) {
           type: transaction.type,
           amount: parseFloat(transaction.amount.toString()),
           description: transaction.description || '',
-          reference_type: transaction.reference_type
+          reference_type: transaction.reference_type,
+          productCategory,
+          productName
         },
         userHistory: labelHistory?.map((l: any) => ({
           type: '',
@@ -311,6 +314,7 @@ export async function getTransactionCategories(req: AuthRequest, res: Response) 
         id,
         amount,
         type,
+        category,
         transaction_labels (
           label
         )
@@ -326,7 +330,7 @@ export async function getTransactionCategories(req: AuthRequest, res: Response) 
     const categorySummary: { [key: string]: { count: number; totalAmount: number } } = {};
     
     transactions?.forEach((t: any) => {
-      const label = t.transaction_labels?.[0]?.label || 'Uncategorized';
+      const label = t.transaction_labels?.[0]?.label || t.category || 'Uncategorized';
       if (!categorySummary[label]) {
         categorySummary[label] = { count: 0, totalAmount: 0 };
       }
@@ -497,6 +501,7 @@ export async function getExpenseStatistics(req: AuthRequest, res: Response) {
         type,
         description,
         created_at,
+        category,
         transaction_labels (
           label
         )
@@ -530,7 +535,7 @@ export async function getExpenseStatistics(req: AuthRequest, res: Response) {
     const categoryBreakdown: { [key: string]: { amount: number; count: number; transactions: any[] } } = {};
     
     transactions?.forEach((t: any) => {
-      const category = t.transaction_labels?.[0]?.label || 'Uncategorized';
+      const category = t.transaction_labels?.[0]?.label || t.category || 'Uncategorized';
       if (!categoryBreakdown[category]) {
         categoryBreakdown[category] = { amount: 0, count: 0, transactions: [] };
       }
@@ -667,7 +672,7 @@ export async function getExpenseInsights(req: AuthRequest, res: Response) {
     // Group by category
     const categoryBreakdown: { [key: string]: { amount: number; count: number } } = {};
     transactions?.forEach((t: any) => {
-      const category = t.transaction_labels?.[0]?.label || 'Uncategorized';
+      const category = t.transaction_labels?.[0]?.label || t.category || 'Uncategorized';
       if (!categoryBreakdown[category]) {
         categoryBreakdown[category] = { amount: 0, count: 0 };
       }
@@ -755,7 +760,7 @@ export async function getExpenseInsights(req: AuthRequest, res: Response) {
       
       const { data: prevTransactions } = await supabase
         .from('transactions')
-        .select(`amount, transaction_labels(label)`)
+        .select(`amount, category, transaction_labels(label)`)
         .eq('user_id', userId)
         .in('type', ['spend', 'revoke'])
         .gte('created_at', prevStartDate.toISOString())
@@ -775,7 +780,7 @@ export async function getExpenseInsights(req: AuthRequest, res: Response) {
         
         const prevCategoryBreakdown: { [key: string]: number } = {};
         prevTransactions.forEach((t: any) => {
-          const cat = t.transaction_labels?.[0]?.label || 'Uncategorized';
+          const cat = t.transaction_labels?.[0]?.label || t.category || 'Uncategorized';
           prevCategoryBreakdown[cat] = (prevCategoryBreakdown[cat] || 0) + parseFloat(t.amount.toString());
         });
         

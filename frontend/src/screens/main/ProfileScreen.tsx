@@ -49,10 +49,10 @@ export default function ProfileScreen() {
       });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       setIsEditing(false);
-      Alert.alert('Thành công', 'Profile updated successfully!');
+      Alert.alert('Thành công', 'Cập nhật hồ sơ thành công!');
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error.response?.data?.error || 'Failed to update profile');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Không thể cập nhật hồ sơ');
     },
   });
 
@@ -92,10 +92,10 @@ export default function ProfileScreen() {
   }, [profile, isEditing]);
 
   async function handleLogout() {
-    Alert.alert('Logout', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+      { text: 'Hủy', style: 'cancel' },
       {
-        text: 'Logout',
+        text: 'Đăng xuất',
         style: 'destructive',
         onPress: async () => {
           await logout();
@@ -242,12 +242,12 @@ export default function ProfileScreen() {
                 style={styles.fieldInput}
                 value={formData.phone}
                 onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                placeholder="Nhập phone number"
+                placeholder="Nhập số điện thoại"
                 placeholderTextColor="#475569"
                 keyboardType="phone-pad"
               />
             ) : (
-              <Text style={styles.fieldValue}>{profile?.phone || 'Not set'}</Text>
+              <Text style={styles.fieldValue}>{profile?.phone || 'Chưa cập nhật'}</Text>
             )}
           </View>
 
@@ -300,7 +300,7 @@ export default function ProfileScreen() {
                     month: 'long',
                     day: 'numeric',
                   })
-                  : 'Not set'}
+                  : 'Chưa cập nhật'}
               </Text>
             )}
           </View>
@@ -319,7 +319,7 @@ export default function ProfileScreen() {
                 numberOfLines={3}
               />
             ) : (
-              <Text style={styles.fieldValue}>{profile?.address || 'Not set'}</Text>
+              <Text style={styles.fieldValue}>{profile?.address || 'Chưa cập nhật'}</Text>
             )}
           </View>
 
@@ -337,7 +337,7 @@ export default function ProfileScreen() {
                 numberOfLines={4}
               />
             ) : (
-              <Text style={styles.fieldValue}>{profile?.bio || 'No bio yet'}</Text>
+              <Text style={styles.fieldValue}>{profile?.bio || 'Chưa có tiểu sử'}</Text>
             )}
           </View>
         </View>

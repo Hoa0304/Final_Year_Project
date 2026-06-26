@@ -13,54 +13,104 @@ import {
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getPurchaseHistory, Purchase } from '../../services/purchase-history.service';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { translateCategory } from '../../utils/category.utils';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function PurchaseHistoryScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const categoryFilter = route.params?.category;
 
   const { data: purchases, isLoading, refetch } = useQuery({
     queryKey: ['purchaseHistory'],
     queryFn: () => getPurchaseHistory(100, 0),
   });
 
+  const filteredPurchases = React.useMemo(() => {
+    if (!purchases) return [];
+    if (!categoryFilter) return purchases;
+    
+    const filterLower = categoryFilter.toLowerCase();
+
+    // Map transaction categories to possible product categories/keywords/names
+    const categoryMapping: Record<string, string[]> = {
+      'điện tử': ['electronics', 'gadgets', 'phones', 'laptops', 'điện thoại', 'máy tính', 'điện tử', 'tech', 'laptop', 'smartphone', 'tablet', 'camera', 'keyboard', 'mouse', 'headphones'],
+      'electronics': ['electronics', 'gadgets', 'phones', 'laptops', 'điện thoại', 'máy tính', 'điện tử', 'tech', 'laptop', 'smartphone', 'tablet', 'camera', 'keyboard', 'mouse', 'headphones'],
+      'ăn uống': ['food', 'beverage', 'groceries', 'thực phẩm', 'đồ ăn', 'đồ uống', 'ăn uống', 'snack'],
+      'food': ['food', 'beverage', 'groceries', 'thực phẩm', 'đồ ăn', 'đồ uống', 'ăn uống', 'snack'],
+      'giải trí': ['entertainment', 'games', 'movies', 'giải trí', 'trò chơi', 'toys'],
+      'entertainment': ['entertainment', 'games', 'movies', 'giải trí', 'trò chơi', 'toys'],
+      'clothing': ['clothing', 'apparel', 'shoes', 'accessories', 'fashion', 'thời trang', 'quần áo', 'áo', 'quần'],
+      'thời trang': ['clothing', 'apparel', 'shoes', 'accessories', 'fashion', 'thời trang', 'quần áo', 'áo', 'quần'],
+      'đi lại': ['transport', 'vehicle', 'xe', 'đi lại', 'travel'],
+      'transport': ['transport', 'vehicle', 'xe', 'đi lại', 'travel'],
+      'education': ['education', 'course', 'book', 'khóa học', 'sách', 'giáo dục'],
+      'giáo dục': ['education', 'course', 'book', 'khóa học', 'sách', 'giáo dục'],
+      'shopping': ['shopping', 'mua sắm', 'retail', 'mouse', 'chuột', 'camera', 'máy ảnh', 'keyboard', 'bàn phím', 'headphones', 'tai nghe', 'watch', 'đồng hồ', 'tablet', 'máy tính bảng', 'laptop', 'máy tính xách tay', 'smartphone', 'điện thoại thông minh', 'clothing', 'thời trang', 'electronics', 'điện tử'],
+      'mua sắm': ['shopping', 'mua sắm', 'retail', 'mouse', 'chuột', 'camera', 'máy ảnh', 'keyboard', 'bàn phím', 'headphones', 'tai nghe', 'watch', 'đồng hồ', 'tablet', 'máy tính bảng', 'laptop', 'máy tính xách tay', 'smartphone', 'điện thoại thông minh', 'clothing', 'thời trang', 'electronics', 'điện tử'],
+    };
+
+    const searchTerms = categoryMapping[filterLower];
+    
+    // If not mapped, do not filter out everything, just do a generic text search
+    if (!searchTerms) {
+      return purchases.filter(p => {
+        const prodCat = (p.productCategory || '').toLowerCase();
+        const prodName = (p.productName || '').toLowerCase();
+        return prodCat.includes(filterLower) || prodName.includes(filterLower);
+      });
+    }
+    
+    const filtered = purchases.filter(p => {
+      const prodCat = (p.productCategory || '').toLowerCase();
+      const prodName = (p.productName || '').toLowerCase();
+      
+      return searchTerms.some(term => 
+        prodCat.includes(term) || prodName.includes(term)
+      );
+    });
+
+    return filtered;
+  }, [purchases, categoryFilter]);
+
   function renderPurchase({ item }: { item: Purchase }) {
     const status = item.status;
-    let statusText = 'Completed';
+    let statusText = 'Đã hoàn thành';
     let statusBadgeColor = '#10B981';
     let statusBgColor = '#10B98115';
 
     if (status === 'pending_payment') {
-      statusText = 'Pending Payment';
+      statusText = 'Chờ thanh toán';
       statusBadgeColor = '#3B82F6';
       statusBgColor = '#3B82F615';
     } else if (status === 'pending') {
-      statusText = 'Pending Confirmation';
+      statusText = 'Chờ xác nhận';
       statusBadgeColor = '#F59E0B';
       statusBgColor = '#F59E0B15';
     } else if (status === 'processing') {
-      statusText = 'Processing';
+      statusText = 'Đang xử lý';
       statusBadgeColor = '#8B5CF6';
       statusBgColor = '#8B5CF615';
     } else if (status === 'shipped' || status === 'out_for_delivery') {
-      statusText = 'Shipped';
+      statusText = 'Đang giao';
       statusBadgeColor = '#06B6D4';
       statusBgColor = '#06B6D415';
     } else if (status === 'delivered') {
-      statusText = 'Delivered';
+      statusText = 'Đã giao';
       statusBadgeColor = '#10B981';
       statusBgColor = '#10B98115';
     } else if (status === 'completed') {
-      statusText = 'Completed';
+      statusText = 'Đã hoàn thành';
       statusBadgeColor = '#10B981';
       statusBgColor = '#10B98115';
     } else if (status === 'cancelled') {
-      statusText = 'Cancelled';
+      statusText = 'Đã hủy';
       statusBadgeColor = '#EF4444';
       statusBgColor = '#EF444415';
     } else if (status === 'rejected') {
-      statusText = 'Rejected';
+      statusText = 'Từ chối';
       statusBadgeColor = '#EF4444';
       statusBgColor = '#EF444415';
     }
@@ -99,7 +149,7 @@ export default function PurchaseHistoryScreen() {
               {item.productName}
             </Text>
             {item.productCategory && (
-              <Text style={styles.productCategory}>{item.productCategory}</Text>
+              <Text style={styles.productCategory}>{translateCategory(item.productCategory)}</Text>
             )}
             <Text style={styles.quantity}>x{item.quantity}</Text>
           </View>
@@ -108,8 +158,7 @@ export default function PurchaseHistoryScreen() {
         <View style={styles.cardFooter}>
           <Text style={styles.totalLabel}>Tổng tiền</Text>
           <View style={styles.priceContainer}>
-            <Ionicons name="logo-bitcoin" size={14} color="#F59E0B" />
-            <Text style={styles.totalAmount}>{item.totalAmount.toLocaleString()}</Text>
+            <Text style={styles.totalAmount}>{item.totalAmount.toLocaleString('vi-VN')} VND</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -130,15 +179,19 @@ export default function PurchaseHistoryScreen() {
 
       <View style={styles.container}>
         <FlatList keyboardShouldPersistTaps="handled"
-          data={purchases}
+          data={filteredPurchases}
           renderItem={renderPurchase}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={isLoading || false} onRefresh={refetch} tintColor="#3B82F6" />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="receipt-outline" size={64} color="#334155" />
-              <Text style={styles.emptyText}>Không có lịch sử mua hàng</Text>
+              <Ionicons name="bag-handle-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyText}>
+                {categoryFilter 
+                  ? `Không có đơn hàng nào khớp với danh mục "${categoryFilter}".\nLưu ý: Giao dịch có thể không liên kết với một đơn hàng cụ thể.` 
+                  : 'Chưa có lịch sử mua hàng'}
+              </Text>
             </View>
           }
         />

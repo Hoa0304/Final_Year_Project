@@ -23,6 +23,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../config/api';
 import ImageUploadPicker from '../../components/ImageUploadPicker';
 import { useRoute } from '@react-navigation/native';
+import { translateCategory } from '../../utils/category.utils';
 
 interface Product {
   id: string;
@@ -223,7 +224,7 @@ export default function AdminProductsScreen({ route }: any) {
           <View style={styles.badgeRow}>
             {item.category && (
               <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{item.category}</Text>
+                <Text style={styles.categoryText}>{translateCategory(item.category)}</Text>
               </View>
             )}
             <View style={[

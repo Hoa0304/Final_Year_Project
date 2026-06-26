@@ -27,9 +27,11 @@ import {
   getStatusProgress,
   getNextStatuses,
   mockVndPayment,
+  getEthRate,
 } from '../../services/order.service';
 import { useAuth } from '../../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { translateCategory } from '../../utils/category.utils';
 
 const TIMELINE_STEPS: OrderStatus[] = ['processing', 'shipped', 'out_for_delivery', 'delivered'];
 
@@ -67,16 +69,16 @@ export default function OrderTrackingScreen() {
 
       if (result.lateCompensation?.issued) {
         Alert.alert(
-          '✅ Delivered',
-          'The order has been delivered. Due to delayed delivery, a compensation voucher has been sent to the customer automatically.',
+          '✅ Đã giao',
+          'Đơn hàng đã được giao. Do giao hàng chậm trễ, một voucher đền bù đã được tự động gửi cho khách hàng.',
           [{ text: 'OK' }]
         );
       } else {
-        Alert.alert('Thành công', `Status updated: ${getStatusLabel(selectedStatus!)}`);
+        Alert.alert('Thành công', `Đã cập nhật trạng thái: ${getStatusLabel(selectedStatus!)}`);
       }
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error?.response?.data?.error || 'Could not update status');
+      Alert.alert('Lỗi', error?.response?.data?.error || 'Không thể cập nhật trạng thái');
     },
   });
 
@@ -84,10 +86,10 @@ export default function OrderTrackingScreen() {
     mutationFn: () => mockVndPayment(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', orderId] });
-      Alert.alert('✅ Payment Successful (Mock)', 'The order payment has been confirmed');
+      Alert.alert('✅ Thanh toán thành công (Mô phỏng)', 'Thanh toán đơn hàng đã được xác nhận');
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error?.response?.data?.error || 'Mock payment error');
+      Alert.alert('Lỗi', error?.response?.data?.error || 'Lỗi thanh toán mô phỏng');
     },
   });
 
@@ -133,8 +135,8 @@ export default function OrderTrackingScreen() {
               <Text style={styles.lateBannerTitle}>Đơn hàng bị trễ</Text>
               <Text style={styles.lateBannerSub}>
                 {order.late_compensation_voucher_id
-                  ? '✅ Compensation voucher has been issued to you'
-                  : 'Bạn will receive a compensation voucher when the order is delivered'
+                  ? '✅ Voucher đền bù đã được cấp cho bạn'
+                  : 'Bạn sẽ nhận được một voucher đền bù khi đơn hàng được giao'
                 }
               </Text>
             </View>
@@ -204,7 +206,7 @@ export default function OrderTrackingScreen() {
             <Ionicons name="calendar-outline" size={20} color={isLate ? '#FF9500' : '#7C3AED'} />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>
-                {isLate ? '⚠️ Estimated delivery (Delayed)' : 'Estimated delivery'}
+                {isLate ? '⚠️ Dự kiến giao hàng (Bị trễ)' : 'Dự kiến giao hàng'}
               </Text>
               <Text style={[styles.infoValue, isLate && { color: '#FF9500' }]}>
                 {estimatedDate.toLocaleDateString('en-US', {
@@ -253,7 +255,7 @@ export default function OrderTrackingScreen() {
               <View style={styles.productDetails}>
                 <Text style={styles.productName}>{order.products.name}</Text>
                 {order.products.category && (
-                  <Text style={styles.productCategory}>{order.products.category}</Text>
+                  <Text style={styles.productCategory}>{translateCategory(order.products.category)}</Text>
                 )}
                 <Text style={styles.quantityText}>Số lượng: {order.quantity}</Text>
               </View>
@@ -299,7 +301,7 @@ export default function OrderTrackingScreen() {
 
           {order.price_coins > 0 && (
             <Text style={styles.discountHint}>
-              Bạn saved {Math.round(order.price_coins).toLocaleString('en-US')} VNĐ by paying with xu
+              Bạn tiết kiệm {Math.round(order.price_coins).toLocaleString('en-US')} VNĐ nhờ thanh toán bằng xu
             </Text>
           )}
 
@@ -310,10 +312,10 @@ export default function OrderTrackingScreen() {
               onPress={() => {
                 Alert.alert(
                   '⚡ Dev Mode',
-                  'Confirm mock VNĐ payment?',
+                  'Xác nhận thanh toán VNĐ mô phỏng?',
                   [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Confirm', onPress: () => mockPayMutation.mutate() }
+                    { text: 'Hủy', style: 'cancel' },
+                    { text: 'Xác nhận', onPress: () => mockPayMutation.mutate() }
                   ]
                 );
               }}
@@ -378,7 +380,7 @@ export default function OrderTrackingScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                Update: {selectedStatus ? getStatusLabel(selectedStatus) : ''}
+                Cập nhật: {selectedStatus ? getStatusLabel(selectedStatus) : ''}
               </Text>
               <TouchableOpacity onPress={() => setStatusModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#fff" />
@@ -398,7 +400,7 @@ export default function OrderTrackingScreen() {
               </>
             )}
 
-            <Text style={styles.modalLabel}>Notes for Khách hàng (optional)</Text>
+            <Text style={styles.modalLabel}>Ghi chú cho khách hàng (Tuỳ chọn)</Text>
             <TextInput
               style={[styles.modalInput, styles.modalTextArea]}
               placeholder="Thêm ghi chú..."

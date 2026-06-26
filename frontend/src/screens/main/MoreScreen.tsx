@@ -45,7 +45,7 @@ export default function MoreScreen() {
     },
     {
       id: 'messages',
-      title: 'Messages',
+      title: 'Tin nhắn',
       icon: 'chatbubbles',
       screen: 'Messages',
       color: '#FF9500',
@@ -69,11 +69,11 @@ export default function MoreScreen() {
     },
     {
       id: 'expense',
-      title: 'Expense Management',
+      title: 'Quản lý chi tiêu',
       icon: 'wallet',
       screen: 'ExpenseManagement',
       color: '#5856D6',
-      description: 'Theo dõi chi phí & ngân sách',
+      description: 'Theo dõi chi tiêu & ngân sách',
     },
   ];
 

@@ -92,12 +92,12 @@ export default function NotificationsScreen() {
 
   const handleDelete = (notification: Notification) => {
     Alert.alert(
-      'Delete Notification',
-      'Are you sure you want to delete this notification?',
+      'Xóa thông báo',
+      'Bạn có chắc chắn muốn xóa thông báo này?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => deleteMutation.mutate(notification.id),
         },
@@ -107,12 +107,12 @@ export default function NotificationsScreen() {
 
   const handleMarkAllAsRead = () => {
     Alert.alert(
-      'Mark Tất cả as Read',
-      'Mark all notifications as read?',
+      'Đánh dấu tất cả đã đọc',
+      'Đánh dấu tất cả thông báo là đã đọc?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Mark Tất cả Read',
+          text: 'Đánh dấu tất cả',
           onPress: () => markAllAsReadMutation.mutate(),
         },
       ]
